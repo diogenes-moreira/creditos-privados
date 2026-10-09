@@ -363,6 +363,158 @@ definitions:
       portfolio:
         $ref: '#/definitions/dto.PortfolioResponse'
     type: object
+  dto.LivestockHerdRequest:
+    properties:
+      females1To2Years:
+        minimum: 0
+        type: integer
+      females2To3Years:
+        minimum: 0
+        type: integer
+      females3To5Years:
+        minimum: 0
+        type: integer
+      females3To8Months:
+        minimum: 0
+        type: integer
+      females8To12Months:
+        minimum: 0
+        type: integer
+      femalesOver5Years:
+        minimum: 0
+        type: integer
+      femalesUnder3Months:
+        minimum: 0
+        type: integer
+      males1To2Years:
+        minimum: 0
+        type: integer
+      males2To3Years:
+        minimum: 0
+        type: integer
+      males3To8Months:
+        minimum: 0
+        type: integer
+      males8To12Months:
+        minimum: 0
+        type: integer
+      malesOver3Years:
+        minimum: 0
+        type: integer
+      malesUnder3Months:
+        minimum: 0
+        type: integer
+      notVaccinated:
+        description: NotVaccinated is the registry's unvaccinated total for the holding.
+        minimum: 0
+        type: integer
+    type: object
+  dto.LivestockQuotaCeilingsResponse:
+    properties:
+      capacity:
+        type: string
+      inputs:
+        type: string
+      ltv:
+        type: string
+      policyCap:
+        type: string
+    type: object
+  dto.LivestockQuotaRequest:
+    properties:
+      completedCycles:
+        minimum: 0
+        type: integer
+      department:
+        maxLength: 60
+        type: string
+      holdingStatus:
+        description: HoldingStatus is the RUV's holding status; "N" (active) scores
+          best.
+        maxLength: 10
+        type: string
+      holdings:
+        items:
+          $ref: '#/definitions/dto.LivestockHerdRequest'
+        minItems: 1
+        type: array
+      nationalId:
+        maxLength: 30
+        type: string
+      reference:
+        description: Reference is the caller's identifier for the request (e.g. its
+          onboarding ID).
+        maxLength: 100
+        type: string
+      reportedCycles:
+        minimum: 0
+        type: integer
+      seniorityCycles:
+        minimum: 0
+        type: integer
+      tenure:
+        description: Tenure is "Propia" or "Arrendada", as the RUV reports it.
+        enum:
+        - Propia
+        - Arrendada
+        type: string
+    required:
+    - holdingStatus
+    - holdings
+    - nationalId
+    - tenure
+    type: object
+  dto.LivestockQuotaResponse:
+    properties:
+      activeCeiling:
+        type: string
+      ceilings:
+        $ref: '#/definitions/dto.LivestockQuotaCeilingsResponse'
+      createdAt:
+        type: string
+      currency:
+        type: string
+      eligibleBasket:
+        description: EligibleBasket is what the rancher would buy in the inputs catalogue
+          over the term.
+        type: string
+      head:
+        type: integer
+      id:
+        type: string
+      nationalId:
+        type: string
+      periodRatePct:
+        type: string
+      projectedIncome:
+        description: ProjectedIncome is the holding's expected revenue over the term.
+        type: string
+      quota:
+        type: string
+      reference:
+        type: string
+      score:
+        $ref: '#/definitions/dto.LivestockScoreResponse'
+      termMonths:
+        type: integer
+      typology:
+        type: string
+      ugg:
+        type: string
+    type: object
+  dto.LivestockScoreResponse:
+    properties:
+      cycleCompliancePct:
+        type: integer
+      grade:
+        type: string
+      score:
+        type: integer
+      seniorityCycles:
+        type: integer
+      vaccinationRatePct:
+        type: integer
+    type: object
   dto.LoanResponse:
     properties:
       amortizationType:
@@ -3315,6 +3467,39 @@ paths:
       summary: Readiness check
       tags:
       - Health
+  /livestock-quotas:
+    post:
+      consumes:
+      - application/json
+      description: 'Runs the RUV-based livestock quota engine for a rancher and stores
+        the result. The holdings are summed: the quota is one per national ID.'
+      parameters:
+      - description: Rancher's RUV data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LivestockQuotaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ServiceKey: []
+      summary: Assess a rancher's livestock credit quota
+      tags:
+      - Livestock quota
   /loans/simulate:
     post:
       consumes:
@@ -4001,5 +4186,10 @@ securityDefinitions:
     description: 'Enter your bearer token in the format: Bearer {token}'
     in: header
     name: Authorization
+    type: apiKey
+  ServiceKey:
+    description: Partner service key (CuppoGan)
+    in: header
+    name: X-API-Key
     type: apiKey
 swagger: "2.0"

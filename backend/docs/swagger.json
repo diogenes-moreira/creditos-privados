@@ -3037,6 +3037,57 @@
                 }
             }
         },
+        "/livestock-quotas": {
+            "post": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Runs the RUV-based livestock quota engine for a rancher and stores the result. The holdings are summed: the quota is one per national ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Assess a rancher's livestock credit quota",
+                "parameters": [
+                    {
+                        "description": "Rancher's RUV data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/loans/simulate": {
             "post": {
                 "security": [
@@ -4647,6 +4698,216 @@
                 }
             }
         },
+        "dto.LivestockHerdRequest": {
+            "type": "object",
+            "properties": {
+                "females1To2Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females2To3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females3To5Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females3To8Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females8To12Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "femalesOver5Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "femalesUnder3Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males1To2Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males2To3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males3To8Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males8To12Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "malesOver3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "malesUnder3Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "notVaccinated": {
+                    "description": "NotVaccinated is the registry's unvaccinated total for the holding.",
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "dto.LivestockQuotaCeilingsResponse": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "string"
+                },
+                "inputs": {
+                    "type": "string"
+                },
+                "ltv": {
+                    "type": "string"
+                },
+                "policyCap": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockQuotaRequest": {
+            "type": "object",
+            "required": [
+                "holdingStatus",
+                "holdings",
+                "nationalId",
+                "tenure"
+            ],
+            "properties": {
+                "completedCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "department": {
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "holdingStatus": {
+                    "description": "HoldingStatus is the RUV's holding status; \"N\" (active) scores best.",
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "holdings": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockHerdRequest"
+                    }
+                },
+                "nationalId": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "reference": {
+                    "description": "Reference is the caller's identifier for the request (e.g. its onboarding ID).",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "reportedCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "seniorityCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "tenure": {
+                    "description": "Tenure is \"Propia\" or \"Arrendada\", as the RUV reports it.",
+                    "type": "string",
+                    "enum": [
+                        "Propia",
+                        "Arrendada"
+                    ]
+                }
+            }
+        },
+        "dto.LivestockQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "activeCeiling": {
+                    "type": "string"
+                },
+                "ceilings": {
+                    "$ref": "#/definitions/dto.LivestockQuotaCeilingsResponse"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "eligibleBasket": {
+                    "description": "EligibleBasket is what the rancher would buy in the inputs catalogue over the term.",
+                    "type": "string"
+                },
+                "head": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                },
+                "periodRatePct": {
+                    "type": "string"
+                },
+                "projectedIncome": {
+                    "description": "ProjectedIncome is the holding's expected revenue over the term.",
+                    "type": "string"
+                },
+                "quota": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "score": {
+                    "$ref": "#/definitions/dto.LivestockScoreResponse"
+                },
+                "termMonths": {
+                    "type": "integer"
+                },
+                "typology": {
+                    "type": "string"
+                },
+                "ugg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockScoreResponse": {
+            "type": "object",
+            "properties": {
+                "cycleCompliancePct": {
+                    "type": "integer"
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "seniorityCycles": {
+                    "type": "integer"
+                },
+                "vaccinationRatePct": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.LoanResponse": {
             "type": "object",
             "properties": {
@@ -6143,6 +6404,12 @@
             "description": "Enter your bearer token in the format: Bearer {token}",
             "type": "apiKey",
             "name": "Authorization",
+            "in": "header"
+        },
+        "ServiceKey": {
+            "description": "Partner service key (CuppoGan)",
+            "type": "apiKey",
+            "name": "X-API-Key",
             "in": "header"
         }
     }

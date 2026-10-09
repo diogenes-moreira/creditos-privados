@@ -31,6 +31,11 @@ import (
 // @in header
 // @name Authorization
 // @description Enter your bearer token in the format: Bearer {token}
+
+// @securityDefinitions.apikey ServiceKey
+// @in header
+// @name X-API-Key
+// @description Partner service key (CuppoGan)
 func main() {
 	_ = godotenv.Load()
 	cfg := config.Load()
@@ -64,6 +69,7 @@ func main() {
 		&model.RiskGradeBand{},
 		&model.RiskAssessment{},
 		&model.RiskFactor{},
+		&model.LivestockQuotaAssessment{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

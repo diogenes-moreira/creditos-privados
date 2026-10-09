@@ -12,6 +12,7 @@ type Config struct {
 	GCS             GCSConfig
 	AI              AIConfig
 	Twilio          TwilioConfig
+	Partners        PartnersConfig
 	Country         string
 	DefaultIVARate  float64
 	LatePenaltyRate float64
@@ -112,6 +113,13 @@ type TwilioConfig struct {
 // AIConfig configures the language model that runs the credit-risk analysis
 // prompt. With no API key the risk module falls back to its deterministic
 // scorecard, so the feature works without any AI credentials.
+// PartnersConfig holds the keys partner services authenticate with. An empty
+// key disables that partner's routes.
+type PartnersConfig struct {
+	// CuppoganAPIKey authenticates CuppoGan on POST /livestock-quotas.
+	CuppoganAPIKey string
+}
+
 type AIConfig struct {
 	APIKey    string
 	Model     string
@@ -174,6 +182,9 @@ func Load() *Config {
 			AuthToken:   getEnv("TWILIO_AUTH_TOKEN", ""),
 			FromNumber:  getEnv("TWILIO_WHATSAPP_FROM", ""),
 			TemplateSID: getEnv("TWILIO_WHATSAPP_TEMPLATE_SID", ""),
+		},
+		Partners: PartnersConfig{
+			CuppoganAPIKey: getEnv("CUPPOGAN_API_KEY", ""),
 		},
 		Country:         country,
 		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", defaults.IVARate),

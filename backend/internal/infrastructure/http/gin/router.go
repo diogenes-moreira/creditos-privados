@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,6 +35,7 @@ type Router struct {
 	countryInfo     config.CountryInfo
 	aiConfig        config.AIConfig
 	twilioConfig    messaging.TwilioConfig
+	partners        config.PartnersConfig
 }
 
 func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
@@ -45,6 +47,7 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		country:         cfg.Country,
 		countryInfo:     cfg.CountryInfo(),
 		aiConfig:        cfg.AI,
+		partners:        cfg.Partners,
 		twilioConfig: messaging.TwilioConfig{
 			AccountSID:      cfg.Twilio.AccountSID,
 			AuthToken:       cfg.Twilio.AuthToken,
@@ -85,6 +88,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	riskModelRepo := postgres.NewRiskModelRepository(r.db)
 	riskAssessmentRepo := postgres.NewRiskAssessmentRepository(r.db)
 	creditHistoryRepo := postgres.NewCreditHistoryRepository(r.db)
+	livestockQuotaRepo := postgres.NewLivestockQuotaRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
@@ -143,6 +147,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
+	livestockQuotaHandler := handler.NewLivestockQuotaHandler(
+		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency))
 
 	// Base path prefix (e.g. "/demo" when behind Firebase Hosting rewrite)
 	basePath := os.Getenv("BASE_PATH")
@@ -167,6 +173,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	api.POST("/auth/request-otp", authHandler.RequestOTP)
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
 	api.POST("/auth/firebase-login", authHandler.FirebaseLogin)
+
+	// Partner services (service key, not a user session). Not registered when
+	// the partner's key is not configured.
+	if r.partners.CuppoganAPIKey != "" {
+		api.POST("/livestock-quotas", middleware.RequireServiceKey("cuppogan", r.partners.CuppoganAPIKey),
+			livestockQuotaHandler.Assess)
+	} else {
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas disabled")
+	}
 
 	// Authenticated routes
 	authenticated := api.Group("")
