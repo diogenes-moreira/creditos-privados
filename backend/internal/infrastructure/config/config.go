@@ -10,6 +10,8 @@ type Config struct {
 	Server          ServerConfig
 	JWT             JWTConfig
 	GCS             GCSConfig
+	AI              AIConfig
+	Twilio          TwilioConfig
 	Country         string
 	DefaultIVARate  float64
 	LatePenaltyRate float64
@@ -34,10 +36,15 @@ var countryDefaults = map[string]struct {
 	NationalIDLabel string
 	TaxIDLabel      string
 	IVARate         float64
+	DialCode        string
 }{
-	"AR": {Currency: "ARS", Locale: "es-AR", TimeZone: "America/Argentina/Buenos_Aires", NationalIDLabel: "DNI", TaxIDLabel: "CUIT", IVARate: 21},
-	"CO": {Currency: "COP", Locale: "es-CO", TimeZone: "America/Bogota", NationalIDLabel: "Cédula", TaxIDLabel: "NIT", IVARate: 19},
+	"AR": {Currency: "ARS", Locale: "es-AR", TimeZone: "America/Argentina/Buenos_Aires", NationalIDLabel: "DNI", TaxIDLabel: "CUIT", IVARate: 21, DialCode: "54"},
+	"CO": {Currency: "COP", Locale: "es-CO", TimeZone: "America/Bogota", NationalIDLabel: "Cédula", TaxIDLabel: "NIT", IVARate: 19, DialCode: "57"},
 }
+
+// DialCode is the deployment country's international dialing code, used to put
+// stored phone numbers into E.164 before handing them to Twilio.
+func (c *Config) DialCode() string { return countryDefaults[c.Country].DialCode }
 
 // CountryInfo returns the localization metadata for the configured country.
 func (c *Config) CountryInfo() CountryInfo {
@@ -92,6 +99,31 @@ type JWTConfig struct {
 	ExpirationHours int
 }
 
+// TwilioConfig configures WhatsApp delivery of one-time login codes through
+// Twilio. With no credentials the OTP sender falls back to Firebase email links
+// and then to the console, so local development needs no Twilio account.
+type TwilioConfig struct {
+	AccountSID  string
+	AuthToken   string
+	FromNumber  string
+	TemplateSID string
+}
+
+// AIConfig configures the language model that runs the credit-risk analysis
+// prompt. With no API key the risk module falls back to its deterministic
+// scorecard, so the feature works without any AI credentials.
+type AIConfig struct {
+	APIKey    string
+	Model     string
+	Effort    string
+	MaxTokens int
+}
+
+// Enabled reports whether a prompt-driven analyzer can be built.
+func (c AIConfig) Enabled() bool {
+	return c.APIKey != ""
+}
+
 type GCSConfig struct {
 	Bucket          string
 	CredentialsFile string
@@ -130,6 +162,18 @@ func Load() *Config {
 			Bucket:          getEnv("GCS_BUCKET", ""),
 			CredentialsFile: getEnv("GCS_CREDENTIALS_FILE", ""),
 			LocalPath:       getEnv("LOCAL_STORAGE_PATH", "./storage"),
+		},
+		AI: AIConfig{
+			APIKey:    getEnv("ANTHROPIC_API_KEY", ""),
+			Model:     getEnv("RISK_ANALYSIS_MODEL", "claude-opus-5"),
+			Effort:    getEnv("RISK_ANALYSIS_EFFORT", "high"),
+			MaxTokens: getEnvInt("RISK_ANALYSIS_MAX_TOKENS", 16000),
+		},
+		Twilio: TwilioConfig{
+			AccountSID:  getEnv("TWILIO_ACCOUNT_SID", ""),
+			AuthToken:   getEnv("TWILIO_AUTH_TOKEN", ""),
+			FromNumber:  getEnv("TWILIO_WHATSAPP_FROM", ""),
+			TemplateSID: getEnv("TWILIO_WHATSAPP_TEMPLATE_SID", ""),
 		},
 		Country:         country,
 		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", defaults.IVARate),
