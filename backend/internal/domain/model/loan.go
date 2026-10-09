@@ -29,6 +29,8 @@ const (
 	LoanDefaulted LoanStatus = "defaulted"
 )
 
+// Loan is a disbursed credit with an amortization schedule. InterestRate is an
+// annual percentage: 45 means 45% per year.
 type Loan struct {
 	ID               uuid.UUID        `gorm:"type:uuid;primaryKey"`
 	ClientID         uuid.UUID        `gorm:"type:uuid;index;not null"`
@@ -248,7 +250,7 @@ func (l *Loan) RecalculateReducingTerm(outstandingPrincipal, interestRate, ivaRa
 	}
 
 	pendingCount := len(pendingIndices)
-	monthlyRate := interestRate.Div(decimal.NewFromInt(12))
+	monthlyRate := interestRate.Div(monthlyRateDivisor)
 	var newN int
 
 	switch l.AmortizationType {
@@ -375,7 +377,7 @@ func (l *Loan) CancellationSettlement(ivaRate decimal.Decimal) (pendingCapital, 
 	if l.DisbursedAt != nil && pendingCapital.IsPositive() {
 		daysElapsed := decimal.NewFromFloat(time.Since(*l.DisbursedAt).Hours() / 24)
 		monthsElapsed := daysElapsed.Div(decimal.NewFromInt(30))
-		monthlyRate := l.InterestRate.Div(decimal.NewFromInt(100))
+		monthlyRate := l.InterestRate.Div(monthlyRateDivisor)
 		accruedInterest = pendingCapital.Mul(monthlyRate).Mul(monthsElapsed).Round(2)
 		accruedIVA = accruedInterest.Mul(ivaRate).Div(decimal.NewFromInt(100)).Round(2)
 	}

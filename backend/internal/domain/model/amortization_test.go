@@ -15,7 +15,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 
 	t.Run("basic 12 installments at 24 percent annual", func(t *testing.T) {
 		principal := decimal.NewFromInt(120000)
-		annualRate := decimal.NewFromFloat(0.24)
+		annualRate := decimal.NewFromInt(24)
 		installments := 12
 
 		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -88,7 +88,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 
 	t.Run("single installment", func(t *testing.T) {
 		principal := decimal.NewFromInt(10000)
-		annualRate := decimal.NewFromFloat(0.12)
+		annualRate := decimal.NewFromInt(12)
 		installments := 1
 
 		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -103,7 +103,7 @@ func TestCalculateFrenchAmortization(t *testing.T) {
 
 	t.Run("interest decreases and capital increases over time", func(t *testing.T) {
 		principal := decimal.NewFromInt(100000)
-		annualRate := decimal.NewFromFloat(0.36)
+		annualRate := decimal.NewFromInt(36)
 		installments := 24
 
 		schedule := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -123,7 +123,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 
 	t.Run("basic 12 installments at 24 percent annual", func(t *testing.T) {
 		principal := decimal.NewFromInt(120000)
-		annualRate := decimal.NewFromFloat(0.24)
+		annualRate := decimal.NewFromInt(24)
 		installments := 12
 
 		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -171,7 +171,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 
 	t.Run("single installment", func(t *testing.T) {
 		principal := decimal.NewFromInt(10000)
-		annualRate := decimal.NewFromFloat(0.12)
+		annualRate := decimal.NewFromInt(12)
 
 		schedule := model.CalculateGermanAmortization(principal, annualRate, 1, startDate, decimal.NewFromInt(21))
 
@@ -183,7 +183,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 
 	t.Run("interest decreases over time", func(t *testing.T) {
 		principal := decimal.NewFromInt(100000)
-		annualRate := decimal.NewFromFloat(0.36)
+		annualRate := decimal.NewFromInt(36)
 		installments := 24
 
 		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -196,7 +196,7 @@ func TestCalculateGermanAmortization(t *testing.T) {
 
 	t.Run("first installment is largest", func(t *testing.T) {
 		principal := decimal.NewFromInt(60000)
-		annualRate := decimal.NewFromFloat(0.24)
+		annualRate := decimal.NewFromInt(24)
 		installments := 6
 
 		schedule := model.CalculateGermanAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))
@@ -248,7 +248,7 @@ func TestFrenchVsGerman_TotalInterestComparison(t *testing.T) {
 	// because the principal is paid down faster (equal capital portions).
 	startDate := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	principal := decimal.NewFromInt(100000)
-	annualRate := decimal.NewFromFloat(0.24)
+	annualRate := decimal.NewFromInt(24)
 	installments := 12
 
 	french := model.CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.NewFromInt(21))

@@ -41,6 +41,11 @@ func main() {
 		&model.VendorPayment{},
 		&model.WithdrawalRequest{},
 		&model.OTPCode{},
+		&model.RiskProfile{},
+		&model.RiskModel{},
+		&model.RiskGradeBand{},
+		&model.RiskAssessment{},
+		&model.RiskFactor{},
 	); err != nil {
 		log.Fatalf("Failed to migrate: %v", err)
 	}
@@ -51,6 +56,8 @@ func main() {
 	creditLines := seedCreditLines(db, clients, 30)
 	loans := seedLoans(db, clients, creditLines, 40, cfg.DefaultIVARate)
 	seedPayments(db, loans)
+	seedRiskModel(db, cfg.Country)
+	seedRiskProfiles(db, clients, cfg.Country)
 	log.Println("Seed completed successfully!")
 }
 
@@ -221,7 +228,7 @@ func seedCreditLines(db *gorm.DB, clients []model.Client, count int) []model.Cre
 	var cls []model.CreditLine
 	adminID := uuid.New()
 	amounts := []int64{50000, 100000, 200000, 500000, 1000000}
-	rates := []string{"0.35", "0.40", "0.45", "0.50", "0.55"}
+	rates := []string{"35", "40", "45", "50", "55"}
 
 	for i := 0; i < count && i < len(clients); i++ {
 		amount := decimal.NewFromInt(amounts[rand.Intn(len(amounts))])
@@ -425,4 +432,91 @@ func seedPayments(db *gorm.DB, loans []model.Loan) {
 		db.Create(&log)
 	}
 	fmt.Println("Created 100 audit log entries")
+}
+
+// seedRiskModel installs the shipped credit-risk analysis model so a seeded
+// deployment can evaluate applicants immediately.
+func seedRiskModel(db *gorm.DB, country string) {
+	var existing int64
+	db.Model(&model.RiskModel{}).Count(&existing)
+	if existing > 0 {
+		log.Println("Risk model already present, skipping")
+		return
+	}
+
+	riskModel, err := model.DefaultRiskModel(country, nil)
+	if err != nil {
+		log.Printf("Failed to build the default risk model: %v", err)
+		return
+	}
+	if err := db.Create(riskModel).Error; err != nil {
+		log.Printf("Failed to create the default risk model: %v", err)
+		return
+	}
+	log.Printf("Created risk model %q v%d with %d grade bands",
+		riskModel.Name, riskModel.Version, len(riskModel.Bands))
+}
+
+// seedRiskProfiles gives most seeded clients risk data, spread across the
+// quality range so the analysis produces a mix of grades and decisions.
+func seedRiskProfiles(db *gorm.DB, clients []model.Client, country string) {
+	params := model.DefaultRiskModelParams(country)
+	created := 0
+
+	for i, client := range clients {
+		// Leave roughly one in six clients without risk data so the console
+		// exercises the "no data on file" path too.
+		if i%6 == 5 {
+			continue
+		}
+
+		// Income spans 1.5x to 6x the policy floor.
+		multiplier := decimal.NewFromFloat(1.5 + float64(i%10)*0.5)
+		income := params.MinMonthlyIncome.Mul(multiplier).Round(2)
+
+		employmentTypes := []model.EmploymentType{
+			model.EmploymentEmployee,
+			model.EmploymentEmployee,
+			model.EmploymentSelfEmployed,
+			model.EmploymentBusinessOwner,
+			model.EmploymentInformal,
+			model.EmploymentRetired,
+		}
+		housingOptions := []model.HousingStatus{
+			model.HousingOwned,
+			model.HousingRented,
+			model.HousingFamily,
+			model.HousingMortgaged,
+		}
+
+		bureau := 420 + (i * 47 % 520)
+		in := model.RiskProfileInput{
+			MonthlyIncome:        income,
+			AdditionalIncome:     income.Mul(decimal.NewFromFloat(float64(i%3) * 0.1)).Round(2),
+			IncomeVerified:       i%3 != 2,
+			EmploymentType:       employmentTypes[i%len(employmentTypes)],
+			EmployerName:         fmt.Sprintf("Employer %d", i%12+1),
+			MonthsEmployed:       3 + (i*7)%90,
+			MonthlyExpenses:      income.Mul(decimal.NewFromFloat(0.25 + float64(i%4)*0.08)).Round(2),
+			ExistingDebtPayments: income.Mul(decimal.NewFromFloat(float64(i%5) * 0.05)).Round(2),
+			Dependents:           i % 4,
+			HousingStatus:        housingOptions[i%len(housingOptions)],
+			HasBankAccount:       i%4 != 3,
+			BureauScore:          &bureau,
+			AdverseRecords:       0,
+			Notes:                "Seeded risk data.",
+		}
+
+		profile, err := model.NewRiskProfile(client.ID, in, model.RiskSourceAdmin, nil)
+		if err != nil {
+			log.Printf("Skipping risk profile for client %s: %v", client.ID, err)
+			continue
+		}
+		if err := db.Create(profile).Error; err != nil {
+			log.Printf("Failed to create risk profile for client %s: %v", client.ID, err)
+			continue
+		}
+		created++
+	}
+	log.Printf("Created %d risk profiles", created)
 }
