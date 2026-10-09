@@ -49,3 +49,6 @@ backend/seed
 
 # PDF output
 *.pdf
+
+# Astro build cache
+static-site/.astro/
