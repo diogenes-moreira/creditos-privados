@@ -49,6 +49,18 @@ import type {
   FinancialReport,
   PortfolioPositionReport,
   OverdueInstallment,
+  RiskProfile,
+  SubmitRiskProfileRequest,
+  AdminSubmitRiskProfileRequest,
+  SimulateRiskRequest,
+  RiskAssessment,
+  RiskEvaluation,
+  CreditAvailability,
+  RiskModel,
+  SaveRiskModelVersionRequest,
+  UpdateRiskModelRequest,
+  PromptPreview,
+  RiskAnalyzerInfo,
 } from "./types";
 
 // ==================== Auth ====================
@@ -531,5 +543,122 @@ export const adminGetOverdueInstallments = async (
   const res = await apiClient.get("/admin/collections/overdue", {
     params: { offset: (page - 1) * pageSize, limit: pageSize },
   });
+  return res.data;
+};
+
+// ==================== Credit risk: my data ====================
+
+export const getMyRiskProfile = async (): Promise<RiskProfile> => {
+  const res = await apiClient.get("/me/risk-profile");
+  return res.data;
+};
+
+export const submitMyRiskProfile = async (data: SubmitRiskProfileRequest): Promise<RiskProfile> => {
+  const res = await apiClient.put("/me/risk-profile", data);
+  return res.data;
+};
+
+export const getMyCreditAvailability = async (): Promise<CreditAvailability> => {
+  const res = await apiClient.get("/me/credit-availability");
+  return res.data;
+};
+
+export const simulateRisk = async (data: SimulateRiskRequest): Promise<RiskEvaluation> => {
+  const res = await apiClient.post("/risk/simulate", data);
+  return res.data;
+};
+
+// ==================== Admin: credit risk ====================
+
+export const adminGetRiskProfiles = async (page = 1, pageSize = 20): Promise<PaginatedResponse<RiskProfile>> => {
+  const res = await apiClient.get("/admin/risk-profiles", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminSubmitRiskProfile = async (data: AdminSubmitRiskProfileRequest): Promise<RiskProfile> => {
+  const res = await apiClient.put("/admin/risk-profiles", data);
+  return res.data;
+};
+
+export const adminGetClientRiskProfile = async (clientId: string): Promise<RiskProfile> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/risk-profile`);
+  return res.data;
+};
+
+export const adminGetClientRiskAssessments = async (
+  clientId: string,
+  page = 1,
+  pageSize = 20
+): Promise<PaginatedResponse<RiskAssessment>> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/risk-assessments`, {
+    params: { offset: (page - 1) * pageSize, limit: pageSize },
+  });
+  return res.data;
+};
+
+export const adminEvaluateClientRisk = async (clientId: string): Promise<RiskAssessment> => {
+  const res = await apiClient.post(`/admin/clients/${clientId}/risk-assessments`);
+  return res.data;
+};
+
+export const adminApplyRiskRecommendation = async (clientId: string): Promise<CreditLine> => {
+  const res = await apiClient.post(`/admin/clients/${clientId}/risk-assessments/apply`);
+  return res.data;
+};
+
+export const adminGetClientCreditAvailability = async (clientId: string): Promise<CreditAvailability> => {
+  const res = await apiClient.get(`/admin/clients/${clientId}/credit-availability`);
+  return res.data;
+};
+
+export const adminGetPendingRiskReviews = async (page = 1, pageSize = 20): Promise<PaginatedResponse<RiskAssessment>> => {
+  const res = await apiClient.get("/admin/risk-assessments/pending", {
+    params: { offset: (page - 1) * pageSize, limit: pageSize },
+  });
+  return res.data;
+};
+
+// ==================== Admin: risk analysis model ====================
+
+export const adminGetActiveRiskModel = async (): Promise<RiskModel> => {
+  const res = await apiClient.get("/admin/risk-models/active");
+  return res.data;
+};
+
+export const adminGetRiskModels = async (page = 1, pageSize = 20): Promise<PaginatedResponse<RiskModel>> => {
+  const res = await apiClient.get("/admin/risk-models", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+export const adminGetRiskModel = async (id: string): Promise<RiskModel> => {
+  const res = await apiClient.get(`/admin/risk-models/${id}`);
+  return res.data;
+};
+
+export const adminSaveRiskModelVersion = async (
+  id: string,
+  data: SaveRiskModelVersionRequest
+): Promise<RiskModel> => {
+  const res = await apiClient.post(`/admin/risk-models/${id}/versions`, data);
+  return res.data;
+};
+
+export const adminUpdateRiskModel = async (id: string, data: UpdateRiskModelRequest): Promise<RiskModel> => {
+  const res = await apiClient.put(`/admin/risk-models/${id}`, data);
+  return res.data;
+};
+
+export const adminActivateRiskModel = async (id: string): Promise<RiskModel> => {
+  const res = await apiClient.post(`/admin/risk-models/${id}/activate`);
+  return res.data;
+};
+
+export const adminPreviewRiskPrompt = async (prompt: string, clientId?: string): Promise<PromptPreview> => {
+  const res = await apiClient.post("/admin/risk-models/preview", { prompt, clientId });
+  return res.data;
+};
+
+export const adminGetRiskAnalyzerInfo = async (): Promise<RiskAnalyzerInfo> => {
+  const res = await apiClient.get("/admin/risk-models/analyzer");
   return res.data;
 };

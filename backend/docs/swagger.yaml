@@ -1,5 +1,20 @@
 basePath: /api/v1
 definitions:
+  config.CountryInfo:
+    properties:
+      country:
+        type: string
+      currency:
+        type: string
+      ivaRate:
+        type: number
+      locale:
+        type: string
+      nationalIdLabel:
+        type: string
+      taxIdLabel:
+        type: string
+    type: object
   dto.AccountResponse:
     properties:
       balance:
@@ -16,6 +31,108 @@ definitions:
     required:
     - note
     type: object
+  dto.AdminCreateLoanRequest:
+    properties:
+      amortizationType:
+        enum:
+        - french
+        - german
+        type: string
+      amount:
+        type: string
+      clientId:
+        type: string
+      creditLineId:
+        type: string
+      numInstallments:
+        minimum: 1
+        type: integer
+    required:
+    - amortizationType
+    - amount
+    - clientId
+    - creditLineId
+    - numInstallments
+    type: object
+  dto.AdminSubmitRiskProfileRequest:
+    properties:
+      additionalIncome:
+        type: string
+      adverseRecords:
+        minimum: 0
+        type: integer
+      bureauScore:
+        maximum: 1000
+        minimum: 0
+        type: integer
+      clientId:
+        type: string
+      dependents:
+        minimum: 0
+        type: integer
+      employerName:
+        type: string
+      employmentType:
+        enum:
+        - employee
+        - self_employed
+        - business_owner
+        - retired
+        - informal
+        - unemployed
+        type: string
+      existingDebtPayments:
+        type: string
+      hasBankAccount:
+        type: boolean
+      housingStatus:
+        enum:
+        - owned
+        - mortgaged
+        - rented
+        - family
+        - other
+        type: string
+      incomeVerified:
+        type: boolean
+      monthlyExpenses:
+        type: string
+      monthlyIncome:
+        type: string
+      monthsEmployed:
+        minimum: 0
+        type: integer
+      notes:
+        type: string
+    required:
+    - clientId
+    - employmentType
+    - housingStatus
+    - monthlyIncome
+    type: object
+  dto.AdminUpdateClientRequest:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      cuit:
+        type: string
+      dni:
+        type: string
+      firstName:
+        type: string
+      isPEP:
+        type: boolean
+      lastName:
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    type: object
   dto.AuthResponse:
     properties:
       token:
@@ -23,11 +140,26 @@ definitions:
       user:
         $ref: '#/definitions/dto.UserResponse'
     type: object
+  dto.CancellationSettlementResponse:
+    properties:
+      accumulatedIVA:
+        type: string
+      accumulatedInterest:
+        type: string
+      pendingCapital:
+        type: string
+      total:
+        type: string
+    type: object
   dto.ClientResponse:
     properties:
       address:
         type: string
       city:
+        type: string
+      comments:
+        type: string
+      country:
         type: string
       createdAt:
         type: string
@@ -47,6 +179,8 @@ definitions:
         type: boolean
       isPEP:
         type: boolean
+      ivaRate:
+        type: string
       lastName:
         type: string
       mercadoPagoLink:
@@ -68,11 +202,59 @@ definitions:
         maximum: 60
         minimum: 1
         type: integer
+      recalculateOnPrepay:
+        type: boolean
     required:
     - clientId
     - interestRate
     - maxAmount
     - maxInstallments
+    type: object
+  dto.CreateRiskModelRequest:
+    properties:
+      activate:
+        type: boolean
+      bands:
+        items:
+          $ref: '#/definitions/dto.RiskGradeBandRequest'
+        minItems: 1
+        type: array
+      description:
+        type: string
+      name:
+        type: string
+      params:
+        $ref: '#/definitions/dto.RiskModelParamsRequest'
+      prompt:
+        type: string
+    required:
+    - bands
+    - name
+    - params
+    - prompt
+    type: object
+  dto.CreditAvailabilityResponse:
+    properties:
+      assessment:
+        $ref: '#/definitions/dto.RiskAssessmentResponse'
+      availableAmount:
+        type: string
+      clientId:
+        type: string
+      decision:
+        type: string
+      grantedLimit:
+        type: string
+      recommendedInstallments:
+        type: integer
+      recommendedInterestRate:
+        type: string
+      recommendedLimit:
+        type: string
+      stale:
+        type: boolean
+      usedAmount:
+        type: string
     type: object
   dto.CreditLineResponse:
     properties:
@@ -94,6 +276,8 @@ definitions:
         type: string
       maxInstallments:
         type: integer
+      recalculateOnPrepay:
+        type: boolean
       rejectionReason:
         type: string
       status:
@@ -123,6 +307,28 @@ definitions:
       message:
         type: string
     type: object
+  dto.FinancialReportResponse:
+    properties:
+      capitalCollected:
+        type: string
+      capitalPending:
+        type: string
+      interestAccrued:
+        type: string
+      interestCollected:
+        type: string
+      ivaAccrued:
+        type: string
+      ivaCollected:
+        type: string
+    type: object
+  dto.FirebaseLoginRequest:
+    properties:
+      idToken:
+        type: string
+    required:
+    - idToken
+    type: object
   dto.InstallmentResponse:
     properties:
       capitalAmount:
@@ -133,12 +339,16 @@ definitions:
         type: string
       interestAmount:
         type: string
+      ivaAmount:
+        type: string
       number:
         type: integer
       paidAmount:
         type: string
       paidAt:
         type: string
+      penaltyApplied:
+        type: boolean
       remainingAmount:
         type: string
       status:
@@ -157,7 +367,11 @@ definitions:
     properties:
       amortizationType:
         type: string
+      cancellationSettlement:
+        $ref: '#/definitions/dto.CancellationSettlementResponse'
       clientId:
+        type: string
+      clientName:
         type: string
       createdAt:
         type: string
@@ -188,11 +402,8 @@ definitions:
     properties:
       email:
         type: string
-      password:
-        type: string
     required:
     - email
-    - password
     type: object
   dto.MercadoPagoLinkRequest:
     properties:
@@ -232,6 +443,24 @@ definitions:
       reference:
         type: string
     type: object
+  dto.PortfolioPositionItemResponse:
+    properties:
+      loanCount:
+        type: integer
+      status:
+        type: string
+      totalOutstanding:
+        type: string
+      totalPrincipal:
+        type: string
+    type: object
+  dto.PortfolioPositionResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.PortfolioPositionItemResponse'
+        type: array
+    type: object
   dto.PortfolioResponse:
     properties:
       activeLoans:
@@ -251,12 +480,69 @@ definitions:
     properties:
       amount:
         type: string
+      strategy:
+        type: string
     required:
     - amount
+    type: object
+  dto.PreviewPromptRequest:
+    properties:
+      clientId:
+        type: string
+      prompt:
+        type: string
+    required:
+    - prompt
+    type: object
+  dto.PromptPreviewResponse:
+    properties:
+      analyzer:
+        type: string
+      applicant:
+        type: string
+      baseline:
+        $ref: '#/definitions/dto.RiskEvaluationResponse'
+      placeholders:
+        items:
+          type: string
+        type: array
+      prompt:
+        type: string
+      rendered:
+        type: string
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.PurchaseResponse:
+    properties:
+      amount:
+        type: string
+      clientId:
+        type: string
+      clientName:
+        type: string
+      createdAt:
+        type: string
+      creditLineId:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      loanId:
+        type: string
+      vendorId:
+        type: string
+      vendorName:
+        type: string
     type: object
   dto.RecordPaymentRequest:
     properties:
       amount:
+        type: string
+      installmentId:
         type: string
       method:
         enum:
@@ -270,11 +556,57 @@ definitions:
     - amount
     - method
     type: object
-  dto.RegisterRequest:
+  dto.RecordPurchaseRequest:
+    properties:
+      amortizationType:
+        enum:
+        - french
+        - german
+        type: string
+      amount:
+        type: string
+      clientId:
+        type: string
+      creditLineId:
+        type: string
+      description:
+        type: string
+      numInstallments:
+        minimum: 1
+        type: integer
+    required:
+    - amortizationType
+    - amount
+    - clientId
+    - creditLineId
+    - description
+    - numInstallments
+    type: object
+  dto.RecordVendorPaymentRequest:
+    properties:
+      amount:
+        type: string
+      method:
+        enum:
+        - cash
+        - transfer
+        type: string
+      reference:
+        type: string
+      vendorId:
+        type: string
+    required:
+    - amount
+    - method
+    - vendorId
+    type: object
+  dto.RegisterClientByVendorRequest:
     properties:
       address:
         type: string
       city:
+        type: string
+      country:
         type: string
       cuit:
         type: string
@@ -290,8 +622,43 @@ definitions:
         type: boolean
       lastName:
         type: string
-      password:
-        minLength: 8
+      phone:
+        type: string
+      province:
+        type: string
+    required:
+    - address
+    - city
+    - cuit
+    - dateOfBirth
+    - dni
+    - email
+    - firstName
+    - lastName
+    - phone
+    - province
+    type: object
+  dto.RegisterRequest:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      cuit:
+        type: string
+      dateOfBirth:
+        type: string
+      dni:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      isPEP:
+        type: boolean
+      lastName:
         type: string
       phone:
         type: string
@@ -306,6 +673,36 @@ definitions:
     - email
     - firstName
     - lastName
+    - phone
+    - province
+    type: object
+  dto.RegisterVendorRequest:
+    properties:
+      address:
+        type: string
+      businessName:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      cuit:
+        type: string
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    required:
+    - address
+    - businessName
+    - city
+    - cuit
+    - email
     - password
     - phone
     - province
@@ -316,6 +713,24 @@ definitions:
         type: string
     required:
     - reason
+    type: object
+  dto.RequestCreditLineByVendorRequest:
+    properties:
+      clientId:
+        type: string
+      interestRate:
+        type: string
+      maxAmount:
+        type: string
+      maxInstallments:
+        maximum: 60
+        minimum: 1
+        type: integer
+    required:
+    - clientId
+    - interestRate
+    - maxAmount
+    - maxInstallments
     type: object
   dto.RequestLoanRequest:
     properties:
@@ -337,6 +752,337 @@ definitions:
     - creditLineId
     - numInstallments
     type: object
+  dto.RequestOTPRequest:
+    properties:
+      channel:
+        enum:
+        - email
+        - phone
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+    type: object
+  dto.RiskAnalyzerInfoResponse:
+    properties:
+      analyzer:
+        type: string
+      placeholders:
+        items:
+          type: string
+        type: array
+      promptDriven:
+        type: boolean
+    type: object
+  dto.RiskAssessmentResponse:
+    properties:
+      analyzer:
+        type: string
+      clientId:
+        type: string
+      clientName:
+        type: string
+      createdAt:
+        type: string
+      decision:
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/dto.RiskFactorResponse'
+        type: array
+      grade:
+        type: string
+      id:
+        type: string
+      maxMonthlyPayment:
+        type: string
+      modelVersion:
+        type: integer
+      policyNotes:
+        items:
+          type: string
+        type: array
+      probabilityOfDefault:
+        type: string
+      recommendedInstallments:
+        type: integer
+      recommendedInterestRate:
+        type: string
+      recommendedLimit:
+        type: string
+      riskModelId:
+        type: string
+      riskModelName:
+        type: string
+      riskProfileId:
+        type: string
+      score:
+        type: integer
+      summary:
+        type: string
+    type: object
+  dto.RiskEvaluationResponse:
+    properties:
+      analyzer:
+        type: string
+      decision:
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/dto.RiskFactorResponse'
+        type: array
+      grade:
+        type: string
+      maxMonthlyPayment:
+        type: string
+      policyNotes:
+        items:
+          type: string
+        type: array
+      probabilityOfDefault:
+        type: string
+      recommendedInstallments:
+        type: integer
+      recommendedInterestRate:
+        type: string
+      recommendedLimit:
+        type: string
+      score:
+        type: integer
+      summary:
+        type: string
+    type: object
+  dto.RiskFactorResponse:
+    properties:
+      code:
+        type: string
+      comment:
+        type: string
+      impact:
+        type: string
+      label:
+        type: string
+      points:
+        type: integer
+      value:
+        type: string
+      weight:
+        type: string
+    type: object
+  dto.RiskGradeBandRequest:
+    properties:
+      decision:
+        enum:
+        - approve
+        - manual_review
+        - decline
+        type: string
+      exposureFactor:
+        type: string
+      grade:
+        enum:
+        - A
+        - B
+        - C
+        - D
+        - E
+        type: string
+      interestSpread:
+        type: string
+      maxInstallments:
+        maximum: 60
+        minimum: 0
+        type: integer
+      minScore:
+        maximum: 100
+        minimum: 0
+        type: integer
+      probabilityOfDefault:
+        type: string
+    required:
+    - decision
+    - grade
+    type: object
+  dto.RiskGradeBandResponse:
+    properties:
+      decision:
+        type: string
+      exposureFactor:
+        type: string
+      grade:
+        type: string
+      interestSpread:
+        type: string
+      maxInstallments:
+        type: integer
+      minScore:
+        type: integer
+      probabilityOfDefault:
+        type: string
+    type: object
+  dto.RiskModelParamsRequest:
+    properties:
+      absoluteMaxLimit:
+        type: string
+      baseInterestRate:
+        type: string
+      expensePerDependent:
+        type: string
+      limitRoundingStep:
+        type: string
+      maxAdverseRecords:
+        minimum: 0
+        type: integer
+      maxAge:
+        maximum: 120
+        minimum: 19
+        type: integer
+      maxDti:
+        type: string
+      maxInstallments:
+        maximum: 60
+        minimum: 1
+        type: integer
+      maxPaymentToIncome:
+        type: string
+      minAge:
+        maximum: 120
+        minimum: 18
+        type: integer
+      minMonthlyIncome:
+        type: string
+      unverifiedIncomeHaircut:
+        type: string
+    required:
+    - absoluteMaxLimit
+    - baseInterestRate
+    - maxAge
+    - maxDti
+    - maxInstallments
+    - maxPaymentToIncome
+    - minAge
+    type: object
+  dto.RiskModelResponse:
+    properties:
+      absoluteMaxLimit:
+        type: string
+      bands:
+        items:
+          $ref: '#/definitions/dto.RiskGradeBandResponse'
+        type: array
+      baseInterestRate:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      expensePerDependent:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      limitRoundingStep:
+        type: string
+      maxAdverseRecords:
+        type: integer
+      maxAge:
+        type: integer
+      maxDti:
+        type: string
+      maxInstallments:
+        type: integer
+      maxPaymentToIncome:
+        type: string
+      minAge:
+        type: integer
+      minMonthlyIncome:
+        type: string
+      name:
+        type: string
+      placeholders:
+        items:
+          type: string
+        type: array
+      prompt:
+        type: string
+      unverifiedIncomeHaircut:
+        type: string
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    type: object
+  dto.RiskProfileResponse:
+    properties:
+      additionalIncome:
+        type: string
+      adverseRecords:
+        type: integer
+      bureauScore:
+        type: integer
+      bureauScoreScale:
+        type: integer
+      clientId:
+        type: string
+      clientName:
+        type: string
+      createdAt:
+        type: string
+      debtToIncomeRatio:
+        type: string
+      dependents:
+        type: integer
+      employerName:
+        type: string
+      employmentType:
+        type: string
+      existingDebtPayments:
+        type: string
+      expenseRatio:
+        type: string
+      grossMonthlyIncome:
+        type: string
+      hasBankAccount:
+        type: boolean
+      housingStatus:
+        type: string
+      id:
+        type: string
+      incomeVerified:
+        type: boolean
+      monthlyExpenses:
+        type: string
+      monthlyIncome:
+        type: string
+      monthsEmployed:
+        type: integer
+      notes:
+        type: string
+      source:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.SaveRiskModelVersionRequest:
+    properties:
+      activate:
+        type: boolean
+      bands:
+        items:
+          $ref: '#/definitions/dto.RiskGradeBandRequest'
+        type: array
+      description:
+        type: string
+      params:
+        $ref: '#/definitions/dto.RiskModelParamsRequest'
+      prompt:
+        type: string
+    required:
+    - params
+    - prompt
+    type: object
   dto.SimulateLoanRequest:
     properties:
       amortizationType:
@@ -357,6 +1103,64 @@ definitions:
     - creditLineId
     - numInstallments
     type: object
+  dto.SimulateRiskRequest:
+    properties:
+      additionalIncome:
+        type: string
+      adverseRecords:
+        minimum: 0
+        type: integer
+      age:
+        maximum: 120
+        minimum: 16
+        type: integer
+      bureauScore:
+        maximum: 1000
+        minimum: 0
+        type: integer
+      dependents:
+        minimum: 0
+        type: integer
+      employerName:
+        type: string
+      employmentType:
+        enum:
+        - employee
+        - self_employed
+        - business_owner
+        - retired
+        - informal
+        - unemployed
+        type: string
+      existingDebtPayments:
+        type: string
+      hasBankAccount:
+        type: boolean
+      housingStatus:
+        enum:
+        - owned
+        - mortgaged
+        - rented
+        - family
+        - other
+        type: string
+      incomeVerified:
+        type: boolean
+      monthlyExpenses:
+        type: string
+      monthlyIncome:
+        type: string
+      monthsEmployed:
+        minimum: 0
+        type: integer
+      notes:
+        type: string
+    required:
+    - age
+    - employmentType
+    - housingStatus
+    - monthlyIncome
+    type: object
   dto.SimulationResponse:
     properties:
       installments:
@@ -372,6 +1176,59 @@ definitions:
       totalPayment:
         type: string
     type: object
+  dto.SubmitRiskProfileRequest:
+    properties:
+      additionalIncome:
+        type: string
+      adverseRecords:
+        minimum: 0
+        type: integer
+      bureauScore:
+        maximum: 1000
+        minimum: 0
+        type: integer
+      dependents:
+        minimum: 0
+        type: integer
+      employerName:
+        type: string
+      employmentType:
+        enum:
+        - employee
+        - self_employed
+        - business_owner
+        - retired
+        - informal
+        - unemployed
+        type: string
+      existingDebtPayments:
+        type: string
+      hasBankAccount:
+        type: boolean
+      housingStatus:
+        enum:
+        - owned
+        - mortgaged
+        - rented
+        - family
+        - other
+        type: string
+      incomeVerified:
+        type: boolean
+      monthlyExpenses:
+        type: string
+      monthlyIncome:
+        type: string
+      monthsEmployed:
+        minimum: 0
+        type: integer
+      notes:
+        type: string
+    required:
+    - employmentType
+    - housingStatus
+    - monthlyIncome
+    type: object
   dto.TrendPointResponse:
     properties:
       amount:
@@ -381,11 +1238,64 @@ definitions:
       date:
         type: string
     type: object
+  dto.UpdateCommentsRequest:
+    properties:
+      comments:
+        type: string
+    type: object
+  dto.UpdateCreditLineRequest:
+    properties:
+      maxAmount:
+        type: string
+      recalculateOnPrepay:
+        type: boolean
+    required:
+    - maxAmount
+    type: object
+  dto.UpdateIVARateRequest:
+    properties:
+      ivaRate:
+        maximum: 100
+        minimum: 0
+        type: number
+    required:
+    - ivaRate
+    type: object
   dto.UpdateProfileRequest:
     properties:
       address:
         type: string
       city:
+        type: string
+      country:
+        type: string
+      phone:
+        type: string
+      province:
+        type: string
+    type: object
+  dto.UpdateRiskModelRequest:
+    properties:
+      bands:
+        items:
+          $ref: '#/definitions/dto.RiskGradeBandRequest'
+        type: array
+      description:
+        type: string
+      params:
+        $ref: '#/definitions/dto.RiskModelParamsRequest'
+      prompt:
+        type: string
+    required:
+    - params
+    type: object
+  dto.UpdateVendorProfileRequest:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
         type: string
       phone:
         type: string
@@ -398,8 +1308,77 @@ definitions:
         type: string
       id:
         type: string
+      phone:
+        type: string
       role:
         type: string
+    type: object
+  dto.VendorAccountResponse:
+    properties:
+      balance:
+        type: string
+      id:
+        type: string
+      vendorId:
+        type: string
+    type: object
+  dto.VendorPaymentResponse:
+    properties:
+      amount:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      method:
+        type: string
+      paidBy:
+        type: string
+      reference:
+        type: string
+      vendorId:
+        type: string
+    type: object
+  dto.VendorResponse:
+    properties:
+      address:
+        type: string
+      businessName:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      createdAt:
+        type: string
+      cuit:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      phone:
+        type: string
+      province:
+        type: string
+    type: object
+  dto.VerifyOTPRequest:
+    properties:
+      channel:
+        enum:
+        - email
+        - phone
+        type: string
+      code:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+    required:
+    - code
     type: object
 host: localhost:8080
 info:
@@ -484,6 +1463,33 @@ paths:
       summary: List or search clients
       tags:
       - Admin Clients
+    post:
+      consumes:
+      - application/json
+      description: Admin creates a client account with all personal data
+      parameters:
+      - description: Client registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register a new client
+      tags:
+      - Admin Clients
   /admin/clients/{id}:
     get:
       description: Returns the details of a specific client by their UUID
@@ -513,6 +1519,79 @@ paths:
       summary: Get a client by ID
       tags:
       - Admin Clients
+    put:
+      consumes:
+      - application/json
+      description: Admin updates any client field (name, DNI, CUIT, phone, address,
+        etc.)
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Client data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdminUpdateClientRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update all client data
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/account:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AccountResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/account/movements:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account movements for a client
+      tags:
+      - Admin Clients
   /admin/clients/{id}/block:
     post:
       description: Blocks a client account, preventing them from performing operations
@@ -540,6 +1619,280 @@ paths:
       summary: Block a client
       tags:
       - Admin Clients
+  /admin/clients/{id}/comments:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Comments
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCommentsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update comments for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/credit-availability:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditAvailabilityResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a client's available credit
+      tags:
+      - Risk
+  /admin/clients/{id}/credit-lines:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CreditLineResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get credit lines for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/iva-rate:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: IVA rate
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateIVARateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update IVA rate for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/loans:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: Get loans for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/payments:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payments for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/purchases:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: Get purchases for a client
+      tags:
+      - Admin Clients
+  /admin/clients/{id}/risk-assessments:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List a client's risk assessments
+      tags:
+      - Risk
+    post:
+      description: Runs the active analysis model over the client's risk data and
+        stores the assessment
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RiskAssessmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Run the risk analysis for a client
+      tags:
+      - Risk
+  /admin/clients/{id}/risk-assessments/apply:
+    post:
+      description: Creates or updates the credit line from the latest approved assessment
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Apply the recommended limit to the client's credit line
+      tags:
+      - Risk
+  /admin/clients/{id}/risk-profile:
+    get:
+      parameters:
+      - description: Client UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskProfileResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a client's credit-risk data
+      tags:
+      - Risk
   /admin/clients/{id}/unblock:
     post:
       description: Unblocks a previously blocked client account
@@ -567,6 +1920,35 @@ paths:
       summary: Unblock a client
       tags:
       - Admin Clients
+  /admin/collections/overdue:
+    get:
+      description: Returns a paginated list of overdue installments with client and
+        loan info
+      parameters:
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List overdue installments (collections worklist)
+      tags:
+      - Dashboard
   /admin/credit-lines:
     post:
       consumes:
@@ -594,6 +1976,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a credit line
+      tags:
+      - Credit Lines
+  /admin/credit-lines/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the maximum amount of an existing credit line
+      parameters:
+      - description: Credit Line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New max amount
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCreditLineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a credit line's max amount
       tags:
       - Credit Lines
   /admin/credit-lines/{id}/approve:
@@ -786,6 +2201,34 @@ paths:
       summary: Get disbursement trends
       tags:
       - Dashboard
+  /admin/loans:
+    post:
+      consumes:
+      - application/json
+      description: Admin creates a loan for a given client and credit line
+      parameters:
+      - description: Loan data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdminCreateLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a loan on behalf of a client
+      tags:
+      - Loans
   /admin/loans/{id}/approve:
     post:
       description: Approves a pending loan request
@@ -862,6 +2305,39 @@ paths:
       summary: Disburse a loan
       tags:
       - Admin Loans
+  /admin/loans/{id}/payments:
+    post:
+      consumes:
+      - application/json
+      description: Admin records a payment for a client's active loan
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a payment on behalf of a client
+      tags:
+      - Admin Loans
   /admin/loans/{id}/prepay:
     post:
       consumes:
@@ -925,6 +2401,35 @@ paths:
       summary: List pending loans
       tags:
       - Admin Loans
+  /admin/loans/withdrawal:
+    post:
+      consumes:
+      - application/json
+      description: Admin creates a loan that is immediately approved and disbursed
+        (cash withdrawal)
+      parameters:
+      - description: Withdrawal data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdminCreateLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a cash withdrawal for a client
+      tags:
+      - Admin Loans
   /admin/payments/{id}/adjust:
     put:
       consumes:
@@ -959,11 +2464,679 @@ paths:
       summary: Adjust a payment
       tags:
       - Admin Payments
+  /admin/reports/financial:
+    get:
+      description: Returns accrued/collected interest, IVA, capital collected and
+        pending for a date range
+      parameters:
+      - description: Start date (YYYY-MM-DD), defaults to 12 months ago
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD), defaults to today
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FinancialReportResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get financial report
+      tags:
+      - Reports
+  /admin/reports/portfolio:
+    get:
+      description: Returns loan count, principal, and outstanding balance grouped
+        by loan status
+      parameters:
+      - description: Start date (YYYY-MM-DD), defaults to 12 months ago
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD), defaults to today
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PortfolioPositionResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get portfolio position
+      tags:
+      - Reports
+  /admin/risk-assessments/pending:
+    get:
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List assessments awaiting a manual decision
+      tags:
+      - Risk
+  /admin/risk-models:
+    get:
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List analysis model versions
+      tags:
+      - Risk Models
+    post:
+      consumes:
+      - application/json
+      description: Registers a new analysis prompt and its policy guardrails
+      parameters:
+      - description: Analysis model
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRiskModelRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an analysis model
+      tags:
+      - Risk Models
+  /admin/risk-models/{id}:
+    get:
+      parameters:
+      - description: Risk Model UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get one analysis model version
+      tags:
+      - Risk Models
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Risk Model UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Model changes
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRiskModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an analysis model version in place
+      tags:
+      - Risk Models
+  /admin/risk-models/{id}/activate:
+    post:
+      description: Makes this version the one used for new evaluations
+      parameters:
+      - description: Risk Model UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate an analysis model version
+      tags:
+      - Risk Models
+  /admin/risk-models/{id}/versions:
+    post:
+      consumes:
+      - application/json
+      description: Derives a new version from an existing model. The running version
+        keeps serving until the new one is activated.
+      parameters:
+      - description: Source Risk Model UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New version
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveRiskModelVersionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Save a new version of an analysis model
+      tags:
+      - Risk Models
+  /admin/risk-models/active:
+    get:
+      description: Returns the analysis prompt and policy guardrails currently in
+        use
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskModelResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the active analysis model
+      tags:
+      - Risk Models
+  /admin/risk-models/analyzer:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskAnalyzerInfoResponse'
+      security:
+      - BearerAuth: []
+      summary: Describe the configured analysis engine
+      tags:
+      - Risk Models
+  /admin/risk-models/preview:
+    post:
+      consumes:
+      - application/json
+      description: Renders a candidate prompt against a client's real data, or sample
+        data, without saving or sending anything
+      parameters:
+      - description: Candidate prompt
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PreviewPromptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PromptPreviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Preview an analysis prompt
+      tags:
+      - Risk Models
+  /admin/risk-profiles:
+    get:
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List submitted credit-risk data
+      tags:
+      - Risk
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Risk data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdminSubmitRiskProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit a client's credit-risk data
+      tags:
+      - Risk
+  /admin/vendors:
+    get:
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List vendors
+      tags:
+      - Admin Vendors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterVendorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.VendorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register a new vendor
+      tags:
+      - Admin Vendors
+  /admin/vendors/{id}:
+    get:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VendorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor detail
+      tags:
+      - Admin Vendors
+  /admin/vendors/{id}/activate:
+    post:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate a vendor
+      tags:
+      - Admin Vendors
+  /admin/vendors/{id}/deactivate:
+    post:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deactivate a vendor
+      tags:
+      - Admin Vendors
+  /admin/vendors/{id}/payments:
+    get:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor's payments (admin)
+      tags:
+      - Admin Vendors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordVendorPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.VendorPaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Record payment to vendor (admin)
+      tags:
+      - Admin Vendors
+  /admin/vendors/{id}/purchases:
+    get:
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor's purchases (admin)
+      tags:
+      - Admin Vendors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Vendor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Purchase data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordPurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PurchaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a purchase on behalf of a vendor
+      tags:
+      - Admin Vendors
+  /auth/firebase-login:
+    post:
+      consumes:
+      - application/json
+      description: Verifies a Firebase ID token (from Google OAuth or Phone Auth)
+        and returns a JWT token
+      parameters:
+      - description: Firebase ID token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FirebaseLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Authenticate via Firebase ID token
+      tags:
+      - Auth
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Validates credentials and returns a JWT token for API access
+      description: Validates credentials and returns a JWT token for API access. For
+        clients, use OTP flow instead.
       parameters:
       - description: Login credentials
         in: body
@@ -994,7 +3167,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-      summary: Authenticate a user
+      summary: Authenticate a user (admin/vendor)
       tags:
       - Auth
   /auth/register:
@@ -1028,6 +3201,83 @@ paths:
       summary: Register a new client
       tags:
       - Auth
+  /auth/request-otp:
+    post:
+      consumes:
+      - application/json
+      description: Sends a 6-digit OTP code via email or signals phone OTP (sent client-side
+        by Firebase)
+      parameters:
+      - description: Email/phone and channel
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Request an OTP code for client/vendor login
+      tags:
+      - Auth
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Validates the OTP code and returns a JWT token
+      parameters:
+      - description: Email and OTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Verify an OTP code and login
+      tags:
+      - Auth
+  /config:
+    get:
+      description: Returns the country, currency, locale and identity labels for this
+        deployment
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/config.CountryInfo'
+      summary: Get deployment configuration
+      tags:
+      - Config
   /health:
     get:
       description: Returns the health status of the service
@@ -1148,6 +3398,26 @@ paths:
       summary: Get account movements
       tags:
       - Account
+  /me/credit-availability:
+    get:
+      description: Returns the credit limit the risk analysis recommends and how much
+        of it is still unused
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreditAvailabilityResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my available credit
+      tags:
+      - Risk
   /me/loans:
     get:
       description: Returns a paginated list of loans belonging to the authenticated
@@ -1392,6 +3662,340 @@ paths:
       summary: Update current client profile
       tags:
       - Client Profile
+  /me/risk-profile:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskProfileResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my credit-risk data
+      tags:
+      - Risk
+    put:
+      consumes:
+      - application/json
+      description: Creates or replaces the authenticated client's credit-risk data,
+        the input to the credit availability analysis
+      parameters:
+      - description: Risk data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubmitRiskProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit my credit-risk data
+      tags:
+      - Risk
+  /me/vendor/account:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VendorAccountResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor account balance
+      tags:
+      - Vendor
+  /me/vendor/account/movements:
+    get:
+      parameters:
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor account movements
+      tags:
+      - Vendor
+  /me/vendor/clients/{id}/credit-lines:
+    get:
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CreditLineResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get client's credit lines (vendor)
+      tags:
+      - Vendor
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Credit line data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestCreditLineByVendorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Request a credit line for client (vendor)
+      tags:
+      - Vendor
+  /me/vendor/clients/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Client data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterClientByVendorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register a new client (vendor)
+      tags:
+      - Vendor
+  /me/vendor/clients/search:
+    get:
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: Search clients (vendor)
+      tags:
+      - Vendor
+  /me/vendor/profile:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VendorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor profile
+      tags:
+      - Vendor
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateVendorProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VendorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update vendor profile
+      tags:
+      - Vendor
+  /me/vendor/purchases:
+    get:
+      parameters:
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get vendor's purchases
+      tags:
+      - Vendor
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Purchase data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordPurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PurchaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Record a purchase
+      tags:
+      - Vendor
+  /risk/simulate:
+    post:
+      consumes:
+      - application/json
+      description: Scores hypothetical risk data and returns the credit it would support.
+        Nothing is stored.
+      parameters:
+      - description: Hypothetical risk data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SimulateRiskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RiskEvaluationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Pre-qualify without an account
+      tags:
+      - Risk
 securityDefinitions:
   BearerAuth:
     description: 'Enter your bearer token in the format: Bearer {token}'

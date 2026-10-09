@@ -36,6 +36,8 @@ Gavel as GavelIcon,
   Store as StoreIcon,
   Assessment as AssessmentIcon,
   MoneyOff as CollectionsIcon,
+  Tune as RiskModelIcon,
+  FactCheck as RiskDataIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -66,6 +68,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.loans"), path: "/loans", icon: <CreditIcon /> },
     { label: t("nav.creditApplication"), path: "/loans/apply", icon: <RequestQuoteIcon /> },
     { label: t("nav.payments"), path: "/payments", icon: <PaymentIcon /> },
+    { label: t("nav.riskProfile"), path: "/risk-profile", icon: <RiskDataIcon /> },
     { label: t("nav.profile"), path: "/profile", icon: <PersonIcon /> },
   ];
 
@@ -83,6 +86,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 { label: t("nav.loanManagement"), path: "/admin/loans", icon: <GavelIcon /> },
     { label: t("nav.collections"), path: "/admin/collections", icon: <CollectionsIcon /> },
     { label: t("nav.reports"), path: "/admin/reports", icon: <AssessmentIcon /> },
+    { label: t("nav.riskModel"), path: "/admin/risk-model", icon: <RiskModelIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
     { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },
   ];

@@ -59,6 +59,11 @@ func main() {
 		&model.VendorPayment{},
 		&model.WithdrawalRequest{},
 		&model.OTPCode{},
+		&model.RiskProfile{},
+		&model.RiskModel{},
+		&model.RiskGradeBand{},
+		&model.RiskAssessment{},
+		&model.RiskFactor{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
