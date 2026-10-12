@@ -69,8 +69,8 @@ func seedAdmins(db *gorm.DB, country string) {
 		phonePrefix = "+5713000010"
 	}
 	admins := []struct{ email, name, phone string }{
-		{fmt.Sprintf("admin@prestia.%s", tld), "Admin Principal", phonePrefix + "100"},
-		{fmt.Sprintf("supervisor@prestia.%s", tld), "Supervisor", phonePrefix + "101"},
+		{fmt.Sprintf("admin@cuppogan.%s", tld), "Admin Principal", phonePrefix + "100"},
+		{fmt.Sprintf("supervisor@cuppogan.%s", tld), "Supervisor", phonePrefix + "101"},
 	}
 	for _, a := range admins {
 		var existing model.User

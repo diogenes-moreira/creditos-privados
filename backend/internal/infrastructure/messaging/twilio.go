@@ -83,7 +83,7 @@ func (s *TwilioWhatsAppSender) SendOTP(ctx context.Context, to port.OTPRecipient
 		form.Set("ContentSid", strings.TrimSpace(s.cfg.TemplateSID))
 		form.Set("ContentVariables", string(vars))
 	} else {
-		form.Set("Body", fmt.Sprintf("Tu código de acceso a Prestia es %s. Vence en 10 minutos.", code))
+		form.Set("Body", fmt.Sprintf("Tu código de acceso a CuppoGan es %s. Vence en 10 minutos.", code))
 	}
 
 	endpoint := fmt.Sprintf("%s/2010-04-01/Accounts/%s/Messages.json", s.baseURL, url.PathEscape(s.cfg.AccountSID))

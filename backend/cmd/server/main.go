@@ -13,13 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Prestia API
+// @title CuppoGan API
 // @version 1.0
 // @description Microcredit management system API for Argentina
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
-// @contact.email support@prestia.com.ar
+// @contact.email soporte@cuppogan.com.co
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
