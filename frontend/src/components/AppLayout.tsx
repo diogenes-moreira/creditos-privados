@@ -109,9 +109,16 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const drawer = (
     <Box>
       <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box component="img" src={`${import.meta.env.BASE_URL}logo.png`} alt="Prestia" sx={{ height: 32 }} />
-        <Typography variant="h6" color="primary" fontWeight={700} noWrap>
-          Prestia
+        {/* The symbol, not the full lockup: the brandbook sets a 180px minimum
+            for the logo, which a 32px drawer header cannot give it. */}
+        <Box
+          component="img"
+          src={`${import.meta.env.BASE_URL}logo-symbol.png`}
+          alt=""
+          sx={{ height: 32 }}
+        />
+        <Typography variant="h6" color="primary" fontWeight={800} noWrap>
+          {t("common.appName")}
         </Typography>
       </Box>
       <Divider />

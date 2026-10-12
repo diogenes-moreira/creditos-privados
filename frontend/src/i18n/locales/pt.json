@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Prestia",
+    "appName": "CuppoGan",
     "loading": "Carregando...",
     "save": "Salvar",
     "cancel": "Cancelar",
@@ -425,7 +425,7 @@
     "viewPurchases": "Ver vendas",
     "balance": "Saldo",
     "balanceTitle": "Meu saldo",
-    "balanceDescription": "Valor que a Prestia lhe deve",
+    "balanceDescription": "Valor que a CuppoGan lhe deve",
     "movements": "Movimentações",
     "noMovements": "Sem movimentações",
     "profile": "Perfil do vendedor",
@@ -489,7 +489,7 @@
     "registeredClientDetails": "Dados do cliente cadastrado",
     "fullName": "Nome completo",
     "registerAnother": "Cadastrar outro cliente",
-    "registerClientDescription": "Preencha os dados do cliente para cadastrá-lo na Prestia",
+    "registerClientDescription": "Preencha os dados do cliente para cadastrá-lo na CuppoGan",
     "dniInvalid": "DNI inválido",
     "cuitInvalid": "CUIT inválido",
     "dateOfBirth": "Data de nascimento",

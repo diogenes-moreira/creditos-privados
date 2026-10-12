@@ -127,9 +127,9 @@ const Login: React.FC = () => {
             </Box>
             <Box
               component="img"
-              src={`${import.meta.env.BASE_URL}logo.png`}
-              alt="Prestia"
-              sx={{ height: 56, mb: 1 }}
+              src={`${import.meta.env.BASE_URL}logo-symbol.png`}
+              alt=""
+              sx={{ height: 72, mb: 1 }}
             />
             <Typography variant="h5" fontWeight={700} color="primary.main">
               {t("common.appName")}
