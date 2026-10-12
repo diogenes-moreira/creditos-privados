@@ -150,7 +150,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	livestockQuotaHandler := handler.NewLivestockQuotaHandler(
 		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency))
 
-	// Base path prefix (e.g. "/demo" when behind Firebase Hosting rewrite)
+	// Optional path prefix for when the service is mounted under a sub-path.
+	// Empty by default: the app is served from the root.
 	basePath := os.Getenv("BASE_PATH")
 
 	// Health (always at root for probes)
