@@ -17,6 +17,9 @@ export function useFirebasePhoneAuth() {
       setLoading(true);
       setError(null);
       try {
+        if (!auth) {
+          throw new Error("Firebase phone sign-in is not configured");
+        }
         const recaptchaVerifier = new RecaptchaVerifier(
           auth,
           recaptchaContainerId,

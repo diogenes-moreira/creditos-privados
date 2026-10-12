@@ -10,6 +10,9 @@ export function useFirebaseGoogleAuth() {
     setLoading(true);
     setError(null);
     try {
+      if (!auth || !googleProvider) {
+        throw new Error("Firebase sign-in is not configured");
+      }
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
       return idToken;
