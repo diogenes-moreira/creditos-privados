@@ -16,6 +16,7 @@ import LoanDetail from "./pages/client/LoanDetail";
 import CreditApplication from "./pages/client/CreditApplication";
 import PaymentHistory from "./pages/client/PaymentHistory";
 import Profile from "./pages/client/Profile";
+import ClientRiskProfile from "./pages/client/RiskProfile";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -26,6 +27,7 @@ import LoanManagement from "./pages/admin/LoanManagement";
 import AuditLog from "./pages/admin/AuditLog";
 import Collections from "./pages/admin/Collections";
 import Reports from "./pages/admin/Reports";
+import AdminRiskModel from "./pages/admin/RiskModel";
 import VendorListAdmin from "./pages/admin/VendorList";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
 
@@ -93,6 +95,11 @@ const App: React.FC = () => {
           <AppLayout><Profile /></AppLayout>
         </ProtectedRoute>
       } />
+      <Route path="/risk-profile" element={
+        <ProtectedRoute requiredRole="client">
+          <AppLayout><ClientRiskProfile /></AppLayout>
+        </ProtectedRoute>
+      } />
 
       {/* Vendor routes */}
       <Route path="/vendor/dashboard" element={
@@ -155,6 +162,11 @@ const App: React.FC = () => {
       <Route path="/admin/reports" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><Reports /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/risk-model" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><AdminRiskModel /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/audit" element={

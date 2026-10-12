@@ -17,7 +17,7 @@ func newTestLoan(t *testing.T) *model.Loan {
 		uuid.New(),
 		uuid.New(),
 		decimal.NewFromInt(100000),
-		decimal.NewFromFloat(0.24),
+		decimal.NewFromInt(24),
 		12,
 		model.AmortizationFrench,
 	)
@@ -41,21 +41,21 @@ func TestNewLoan(t *testing.T) {
 		{
 			name:            "valid French loan",
 			principal:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.24),
+			interestRate:    decimal.NewFromInt(24),
 			numInstallments: 12,
 			amortType:       model.AmortizationFrench,
 		},
 		{
 			name:            "valid German loan",
 			principal:       decimal.NewFromInt(50000),
-			interestRate:    decimal.NewFromFloat(0.36),
+			interestRate:    decimal.NewFromInt(36),
 			numInstallments: 6,
 			amortType:       model.AmortizationGerman,
 		},
 		{
 			name:            "zero principal fails",
 			principal:       decimal.NewFromInt(0),
-			interestRate:    decimal.NewFromFloat(0.24),
+			interestRate:    decimal.NewFromInt(24),
 			numInstallments: 12,
 			amortType:       model.AmortizationFrench,
 			wantErr:         true,
@@ -64,7 +64,7 @@ func TestNewLoan(t *testing.T) {
 		{
 			name:            "negative principal fails",
 			principal:       decimal.NewFromInt(-1000),
-			interestRate:    decimal.NewFromFloat(0.24),
+			interestRate:    decimal.NewFromInt(24),
 			numInstallments: 12,
 			amortType:       model.AmortizationFrench,
 			wantErr:         true,
@@ -73,7 +73,7 @@ func TestNewLoan(t *testing.T) {
 		{
 			name:            "zero installments fails",
 			principal:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.24),
+			interestRate:    decimal.NewFromInt(24),
 			numInstallments: 0,
 			amortType:       model.AmortizationFrench,
 			wantErr:         true,
@@ -82,7 +82,7 @@ func TestNewLoan(t *testing.T) {
 		{
 			name:            "invalid amortization type fails",
 			principal:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.24),
+			interestRate:    decimal.NewFromInt(24),
 			numInstallments: 12,
 			amortType:       model.AmortizationType("american"),
 			wantErr:         true,
@@ -182,7 +182,7 @@ func TestLoan_Disburse(t *testing.T) {
 
 	t.Run("disburse with German amortization", func(t *testing.T) {
 		loan, _ := model.NewLoan(uuid.New(), uuid.New(),
-			decimal.NewFromInt(60000), decimal.NewFromFloat(0.24), 6, model.AmortizationGerman)
+			decimal.NewFromInt(60000), decimal.NewFromInt(24), 6, model.AmortizationGerman)
 		_ = loan.RequestApproval()
 		_ = loan.Approve(uuid.New())
 

@@ -481,3 +481,202 @@ export interface PaginatedResponse<T> {
   offset: number;
   limit: number;
 }
+
+// ---- Credit risk ----
+export type EmploymentType =
+  | "employee"
+  | "self_employed"
+  | "business_owner"
+  | "retired"
+  | "informal"
+  | "unemployed";
+
+export type HousingStatus = "owned" | "mortgaged" | "rented" | "family" | "other";
+
+export type RiskDecision = "approve" | "manual_review" | "decline";
+
+export type RiskGrade = "A" | "B" | "C" | "D" | "E";
+
+export type FactorImpact = "positive" | "negative" | "neutral";
+
+export interface RiskProfile {
+  id: string;
+  clientId: string;
+  clientName?: string;
+  monthlyIncome: string;
+  additionalIncome: string;
+  grossMonthlyIncome: string;
+  incomeVerified: boolean;
+  employmentType: EmploymentType;
+  employerName?: string;
+  monthsEmployed: number;
+  monthlyExpenses: string;
+  existingDebtPayments: string;
+  dependents: number;
+  housingStatus: HousingStatus;
+  hasBankAccount: boolean;
+  bureauScore?: number;
+  bureauScoreScale: number;
+  adverseRecords: number;
+  debtToIncomeRatio: string;
+  expenseRatio: string;
+  notes?: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmitRiskProfileRequest {
+  monthlyIncome: string;
+  additionalIncome?: string;
+  incomeVerified: boolean;
+  employmentType: EmploymentType;
+  employerName?: string;
+  monthsEmployed: number;
+  monthlyExpenses?: string;
+  existingDebtPayments?: string;
+  dependents: number;
+  housingStatus: HousingStatus;
+  hasBankAccount: boolean;
+  bureauScore?: number | null;
+  adverseRecords: number;
+  notes?: string;
+}
+
+export interface AdminSubmitRiskProfileRequest extends SubmitRiskProfileRequest {
+  clientId: string;
+}
+
+export interface SimulateRiskRequest extends SubmitRiskProfileRequest {
+  age: number;
+}
+
+export interface RiskFactor {
+  code: string;
+  label: string;
+  value?: string;
+  impact: FactorImpact;
+  weight?: string;
+  points: number;
+  comment?: string;
+}
+
+export interface RiskAssessment {
+  id: string;
+  clientId: string;
+  clientName?: string;
+  riskProfileId: string;
+  riskModelId: string;
+  riskModelName: string;
+  modelVersion: number;
+  analyzer: string;
+  score: number;
+  grade: RiskGrade;
+  probabilityOfDefault: string;
+  decision: RiskDecision;
+  maxMonthlyPayment: string;
+  recommendedLimit: string;
+  recommendedInstallments: number;
+  recommendedInterestRate: string;
+  summary?: string;
+  policyNotes?: string[];
+  factors?: RiskFactor[];
+  createdAt: string;
+}
+
+export interface RiskEvaluation {
+  score: number;
+  grade: RiskGrade;
+  probabilityOfDefault: string;
+  decision: RiskDecision;
+  maxMonthlyPayment: string;
+  recommendedLimit: string;
+  recommendedInstallments: number;
+  recommendedInterestRate: string;
+  summary?: string;
+  policyNotes?: string[];
+  factors?: RiskFactor[];
+  analyzer: string;
+}
+
+export interface CreditAvailability {
+  clientId: string;
+  decision: RiskDecision;
+  recommendedLimit: string;
+  grantedLimit: string;
+  usedAmount: string;
+  availableAmount: string;
+  recommendedInstallments: number;
+  recommendedInterestRate: string;
+  stale: boolean;
+  assessment?: RiskAssessment;
+}
+
+export interface RiskGradeBand {
+  grade: RiskGrade;
+  minScore: number;
+  interestSpread: string;
+  exposureFactor: string;
+  maxInstallments: number;
+  decision: RiskDecision;
+  probabilityOfDefault: string;
+}
+
+export interface RiskModelParams {
+  minAge: number;
+  maxAge: number;
+  minMonthlyIncome: string;
+  maxAdverseRecords: number;
+  maxDti: string;
+  maxPaymentToIncome: string;
+  unverifiedIncomeHaircut: string;
+  expensePerDependent: string;
+  absoluteMaxLimit: string;
+  maxInstallments: number;
+  limitRoundingStep: string;
+  baseInterestRate: string;
+}
+
+export interface RiskModel extends RiskModelParams {
+  id: string;
+  name: string;
+  version: number;
+  prompt: string;
+  description?: string;
+  isActive: boolean;
+  bands: RiskGradeBand[];
+  placeholders: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveRiskModelVersionRequest {
+  prompt: string;
+  description?: string;
+  params: RiskModelParams;
+  bands?: RiskGradeBand[];
+  activate: boolean;
+}
+
+export interface UpdateRiskModelRequest {
+  prompt?: string;
+  description?: string;
+  params: RiskModelParams;
+  bands?: RiskGradeBand[];
+}
+
+export interface PromptPreview {
+  prompt: string;
+  rendered: string;
+  applicant: string;
+  analyzer: string;
+  placeholders: string[];
+  warnings?: string[];
+  baseline?: RiskEvaluation;
+}
+
+export interface RiskAnalyzerInfo {
+  analyzer: string;
+  promptDriven: boolean;
+  placeholders: string[];
+}

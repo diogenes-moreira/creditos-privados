@@ -24,7 +24,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "valid credit line",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: 12,
 		},
 		{
@@ -36,19 +36,19 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "max 60 installments",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.30),
+			interestRate:    decimal.NewFromInt(30),
 			maxInstallments: 60,
 		},
 		{
 			name:            "min 1 installment",
 			maxAmount:       decimal.NewFromInt(10000),
-			interestRate:    decimal.NewFromFloat(0.10),
+			interestRate:    decimal.NewFromInt(10),
 			maxInstallments: 1,
 		},
 		{
 			name:            "zero max amount fails",
 			maxAmount:       decimal.NewFromInt(0),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: 12,
 			wantErr:         true,
 			errMsg:          "max amount must be positive",
@@ -56,7 +56,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "negative max amount fails",
 			maxAmount:       decimal.NewFromInt(-1000),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: 12,
 			wantErr:         true,
 			errMsg:          "max amount must be positive",
@@ -64,7 +64,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "negative interest rate fails",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(-0.01),
+			interestRate:    decimal.NewFromInt(-1),
 			maxInstallments: 12,
 			wantErr:         true,
 			errMsg:          "interest rate cannot be negative",
@@ -72,7 +72,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "zero installments fails",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: 0,
 			wantErr:         true,
 			errMsg:          "max installments must be between 1 and 60",
@@ -80,7 +80,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "over 60 installments fails",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: 61,
 			wantErr:         true,
 			errMsg:          "max installments must be between 1 and 60",
@@ -88,7 +88,7 @@ func TestNewCreditLine(t *testing.T) {
 		{
 			name:            "negative installments fails",
 			maxAmount:       decimal.NewFromInt(100000),
-			interestRate:    decimal.NewFromFloat(0.25),
+			interestRate:    decimal.NewFromInt(25),
 			maxInstallments: -1,
 			wantErr:         true,
 			errMsg:          "max installments must be between 1 and 60",
@@ -120,7 +120,7 @@ func TestCreditLine_Approve(t *testing.T) {
 	approverID := uuid.New()
 
 	t.Run("approve pending credit line", func(t *testing.T) {
-		cl, err := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, err := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		require.NoError(t, err)
 
 		err = cl.Approve(approverID)
@@ -132,7 +132,7 @@ func TestCreditLine_Approve(t *testing.T) {
 	})
 
 	t.Run("cannot approve already approved", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(approverID)
 
 		err := cl.Approve(approverID)
@@ -141,7 +141,7 @@ func TestCreditLine_Approve(t *testing.T) {
 	})
 
 	t.Run("cannot approve rejected", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Reject(uuid.New(), "bad credit")
 
 		err := cl.Approve(approverID)
@@ -154,7 +154,7 @@ func TestCreditLine_Reject(t *testing.T) {
 	rejectorID := uuid.New()
 
 	t.Run("reject pending credit line", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		err := cl.Reject(rejectorID, "insufficient income")
 
 		require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestCreditLine_Reject(t *testing.T) {
 	})
 
 	t.Run("reject without reason fails", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		err := cl.Reject(rejectorID, "")
 
 		require.Error(t, err)
@@ -174,7 +174,7 @@ func TestCreditLine_Reject(t *testing.T) {
 	})
 
 	t.Run("cannot reject approved", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(uuid.New())
 
 		err := cl.Reject(rejectorID, "changed mind")
@@ -184,7 +184,7 @@ func TestCreditLine_Reject(t *testing.T) {
 }
 
 func TestCreditLine_AvailableAmount(t *testing.T) {
-	cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+	cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 
 	assert.True(t, cl.AvailableAmount().Equal(decimal.NewFromInt(100000)))
 
@@ -197,7 +197,7 @@ func TestCreditLine_AvailableAmount(t *testing.T) {
 
 func TestCreditLine_CanDisburse(t *testing.T) {
 	t.Run("approved line with enough balance", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(uuid.New())
 
 		err := cl.CanDisburse(decimal.NewFromInt(50000))
@@ -205,7 +205,7 @@ func TestCreditLine_CanDisburse(t *testing.T) {
 	})
 
 	t.Run("approved line exact balance", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(uuid.New())
 
 		err := cl.CanDisburse(decimal.NewFromInt(100000))
@@ -213,7 +213,7 @@ func TestCreditLine_CanDisburse(t *testing.T) {
 	})
 
 	t.Run("exceeds available amount", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(uuid.New())
 
 		err := cl.CanDisburse(decimal.NewFromInt(100001))
@@ -222,7 +222,7 @@ func TestCreditLine_CanDisburse(t *testing.T) {
 	})
 
 	t.Run("not approved fails", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 
 		err := cl.CanDisburse(decimal.NewFromInt(50000))
 		require.Error(t, err)
@@ -230,7 +230,7 @@ func TestCreditLine_CanDisburse(t *testing.T) {
 	})
 
 	t.Run("partially used line", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		_ = cl.Approve(uuid.New())
 		cl.RecordDisbursement(decimal.NewFromInt(60000))
 
@@ -244,7 +244,7 @@ func TestCreditLine_CanDisburse(t *testing.T) {
 }
 
 func TestCreditLine_ReleaseDisbursement(t *testing.T) {
-	cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+	cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 	cl.RecordDisbursement(decimal.NewFromInt(50000))
 
 	cl.ReleaseDisbursement(decimal.NewFromInt(30000))
@@ -257,14 +257,14 @@ func TestCreditLine_ReleaseDisbursement(t *testing.T) {
 
 func TestCreditLine_UpdateMaxAmount(t *testing.T) {
 	t.Run("increase max amount", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(200000))
 		require.NoError(t, err)
 		assert.True(t, cl.MaxAmount.Equal(decimal.NewFromInt(200000)))
 	})
 
 	t.Run("decrease max amount above used", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		cl.RecordDisbursement(decimal.NewFromInt(30000))
 
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(50000))
@@ -273,7 +273,7 @@ func TestCreditLine_UpdateMaxAmount(t *testing.T) {
 	})
 
 	t.Run("decrease to exactly used amount", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		cl.RecordDisbursement(decimal.NewFromInt(30000))
 
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(30000))
@@ -282,7 +282,7 @@ func TestCreditLine_UpdateMaxAmount(t *testing.T) {
 	})
 
 	t.Run("decrease below used amount fails", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		cl.RecordDisbursement(decimal.NewFromInt(30000))
 
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(20000))
@@ -291,14 +291,14 @@ func TestCreditLine_UpdateMaxAmount(t *testing.T) {
 	})
 
 	t.Run("zero max amount fails", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(0))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "max amount must be positive")
 	})
 
 	t.Run("negative max amount fails", func(t *testing.T) {
-		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromFloat(0.25), 12, false)
+		cl, _ := model.NewCreditLine(uuid.New(), decimal.NewFromInt(100000), decimal.NewFromInt(25), 12, false)
 		err := cl.UpdateMaxAmount(decimal.NewFromInt(-5000))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "max amount must be positive")

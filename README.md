@@ -150,6 +150,14 @@ npm run dev    # http://localhost:4321
 | `GCS_BUCKET` | Bucket de Google Cloud Storage (opcional en dev) | - |
 | `GCS_CREDENTIALS_FILE` | Credenciales de GCS (opcional en dev) | - |
 | `LOCAL_STORAGE_PATH` | Path de almacenamiento local (fallback) | `./storage` |
+| `TWILIO_ACCOUNT_SID` | Habilita el envío del OTP por WhatsApp (opcional) | - |
+| `TWILIO_AUTH_TOKEN` | Token de Twilio | - |
+| `TWILIO_WHATSAPP_FROM` | Remitente WhatsApp de Twilio en E.164 | - |
+| `TWILIO_WHATSAPP_TEMPLATE_SID` | Template aprobado (`HX...`) con el código en `{{1}}` | - |
+| `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
+| `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
+| `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |
+| `RISK_ANALYSIS_MAX_TOKENS` | Tope de tokens por análisis | `16000` |
 
 ## API Endpoints
 
@@ -177,6 +185,10 @@ npm run dev    # http://localhost:4321
 | `GET` | `/api/v1/me/loans/:id` | Detalle de préstamo |
 | `POST` | `/api/v1/me/loans/:loanId/payments` | Registrar pago |
 | `GET` | `/api/v1/me/payments` | Mis pagos |
+| `GET` | `/api/v1/me/risk-profile` | Mis datos financieros |
+| `PUT` | `/api/v1/me/risk-profile` | Cargar/actualizar mis datos financieros |
+| `GET` | `/api/v1/me/credit-availability` | Mi crédito disponible |
+| `POST` | `/api/v1/risk/simulate` | Precalificación sin persistir |
 
 ### Administrador (requiere JWT + rol admin)
 
@@ -202,6 +214,22 @@ npm run dev    # http://localhost:4321
 | `GET` | `/api/v1/admin/dashboard/kpis` | KPIs generales |
 | `GET` | `/api/v1/admin/dashboard/trends/disbursements` | Tendencia desembolsos |
 | `GET` | `/api/v1/admin/dashboard/trends/collections` | Tendencia cobranzas |
+| `GET` | `/api/v1/admin/risk-profiles` | Listar datos de riesgo cargados |
+| `PUT` | `/api/v1/admin/risk-profiles` | Cargar/actualizar datos de riesgo de un cliente |
+| `GET` | `/api/v1/admin/clients/:id/risk-profile` | Datos de riesgo del cliente |
+| `POST` | `/api/v1/admin/clients/:id/risk-assessments` | Evaluar riesgo del cliente |
+| `GET` | `/api/v1/admin/clients/:id/risk-assessments` | Historial de evaluaciones |
+| `POST` | `/api/v1/admin/clients/:id/risk-assessments/apply` | Aplicar límite recomendado a la línea |
+| `GET` | `/api/v1/admin/clients/:id/credit-availability` | Disponibilidad de crédito |
+| `GET` | `/api/v1/admin/risk-assessments/pending` | Evaluaciones en revisión manual |
+| `GET` | `/api/v1/admin/risk-models` | Versiones del modelo de análisis |
+| `POST` | `/api/v1/admin/risk-models` | Crear modelo de análisis |
+| `GET` | `/api/v1/admin/risk-models/active` | Modelo activo (prompt + barandas) |
+| `GET` | `/api/v1/admin/risk-models/analyzer` | Motor de análisis configurado |
+| `POST` | `/api/v1/admin/risk-models/preview` | Previsualizar un prompt sin guardarlo |
+| `PUT` | `/api/v1/admin/risk-models/:id` | Editar una versión |
+| `POST` | `/api/v1/admin/risk-models/:id/versions` | Guardar una nueva versión |
+| `POST` | `/api/v1/admin/risk-models/:id/activate` | Activar una versión |
 | `GET` | `/api/v1/admin/audit` | Registros de auditoría |
 
 Documentación interactiva completa en Swagger UI: `http://localhost:8080/swagger/index.html`
@@ -276,9 +304,33 @@ El frontend soporta tres idiomas:
 
 El idioma se detecta automáticamente del navegador. Se puede cambiar desde el selector de idioma en la barra superior.
 
+## Riesgo crediticio
+
+El módulo de riesgo responde una sola pregunta: **cuánto crédito se le puede dar a este solicitante**. Tiene tres piezas.
+
+**1. Datos del solicitante.** Ingresos, empleo, gastos, obligaciones, personas a cargo, vivienda y datos de buró. Se cargan por tres vías, todas contra el mismo endpoint del dominio: el cliente desde su portal (`/me/risk-profile`), un operador desde la ficha del cliente, o una integración vía API. Los campos que son *atestación del prestador* — ingresos verificados, puntaje de buró, antecedentes negativos — no se pueden autodeclarar: en una carga hecha por el cliente o por un comercio se conservan los valores del registro y se ignora lo que venga en el request.
+
+**2. Modelo de análisis, editable por el usuario.** Es una entidad versionada que combina:
+
+- **Un prompt de análisis** que el administrador edita desde *Modelo de riesgo* en el panel. Los marcadores `{{client}}`, `{{profile}}`, `{{history}}`, `{{policy}}`, `{{baseline}}`, `{{currency}}`, `{{country}}` y `{{today}}` se reemplazan con los datos reales al evaluar. El editor valida los marcadores, previsualiza el prompt renderizado contra un cliente real antes de guardar, y cada edición crea una versión nueva: la versión en servicio sigue atendiendo hasta que se active otra, y cada evaluación queda sellada con la versión que la produjo.
+- **Barandas numéricas** (edad, ingreso mínimo, deuda sobre ingreso, cuota sobre ingreso, techo de exposición, plazo máximo, tasa base) y **categorías A–E** con su decisión, spread de tasa, factor de exposición y plazo máximo.
+
+Las barandas se aplican **después** del análisis y solo pueden restringir: bajan el límite, acortan el plazo, suben la tasa al piso de la categoría y endurecen la decisión. Nunca la aflojan. Cada ajuste queda registrado en la evaluación, así que un analista ve exactamente qué recortó la política.
+
+**3. El cálculo de disponibilidad.** La capacidad de pago es el menor entre el excedente disponible y un porcentaje del ingreso reconocido (los ingresos sin verificar sufren un descuento configurable). Esa cuota se convierte en capital invirtiendo el mismo cronograma de amortización francesa que usan los préstamos reales, de modo que el límite recomendado siempre es un capital cuya cuota más alta cabe en la capacidad de pago.
+
+**Motor de análisis.** Si `ANTHROPIC_API_KEY` está configurada, el prompt se ejecuta contra Claude con salida estructurada. Si no lo está —o si la llamada falla— la evaluación usa un **scorecard determinístico** del dominio que pondera capacidad de pago, endeudamiento, estabilidad laboral, buró e historial de pago interno. El módulo funciona completo sin credenciales de IA; el scorecard también se usa siempre para las precalificaciones y se le entrega al análisis por prompt como referencia. Cuando no hay datos de buró o historial, esos factores puntúan neutro en lugar de penalizar a quien no tiene legajo.
+
 ## Decisiones técnicas
 
 - **shopspring/decimal** para toda aritmética monetaria (nunca `float64`)
+- **Tasas de interés en porcentaje anual** - `CreditLine.InterestRate`,
+  `Loan.InterestRate`, `RiskModel.BaseInterestRate` y `RiskGradeBand.InterestSpread`
+  se guardan como porcentaje anual: `45` significa 45% anual. La conversión a tasa
+  mensual divide por 12 meses y por 100 puntos (`monthlyRateDivisor = 1200` en
+  `amortization.go`). Es la misma unidad que muestra y envía el frontend.
+  No confundir con los *ratios* del modelo de riesgo (`MaxDTI`, `ExposureFactor`,
+  `ProbabilityOfDefault`), que sí son fracciones (0.45 = 45%)
 - **UUID** como primary key en todas las entidades
 - **Soft deletes** via `gorm.DeletedAt`
 - **Sin SQL directo** - solo API chainable de GORM, incluso para agregaciones del dashboard
@@ -286,8 +338,71 @@ El idioma se detecta automáticamente del navegador. Se puede cambiar desde el s
 - **Auditoría por contexto** - middleware inyecta IP/UserAgent
 - **JWT local** en desarrollo, Firebase Auth en producción
 - **Almacenamiento local** como fallback de Google Cloud Storage
+- **OTP por WhatsApp (Twilio)** - el canal se elige por configuración: con
+  credenciales de Twilio el código va por WhatsApp, si no cae a email link de
+  Firebase y finalmente a consola, así que el desarrollo local no necesita
+  cuentas. El puerto `port.OTPSender` vive en el dominio; Twilio, Firebase y
+  consola son adaptadores
+- **Política de riesgo como dato** - el prompt y las barandas son entidades versionadas, editables sin deploy
+- **Las barandas solo restringen** - una recomendación externa nunca puede ampliar el límite, el plazo ni bajar la tasa por debajo del piso de su categoría
+- **Degradación sin IA** - sin `ANTHROPIC_API_KEY` el riesgo se evalúa con un scorecard determinístico del dominio
 
-## Deploy a producción
+## Deploy a producción (GCP — proyecto `fedegan-prestia-30x`)
+
+Este es el camino de deploy real: `.github/workflows/deploy.yml` se dispara con cada
+push a `main`, construye la imagen (frontend + backend en `Dockerfile.cloud`), la sube a
+Artifact Registry y despliega a Cloud Run. Un único servicio sirve la SPA de React
+(`FRONTEND_DIR=/app/public`) y la API bajo `BASE_PATH=/demo`, así que el frontend es
+*same-origin* con la API y no necesita CORS en producción.
+
+**La landing de Astro (`static-site/`) no se deploya.** Queda como código del repo, sin
+Firebase Hosting: no hay reverse proxy delante de Cloud Run y la app se accede
+directamente en la URL del servicio.
+
+| Recurso | Valor |
+|---|---|
+| Proyecto GCP | `fedegan-prestia-30x` |
+| Región | `us-central1` |
+| Servicio Cloud Run | `prestia-app` |
+| Artifact Registry | `us-central1-docker.pkg.dev/fedegan-prestia-30x/docker-repo/prestia-app` |
+| Instancia Cloud SQL | `fedegan-prestia-30x:us-central1:prestia-db` |
+
+El ID del proyecto vive centralizado en el bloque `env:` de `.github/workflows/deploy.yml`
+(`PROJECT_ID`, `IMAGE`, `SQL_INSTANCE`). Para apuntar a otro proyecto, cambiar ese bloque.
+
+> **Atención en bases con datos previos:** las tasas de interés pasaron a
+> guardarse como porcentaje anual (`45` = 45%). Una base que venga de una versión
+> anterior con tasas en fracción (`0.45`) las interpretaría como 0.45% anual, es
+> decir un crédito casi sin interés. En ese caso hay que multiplicar por 100
+> `credit_lines.interest_rate`, `loans.interest_rate`,
+> `risk_models.base_interest_rate` y `risk_grade_bands.interest_spread` antes de
+> exponer el servicio. Con base nueva + `seed` no aplica.
+
+### Infraestructura requerida (una sola vez, por proyecto)
+
+Verificar que existan en `fedegan-prestia-30x` antes del primer deploy — los nombres de
+recurso arriba son los esperados por la config, no se crean automáticamente:
+
+```bash
+gcloud config set project fedegan-prestia-30x
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com sqladmin.googleapis.com secretmanager.googleapis.com
+gcloud artifacts repositories list --location=us-central1   # debe existir docker-repo
+gcloud sql instances list                                   # debe existir prestia-db
+```
+
+### Secrets de GitHub Actions
+
+Autenticación por Workload Identity Federation: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`.
+Build del frontend: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+`VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`,
+`VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MEASUREMENT_ID`.
+
+### Secrets de Secret Manager (los lee Cloud Run en runtime)
+
+`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSLMODE`, `DB_INSTANCE`,
+`JWT_SECRET`, `FIREBASE_CREDENTIALS`.
+
+## Deploy con Docker (self-hosted)
 
 ### Requisitos
 

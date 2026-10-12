@@ -86,6 +86,7 @@ import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
+import ClientRiskPanel from "../../components/ClientRiskPanel";
 import { formatMoney as fmtMoney, getCountryConfig } from "../../config/countryConfig";
 import type { Loan, Payment, Purchase, Movement, CreditLine, Installment, CancellationSettlement } from "../../api/types";
 
@@ -817,6 +818,7 @@ const ClientDetail: React.FC = () => {
             <Tab label={t("admin.clientDetailPaymentsTab")} />
             <Tab label={t("admin.clientDetailPurchasesTab")} />
             <Tab label={t("admin.clientDetailMovementsTab")} />
+            <Tab label={t("admin.clientDetailRiskTab")} />
           </Tabs>
         </Box>
         <CardContent>
@@ -872,6 +874,7 @@ const ClientDetail: React.FC = () => {
               emptyMessage={t("account.noMovements")}
             />
           )}
+          {activeTab === 4 && id && <ClientRiskPanel clientId={id} />}
         </CardContent>
       </Card>
 

@@ -36,6 +36,8 @@ Gavel as GavelIcon,
   Store as StoreIcon,
   Assessment as AssessmentIcon,
   MoneyOff as CollectionsIcon,
+  Tune as RiskModelIcon,
+  FactCheck as RiskDataIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -66,6 +68,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.loans"), path: "/loans", icon: <CreditIcon /> },
     { label: t("nav.creditApplication"), path: "/loans/apply", icon: <RequestQuoteIcon /> },
     { label: t("nav.payments"), path: "/payments", icon: <PaymentIcon /> },
+    { label: t("nav.riskProfile"), path: "/risk-profile", icon: <RiskDataIcon /> },
     { label: t("nav.profile"), path: "/profile", icon: <PersonIcon /> },
   ];
 
@@ -83,6 +86,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 { label: t("nav.loanManagement"), path: "/admin/loans", icon: <GavelIcon /> },
     { label: t("nav.collections"), path: "/admin/collections", icon: <CollectionsIcon /> },
     { label: t("nav.reports"), path: "/admin/reports", icon: <AssessmentIcon /> },
+    { label: t("nav.riskModel"), path: "/admin/risk-model", icon: <RiskModelIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
     { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },
   ];
@@ -105,9 +109,16 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const drawer = (
     <Box>
       <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box component="img" src={`${import.meta.env.BASE_URL}logo.png`} alt="Prestia" sx={{ height: 32 }} />
-        <Typography variant="h6" color="primary" fontWeight={700} noWrap>
-          Prestia
+        {/* The symbol, not the full lockup: the brandbook sets a 180px minimum
+            for the logo, which a 32px drawer header cannot give it. */}
+        <Box
+          component="img"
+          src={`${import.meta.env.BASE_URL}logo-symbol.png`}
+          alt=""
+          sx={{ height: 32 }}
+        />
+        <Typography variant="h6" color="primary" fontWeight={800} noWrap>
+          {t("common.appName")}
         </Typography>
       </Box>
       <Divider />

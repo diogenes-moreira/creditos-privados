@@ -20,7 +20,7 @@ func (g *Generator) GenerateLoanSchedule(loan *model.Loan, installments []model.
 	pdf.AddPage()
 
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Prestia - Plan de Cuotas")
+	pdf.Cell(190, 10, "CuppoGan - Plan de Cuotas")
 	pdf.Ln(15)
 
 	pdf.SetFont("Arial", "", 11)
@@ -92,7 +92,7 @@ func (g *Generator) GeneratePaymentReceipt(payment *model.Payment, loan *model.L
 
 	// Header
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Prestia - Comprobante de Pago")
+	pdf.Cell(190, 10, "CuppoGan - Comprobante de Pago")
 	pdf.Ln(15)
 
 	// Receipt info
@@ -189,7 +189,7 @@ func (g *Generator) GenerateCancellationReceipt(payment *model.Payment, loan *mo
 
 	// Header
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Prestia - Comprobante de Cancelacion Anticipada")
+	pdf.Cell(190, 10, "CuppoGan - Comprobante de Cancelacion Anticipada")
 	pdf.Ln(15)
 
 	// Receipt info
@@ -271,7 +271,7 @@ func (g *Generator) GenerateVendorPaymentReceipt(payment *model.VendorPayment, v
 	pdf.AddPage()
 
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(190, 10, "Prestia - Comprobante de Pago a Vendedor")
+	pdf.Cell(190, 10, "CuppoGan - Comprobante de Pago a Vendedor")
 	pdf.Ln(15)
 
 	pdf.SetFont("Arial", "", 11)

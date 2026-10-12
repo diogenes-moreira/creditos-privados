@@ -14,6 +14,13 @@ const (
 	AmortizationGerman AmortizationType = "german"
 )
 
+// Interest rates across the domain (CreditLine.InterestRate, Loan.InterestRate,
+// RiskModel.BaseInterestRate and RiskGradeBand.InterestSpread) are stored as
+// annual percentages: 24 means 24% per year. Converting one to the monthly
+// fraction used in the interest formulas therefore divides by 12 months and by
+// 100 percentage points.
+var monthlyRateDivisor = decimal.NewFromInt(1200)
+
 type AmortizationSchedule struct {
 	Installments  []InstallmentCalc
 	TotalInterest decimal.Decimal
@@ -32,10 +39,11 @@ type InstallmentCalc struct {
 }
 
 // CalculateFrenchAmortization computes a fixed-payment (French) amortization schedule.
-// Monthly interest rate = annual rate / 12.
+// annualRate is an annual percentage (e.g. 24 for 24% per year), so the monthly
+// rate used for interest is annualRate / 12 / 100.
 // ivaRate is the IVA percentage applied on interest (e.g. 21 for 21%). Use zero to skip IVA.
 func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time, ivaRate decimal.Decimal) AmortizationSchedule {
-	monthlyRate := annualRate.Div(decimal.NewFromInt(12))
+	monthlyRate := annualRate.Div(monthlyRateDivisor)
 	hundred := decimal.NewFromInt(100)
 	schedule := AmortizationSchedule{}
 	remaining := principal
@@ -109,9 +117,11 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 
 // CalculateGermanAmortization computes a fixed-capital (German) amortization schedule.
 // Capital portion is equal each month, interest decreases as remaining principal decreases.
+// annualRate is an annual percentage (e.g. 24 for 24% per year), so the monthly
+// rate used for interest is annualRate / 12 / 100.
 // ivaRate is the IVA percentage applied on interest (e.g. 21 for 21%). Use zero to skip IVA.
 func CalculateGermanAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time, ivaRate decimal.Decimal) AmortizationSchedule {
-	monthlyRate := annualRate.Div(decimal.NewFromInt(12))
+	monthlyRate := annualRate.Div(monthlyRateDivisor)
 	hundred := decimal.NewFromInt(100)
 	capitalPerMonth := principal.Div(decimal.NewFromInt(int64(installments))).Round(2)
 	remaining := principal

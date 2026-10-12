@@ -121,6 +121,49 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin creates a client account with all personal data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Register a new client",
+                "parameters": [
+                    {
+                        "description": "Client registration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/admin/clients/{id}": {
@@ -164,6 +207,122 @@
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin updates any client field (name, DNI, CUIT, phone, address, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Update all client data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Client data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUpdateClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/account": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get account for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AccountResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/account/movements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get account movements for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
                         }
                     }
                 }
@@ -212,6 +371,446 @@
                 }
             }
         },
+        "/admin/clients/{id}/comments": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Update comments for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Comments",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCommentsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/credit-availability": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Get a client's available credit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreditAvailabilityResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/credit-lines": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get credit lines for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.CreditLineResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/iva-rate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Update IVA rate for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "IVA rate",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateIVARateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/loans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get loans for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/payments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get payments for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/purchases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Clients"
+                ],
+                "summary": "Get purchases for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/risk-assessments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "List a client's risk assessments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Runs the active analysis model over the client's risk data and stores the assessment",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Run the risk analysis for a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskAssessmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/risk-assessments/apply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates or updates the credit line from the latest approved assessment",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Apply the recommended limit to the client's credit line",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreditLineResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/clients/{id}/risk-profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Get a client's credit-risk data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskProfileResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/clients/{id}/unblock": {
             "post": {
                 "security": [
@@ -248,6 +847,51 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/collections/overdue": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of overdue installments with client and loan info",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "List overdue installments (collections worklist)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -340,6 +984,58 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/credit-lines/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the maximum amount of an existing credit line",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Credit Lines"
+                ],
+                "summary": "Update a credit line's max amount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit Line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New max amount",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCreditLineRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreditLineResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -600,6 +1296,51 @@
                 }
             }
         },
+        "/admin/loans": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin creates a loan for a given client and credit line",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Loans"
+                ],
+                "summary": "Create a loan on behalf of a client",
+                "parameters": [
+                    {
+                        "description": "Loan data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminCreateLoanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoanResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/loans/pending": {
             "get": {
                 "security": [
@@ -640,6 +1381,51 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/loans/withdrawal": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin creates a loan that is immediately approved and disbursed (cash withdrawal)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Loans"
+                ],
+                "summary": "Create a cash withdrawal for a client",
+                "parameters": [
+                    {
+                        "description": "Withdrawal data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminCreateLoanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoanResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -767,6 +1553,58 @@
                 }
             }
         },
+        "/admin/loans/{id}/payments": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin records a payment for a client's active loan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Loans"
+                ],
+                "summary": "Record a payment on behalf of a client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Loan UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RecordPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/loans/{id}/prepay": {
             "post": {
                 "security": [
@@ -871,9 +1709,1005 @@
                 }
             }
         },
-        "/auth/login": {
+        "/admin/reports/financial": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns accrued/collected interest, IVA, capital collected and pending for a date range",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get financial report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD), defaults to 12 months ago",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD), defaults to today",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FinancialReportResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/portfolio": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns loan count, principal, and outstanding balance grouped by loan status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get portfolio position",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD), defaults to 12 months ago",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD), defaults to today",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioPositionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-assessments/pending": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "List assessments awaiting a manual decision",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "List analysis model versions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Validates credentials and returns a JWT token for API access",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registers a new analysis prompt and its policy guardrails",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Create an analysis model",
+                "parameters": [
+                    {
+                        "description": "Analysis model",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateRiskModelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/active": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the analysis prompt and policy guardrails currently in use",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Get the active analysis model",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/analyzer": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Describe the configured analysis engine",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskAnalyzerInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/preview": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Renders a candidate prompt against a client's real data, or sample data, without saving or sending anything",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Preview an analysis prompt",
+                "parameters": [
+                    {
+                        "description": "Candidate prompt",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PreviewPromptRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PromptPreviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Get one analysis model version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Risk Model UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Update an analysis model version in place",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Risk Model UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Model changes",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateRiskModelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Makes this version the one used for new evaluations",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Activate an analysis model version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Risk Model UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-models/{id}/versions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Derives a new version from an existing model. The running version keeps serving until the new one is activated.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk Models"
+                ],
+                "summary": "Save a new version of an analysis model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source Risk Model UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New version",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SaveRiskModelVersionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskModelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/risk-profiles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "List submitted credit-risk data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Submit a client's credit-risk data",
+                "parameters": [
+                    {
+                        "description": "Risk data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminSubmitRiskProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "List vendors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Register a new vendor",
+                "parameters": [
+                    {
+                        "description": "Vendor data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterVendorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Get vendor detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Activate a vendor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors/{id}/deactivate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Deactivate a vendor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors/{id}/payments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Get vendor's payments (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Record payment to vendor (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RecordVendorPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorPaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/vendors/{id}/purchases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Get vendor's purchases (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Vendors"
+                ],
+                "summary": "Record a purchase on behalf of a vendor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Vendor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Purchase data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RecordPurchaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PurchaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/firebase-login": {
+            "post": {
+                "description": "Verifies a Firebase ID token (from Google OAuth or Phone Auth) and returns a JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -883,7 +2717,65 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Authenticate a user",
+                "summary": "Authenticate via Firebase ID token",
+                "parameters": [
+                    {
+                        "description": "Firebase ID token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.FirebaseLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Validates credentials and returns a JWT token for API access. For clients, use OTP flow instead.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Authenticate a user (admin/vendor)",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -975,6 +2867,121 @@
                 }
             }
         },
+        "/auth/request-otp": {
+            "post": {
+                "description": "Sends a 6-digit OTP code via email or signals phone OTP (sent client-side by Firebase)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request an OTP code for client/vendor login",
+                "parameters": [
+                    {
+                        "description": "Email/phone and channel",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify-otp": {
+            "post": {
+                "description": "Validates the OTP code and returns a JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify an OTP code and login",
+                "parameters": [
+                    {
+                        "description": "Email and OTP code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/config": {
+            "get": {
+                "description": "Returns the country, currency, locale and identity labels for this deployment",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Config"
+                ],
+                "summary": "Get deployment configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/config.CountryInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the health status of the service",
@@ -1025,6 +3032,57 @@
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/livestock-quotas": {
+            "post": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Runs the RUV-based livestock quota engine for a rancher and stores the result. The holdings are summed: the quota is one per national ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Assess a rancher's livestock credit quota",
+                "parameters": [
+                    {
+                        "description": "Rancher's RUV data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1152,6 +3210,37 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/credit-availability": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the credit limit the risk analysis recommends and how much of it is still unused",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Get my available credit",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreditAvailabilityResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1533,9 +3622,567 @@
                     }
                 }
             }
+        },
+        "/me/risk-profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Get my credit-risk data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskProfileResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates or replaces the authenticated client's credit-risk data, the input to the credit availability analysis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Submit my credit-risk data",
+                "parameters": [
+                    {
+                        "description": "Risk data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmitRiskProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/account": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Get vendor account balance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorAccountResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/account/movements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Get vendor account movements",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/clients/register": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Register a new client (vendor)",
+                "parameters": [
+                    {
+                        "description": "Client data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterClientByVendorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/clients/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Search clients (vendor)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/clients/{id}/credit-lines": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Get client's credit lines (vendor)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.CreditLineResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Request a credit line for client (vendor)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Credit line data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestCreditLineByVendorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreditLineResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Get vendor profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Update vendor profile",
+                "parameters": [
+                    {
+                        "description": "Profile data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateVendorProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VendorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/vendor/purchases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Get vendor's purchases",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vendor"
+                ],
+                "summary": "Record a purchase",
+                "parameters": [
+                    {
+                        "description": "Purchase data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RecordPurchaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PurchaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/risk/simulate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Scores hypothetical risk data and returns the credit it would support. Nothing is stored.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Risk"
+                ],
+                "summary": "Pre-qualify without an account",
+                "parameters": [
+                    {
+                        "description": "Hypothetical risk data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SimulateRiskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RiskEvaluationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "config.CountryInfo": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "ivaRate": {
+                    "type": "number"
+                },
+                "locale": {
+                    "type": "string"
+                },
+                "nationalIdLabel": {
+                    "type": "string"
+                },
+                "taxIdLabel": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AccountResponse": {
             "type": "object",
             "properties": {
@@ -1561,6 +4208,149 @@
                 }
             }
         },
+        "dto.AdminCreateLoanRequest": {
+            "type": "object",
+            "required": [
+                "amortizationType",
+                "amount",
+                "clientId",
+                "creditLineId",
+                "numInstallments"
+            ],
+            "properties": {
+                "amortizationType": {
+                    "type": "string",
+                    "enum": [
+                        "french",
+                        "german"
+                    ]
+                },
+                "amount": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "creditLineId": {
+                    "type": "string"
+                },
+                "numInstallments": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "dto.AdminSubmitRiskProfileRequest": {
+            "type": "object",
+            "required": [
+                "clientId",
+                "employmentType",
+                "housingStatus",
+                "monthlyIncome"
+            ],
+            "properties": {
+                "additionalIncome": {
+                    "type": "string"
+                },
+                "adverseRecords": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "bureauScore": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 0
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "dependents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "employerName": {
+                    "type": "string"
+                },
+                "employmentType": {
+                    "type": "string",
+                    "enum": [
+                        "employee",
+                        "self_employed",
+                        "business_owner",
+                        "retired",
+                        "informal",
+                        "unemployed"
+                    ]
+                },
+                "existingDebtPayments": {
+                    "type": "string"
+                },
+                "hasBankAccount": {
+                    "type": "boolean"
+                },
+                "housingStatus": {
+                    "type": "string",
+                    "enum": [
+                        "owned",
+                        "mortgaged",
+                        "rented",
+                        "family",
+                        "other"
+                    ]
+                },
+                "incomeVerified": {
+                    "type": "boolean"
+                },
+                "monthlyExpenses": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "string"
+                },
+                "monthsEmployed": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AdminUpdateClientRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "cuit": {
+                    "type": "string"
+                },
+                "dni": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "isPEP": {
+                    "type": "boolean"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AuthResponse": {
             "type": "object",
             "properties": {
@@ -1572,6 +4362,23 @@
                 }
             }
         },
+        "dto.CancellationSettlementResponse": {
+            "type": "object",
+            "properties": {
+                "accumulatedIVA": {
+                    "type": "string"
+                },
+                "accumulatedInterest": {
+                    "type": "string"
+                },
+                "pendingCapital": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ClientResponse": {
             "type": "object",
             "properties": {
@@ -1579,6 +4386,12 @@
                     "type": "string"
                 },
                 "city": {
+                    "type": "string"
+                },
+                "comments": {
+                    "type": "string"
+                },
+                "country": {
                     "type": "string"
                 },
                 "createdAt": {
@@ -1607,6 +4420,9 @@
                 },
                 "isPEP": {
                     "type": "boolean"
+                },
+                "ivaRate": {
+                    "type": "string"
                 },
                 "lastName": {
                     "type": "string"
@@ -1644,6 +4460,77 @@
                     "type": "integer",
                     "maximum": 60,
                     "minimum": 1
+                },
+                "recalculateOnPrepay": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.CreateRiskModelRequest": {
+            "type": "object",
+            "required": [
+                "bands",
+                "name",
+                "params",
+                "prompt"
+            ],
+            "properties": {
+                "activate": {
+                    "type": "boolean"
+                },
+                "bands": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskGradeBandRequest"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.RiskModelParamsRequest"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreditAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "$ref": "#/definitions/dto.RiskAssessmentResponse"
+                },
+                "availableAmount": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "grantedLimit": {
+                    "type": "string"
+                },
+                "recommendedInstallments": {
+                    "type": "integer"
+                },
+                "recommendedInterestRate": {
+                    "type": "string"
+                },
+                "recommendedLimit": {
+                    "type": "string"
+                },
+                "stale": {
+                    "type": "boolean"
+                },
+                "usedAmount": {
+                    "type": "string"
                 }
             }
         },
@@ -1676,6 +4563,9 @@
                 },
                 "maxInstallments": {
                     "type": "integer"
+                },
+                "recalculateOnPrepay": {
+                    "type": "boolean"
                 },
                 "rejectionReason": {
                     "type": "string"
@@ -1722,6 +4612,40 @@
                 }
             }
         },
+        "dto.FinancialReportResponse": {
+            "type": "object",
+            "properties": {
+                "capitalCollected": {
+                    "type": "string"
+                },
+                "capitalPending": {
+                    "type": "string"
+                },
+                "interestAccrued": {
+                    "type": "string"
+                },
+                "interestCollected": {
+                    "type": "string"
+                },
+                "ivaAccrued": {
+                    "type": "string"
+                },
+                "ivaCollected": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.FirebaseLoginRequest": {
+            "type": "object",
+            "required": [
+                "idToken"
+            ],
+            "properties": {
+                "idToken": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.InstallmentResponse": {
             "type": "object",
             "properties": {
@@ -1737,6 +4661,9 @@
                 "interestAmount": {
                     "type": "string"
                 },
+                "ivaAmount": {
+                    "type": "string"
+                },
                 "number": {
                     "type": "integer"
                 },
@@ -1745,6 +4672,9 @@
                 },
                 "paidAt": {
                     "type": "string"
+                },
+                "penaltyApplied": {
+                    "type": "boolean"
                 },
                 "remainingAmount": {
                     "type": "string"
@@ -1768,13 +4698,229 @@
                 }
             }
         },
+        "dto.LivestockHerdRequest": {
+            "type": "object",
+            "properties": {
+                "females1To2Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females2To3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females3To5Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females3To8Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "females8To12Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "femalesOver5Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "femalesUnder3Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males1To2Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males2To3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males3To8Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "males8To12Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "malesOver3Years": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "malesUnder3Months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "notVaccinated": {
+                    "description": "NotVaccinated is the registry's unvaccinated total for the holding.",
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "dto.LivestockQuotaCeilingsResponse": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "string"
+                },
+                "inputs": {
+                    "type": "string"
+                },
+                "ltv": {
+                    "type": "string"
+                },
+                "policyCap": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockQuotaRequest": {
+            "type": "object",
+            "required": [
+                "holdingStatus",
+                "holdings",
+                "nationalId",
+                "tenure"
+            ],
+            "properties": {
+                "completedCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "department": {
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "holdingStatus": {
+                    "description": "HoldingStatus is the RUV's holding status; \"N\" (active) scores best.",
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "holdings": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockHerdRequest"
+                    }
+                },
+                "nationalId": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "reference": {
+                    "description": "Reference is the caller's identifier for the request (e.g. its onboarding ID).",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "reportedCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "seniorityCycles": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "tenure": {
+                    "description": "Tenure is \"Propia\" or \"Arrendada\", as the RUV reports it.",
+                    "type": "string",
+                    "enum": [
+                        "Propia",
+                        "Arrendada"
+                    ]
+                }
+            }
+        },
+        "dto.LivestockQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "activeCeiling": {
+                    "type": "string"
+                },
+                "ceilings": {
+                    "$ref": "#/definitions/dto.LivestockQuotaCeilingsResponse"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "eligibleBasket": {
+                    "description": "EligibleBasket is what the rancher would buy in the inputs catalogue over the term.",
+                    "type": "string"
+                },
+                "head": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                },
+                "periodRatePct": {
+                    "type": "string"
+                },
+                "projectedIncome": {
+                    "description": "ProjectedIncome is the holding's expected revenue over the term.",
+                    "type": "string"
+                },
+                "quota": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "score": {
+                    "$ref": "#/definitions/dto.LivestockScoreResponse"
+                },
+                "termMonths": {
+                    "type": "integer"
+                },
+                "typology": {
+                    "type": "string"
+                },
+                "ugg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockScoreResponse": {
+            "type": "object",
+            "properties": {
+                "cycleCompliancePct": {
+                    "type": "integer"
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "seniorityCycles": {
+                    "type": "integer"
+                },
+                "vaccinationRatePct": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.LoanResponse": {
             "type": "object",
             "properties": {
                 "amortizationType": {
                     "type": "string"
                 },
+                "cancellationSettlement": {
+                    "$ref": "#/definitions/dto.CancellationSettlementResponse"
+                },
                 "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
                     "type": "string"
                 },
                 "createdAt": {
@@ -1818,14 +4964,10 @@
         "dto.LoginRequest": {
             "type": "object",
             "required": [
-                "email",
-                "password"
+                "email"
             ],
             "properties": {
                 "email": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 }
             }
@@ -1888,6 +5030,34 @@
                 }
             }
         },
+        "dto.PortfolioPositionItemResponse": {
+            "type": "object",
+            "properties": {
+                "loanCount": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "totalOutstanding": {
+                    "type": "string"
+                },
+                "totalPrincipal": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PortfolioPositionResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PortfolioPositionItemResponse"
+                    }
+                }
+            }
+        },
         "dto.PortfolioResponse": {
             "type": "object",
             "properties": {
@@ -1919,6 +5089,90 @@
             "properties": {
                 "amount": {
                     "type": "string"
+                },
+                "strategy": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PreviewPromptRequest": {
+            "type": "object",
+            "required": [
+                "prompt"
+            ],
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PromptPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "analyzer": {
+                    "type": "string"
+                },
+                "applicant": {
+                    "type": "string"
+                },
+                "baseline": {
+                    "$ref": "#/definitions/dto.RiskEvaluationResponse"
+                },
+                "placeholders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "rendered": {
+                    "type": "string"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.PurchaseResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "creditLineId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "loanId": {
+                    "type": "string"
+                },
+                "vendorId": {
+                    "type": "string"
+                },
+                "vendorName": {
+                    "type": "string"
                 }
             }
         },
@@ -1930,6 +5184,9 @@
             ],
             "properties": {
                 "amount": {
+                    "type": "string"
+                },
+                "installmentId": {
                     "type": "string"
                 },
                 "method": {
@@ -1945,7 +5202,69 @@
                 }
             }
         },
-        "dto.RegisterRequest": {
+        "dto.RecordPurchaseRequest": {
+            "type": "object",
+            "required": [
+                "amortizationType",
+                "amount",
+                "clientId",
+                "creditLineId",
+                "description",
+                "numInstallments"
+            ],
+            "properties": {
+                "amortizationType": {
+                    "type": "string",
+                    "enum": [
+                        "french",
+                        "german"
+                    ]
+                },
+                "amount": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "creditLineId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "numInstallments": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "dto.RecordVendorPaymentRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "method",
+                "vendorId"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string",
+                    "enum": [
+                        "cash",
+                        "transfer"
+                    ]
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "vendorId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegisterClientByVendorRequest": {
             "type": "object",
             "required": [
                 "address",
@@ -1956,7 +5275,6 @@
                 "email",
                 "firstName",
                 "lastName",
-                "password",
                 "phone",
                 "province"
             ],
@@ -1965,6 +5283,9 @@
                     "type": "string"
                 },
                 "city": {
+                    "type": "string"
+                },
+                "country": {
                     "type": "string"
                 },
                 "cuit": {
@@ -1988,6 +5309,98 @@
                 "lastName": {
                     "type": "string"
                 },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "address",
+                "city",
+                "cuit",
+                "dateOfBirth",
+                "dni",
+                "email",
+                "firstName",
+                "lastName",
+                "phone",
+                "province"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "cuit": {
+                    "type": "string"
+                },
+                "dateOfBirth": {
+                    "type": "string"
+                },
+                "dni": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "isPEP": {
+                    "type": "boolean"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegisterVendorRequest": {
+            "type": "object",
+            "required": [
+                "address",
+                "businessName",
+                "city",
+                "cuit",
+                "email",
+                "password",
+                "phone",
+                "province"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "businessName": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "cuit": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string",
                     "minLength": 8
@@ -2008,6 +5421,31 @@
             "properties": {
                 "reason": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.RequestCreditLineByVendorRequest": {
+            "type": "object",
+            "required": [
+                "clientId",
+                "interestRate",
+                "maxAmount",
+                "maxInstallments"
+            ],
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "interestRate": {
+                    "type": "string"
+                },
+                "maxAmount": {
+                    "type": "string"
+                },
+                "maxInstallments": {
+                    "type": "integer",
+                    "maximum": 60,
+                    "minimum": 1
                 }
             }
         },
@@ -2039,6 +5477,495 @@
                 }
             }
         },
+        "dto.RequestOTPRequest": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "type": "string",
+                    "enum": [
+                        "email",
+                        "phone"
+                    ]
+                },
+                "email": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskAnalyzerInfoResponse": {
+            "type": "object",
+            "properties": {
+                "analyzer": {
+                    "type": "string"
+                },
+                "placeholders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "promptDriven": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.RiskAssessmentResponse": {
+            "type": "object",
+            "properties": {
+                "analyzer": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskFactorResponse"
+                    }
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maxMonthlyPayment": {
+                    "type": "string"
+                },
+                "modelVersion": {
+                    "type": "integer"
+                },
+                "policyNotes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "probabilityOfDefault": {
+                    "type": "string"
+                },
+                "recommendedInstallments": {
+                    "type": "integer"
+                },
+                "recommendedInterestRate": {
+                    "type": "string"
+                },
+                "recommendedLimit": {
+                    "type": "string"
+                },
+                "riskModelId": {
+                    "type": "string"
+                },
+                "riskModelName": {
+                    "type": "string"
+                },
+                "riskProfileId": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskEvaluationResponse": {
+            "type": "object",
+            "properties": {
+                "analyzer": {
+                    "type": "string"
+                },
+                "decision": {
+                    "type": "string"
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskFactorResponse"
+                    }
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "maxMonthlyPayment": {
+                    "type": "string"
+                },
+                "policyNotes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "probabilityOfDefault": {
+                    "type": "string"
+                },
+                "recommendedInstallments": {
+                    "type": "integer"
+                },
+                "recommendedInterestRate": {
+                    "type": "string"
+                },
+                "recommendedLimit": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskFactorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "impact": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskGradeBandRequest": {
+            "type": "object",
+            "required": [
+                "decision",
+                "grade"
+            ],
+            "properties": {
+                "decision": {
+                    "type": "string",
+                    "enum": [
+                        "approve",
+                        "manual_review",
+                        "decline"
+                    ]
+                },
+                "exposureFactor": {
+                    "type": "string"
+                },
+                "grade": {
+                    "type": "string",
+                    "enum": [
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "E"
+                    ]
+                },
+                "interestSpread": {
+                    "type": "string"
+                },
+                "maxInstallments": {
+                    "type": "integer",
+                    "maximum": 60,
+                    "minimum": 0
+                },
+                "minScore": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "probabilityOfDefault": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskGradeBandResponse": {
+            "type": "object",
+            "properties": {
+                "decision": {
+                    "type": "string"
+                },
+                "exposureFactor": {
+                    "type": "string"
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "interestSpread": {
+                    "type": "string"
+                },
+                "maxInstallments": {
+                    "type": "integer"
+                },
+                "minScore": {
+                    "type": "integer"
+                },
+                "probabilityOfDefault": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskModelParamsRequest": {
+            "type": "object",
+            "required": [
+                "absoluteMaxLimit",
+                "baseInterestRate",
+                "maxAge",
+                "maxDti",
+                "maxInstallments",
+                "maxPaymentToIncome",
+                "minAge"
+            ],
+            "properties": {
+                "absoluteMaxLimit": {
+                    "type": "string"
+                },
+                "baseInterestRate": {
+                    "type": "string"
+                },
+                "expensePerDependent": {
+                    "type": "string"
+                },
+                "limitRoundingStep": {
+                    "type": "string"
+                },
+                "maxAdverseRecords": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "maxAge": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 19
+                },
+                "maxDti": {
+                    "type": "string"
+                },
+                "maxInstallments": {
+                    "type": "integer",
+                    "maximum": 60,
+                    "minimum": 1
+                },
+                "maxPaymentToIncome": {
+                    "type": "string"
+                },
+                "minAge": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 18
+                },
+                "minMonthlyIncome": {
+                    "type": "string"
+                },
+                "unverifiedIncomeHaircut": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RiskModelResponse": {
+            "type": "object",
+            "properties": {
+                "absoluteMaxLimit": {
+                    "type": "string"
+                },
+                "bands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskGradeBandResponse"
+                    }
+                },
+                "baseInterestRate": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expensePerDependent": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "limitRoundingStep": {
+                    "type": "string"
+                },
+                "maxAdverseRecords": {
+                    "type": "integer"
+                },
+                "maxAge": {
+                    "type": "integer"
+                },
+                "maxDti": {
+                    "type": "string"
+                },
+                "maxInstallments": {
+                    "type": "integer"
+                },
+                "maxPaymentToIncome": {
+                    "type": "string"
+                },
+                "minAge": {
+                    "type": "integer"
+                },
+                "minMonthlyIncome": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "placeholders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "unverifiedIncomeHaircut": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RiskProfileResponse": {
+            "type": "object",
+            "properties": {
+                "additionalIncome": {
+                    "type": "string"
+                },
+                "adverseRecords": {
+                    "type": "integer"
+                },
+                "bureauScore": {
+                    "type": "integer"
+                },
+                "bureauScoreScale": {
+                    "type": "integer"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "debtToIncomeRatio": {
+                    "type": "string"
+                },
+                "dependents": {
+                    "type": "integer"
+                },
+                "employerName": {
+                    "type": "string"
+                },
+                "employmentType": {
+                    "type": "string"
+                },
+                "existingDebtPayments": {
+                    "type": "string"
+                },
+                "expenseRatio": {
+                    "type": "string"
+                },
+                "grossMonthlyIncome": {
+                    "type": "string"
+                },
+                "hasBankAccount": {
+                    "type": "boolean"
+                },
+                "housingStatus": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "incomeVerified": {
+                    "type": "boolean"
+                },
+                "monthlyExpenses": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "string"
+                },
+                "monthsEmployed": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SaveRiskModelVersionRequest": {
+            "type": "object",
+            "required": [
+                "params",
+                "prompt"
+            ],
+            "properties": {
+                "activate": {
+                    "type": "boolean"
+                },
+                "bands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskGradeBandRequest"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.RiskModelParamsRequest"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.SimulateLoanRequest": {
             "type": "object",
             "required": [
@@ -2067,6 +5994,84 @@
                 }
             }
         },
+        "dto.SimulateRiskRequest": {
+            "type": "object",
+            "required": [
+                "age",
+                "employmentType",
+                "housingStatus",
+                "monthlyIncome"
+            ],
+            "properties": {
+                "additionalIncome": {
+                    "type": "string"
+                },
+                "adverseRecords": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "age": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 16
+                },
+                "bureauScore": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 0
+                },
+                "dependents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "employerName": {
+                    "type": "string"
+                },
+                "employmentType": {
+                    "type": "string",
+                    "enum": [
+                        "employee",
+                        "self_employed",
+                        "business_owner",
+                        "retired",
+                        "informal",
+                        "unemployed"
+                    ]
+                },
+                "existingDebtPayments": {
+                    "type": "string"
+                },
+                "hasBankAccount": {
+                    "type": "boolean"
+                },
+                "housingStatus": {
+                    "type": "string",
+                    "enum": [
+                        "owned",
+                        "mortgaged",
+                        "rented",
+                        "family",
+                        "other"
+                    ]
+                },
+                "incomeVerified": {
+                    "type": "boolean"
+                },
+                "monthlyExpenses": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "string"
+                },
+                "monthsEmployed": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.SimulationResponse": {
             "type": "object",
             "properties": {
@@ -2090,6 +6095,78 @@
                 }
             }
         },
+        "dto.SubmitRiskProfileRequest": {
+            "type": "object",
+            "required": [
+                "employmentType",
+                "housingStatus",
+                "monthlyIncome"
+            ],
+            "properties": {
+                "additionalIncome": {
+                    "type": "string"
+                },
+                "adverseRecords": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "bureauScore": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 0
+                },
+                "dependents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "employerName": {
+                    "type": "string"
+                },
+                "employmentType": {
+                    "type": "string",
+                    "enum": [
+                        "employee",
+                        "self_employed",
+                        "business_owner",
+                        "retired",
+                        "informal",
+                        "unemployed"
+                    ]
+                },
+                "existingDebtPayments": {
+                    "type": "string"
+                },
+                "hasBankAccount": {
+                    "type": "boolean"
+                },
+                "housingStatus": {
+                    "type": "string",
+                    "enum": [
+                        "owned",
+                        "mortgaged",
+                        "rented",
+                        "family",
+                        "other"
+                    ]
+                },
+                "incomeVerified": {
+                    "type": "boolean"
+                },
+                "monthlyExpenses": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "string"
+                },
+                "monthsEmployed": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "notes": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.TrendPointResponse": {
             "type": "object",
             "properties": {
@@ -2104,6 +6181,41 @@
                 }
             }
         },
+        "dto.UpdateCommentsRequest": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateCreditLineRequest": {
+            "type": "object",
+            "required": [
+                "maxAmount"
+            ],
+            "properties": {
+                "maxAmount": {
+                    "type": "string"
+                },
+                "recalculateOnPrepay": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.UpdateIVARateRequest": {
+            "type": "object",
+            "required": [
+                "ivaRate"
+            ],
+            "properties": {
+                "ivaRate": {
+                    "type": "number",
+                    "maximum": 100,
+                    "minimum": 0
+                }
+            }
+        },
         "dto.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -2111,6 +6223,52 @@
                     "type": "string"
                 },
                 "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateRiskModelRequest": {
+            "type": "object",
+            "required": [
+                "params"
+            ],
+            "properties": {
+                "bands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RiskGradeBandRequest"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.RiskModelParamsRequest"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateVendorProfileRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
                     "type": "string"
                 },
                 "phone": {
@@ -2130,7 +6288,112 @@
                 "id": {
                     "type": "string"
                 },
+                "phone": {
+                    "type": "string"
+                },
                 "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VendorAccountResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "vendorId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VendorPaymentResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "paidBy": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "vendorId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VendorResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "businessName": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "cuit": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VerifyOTPRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "channel": {
+                    "type": "string",
+                    "enum": [
+                        "email",
+                        "phone"
+                    ]
+                },
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "phone": {
                     "type": "string"
                 }
             }
@@ -2141,6 +6404,12 @@
             "description": "Enter your bearer token in the format: Bearer {token}",
             "type": "apiKey",
             "name": "Authorization",
+            "in": "header"
+        },
+        "ServiceKey": {
+            "description": "Partner service key (CuppoGan)",
+            "type": "apiKey",
+            "name": "X-API-Key",
             "in": "header"
         }
     }

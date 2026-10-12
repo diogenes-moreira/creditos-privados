@@ -6,20 +6,19 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
-	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
 )
 
 type OTPService struct {
-	otpRepo   port.OTPRepository
-	userRepo  port.UserRepository
-	sender    messaging.OTPSender
-	audit     *AuditService
+	otpRepo  port.OTPRepository
+	userRepo port.UserRepository
+	sender   port.OTPSender
+	audit    *AuditService
 }
 
 func NewOTPService(
 	otpRepo port.OTPRepository,
 	userRepo port.UserRepository,
-	sender messaging.OTPSender,
+	sender port.OTPSender,
 	audit *AuditService,
 ) *OTPService {
 	return &OTPService{
@@ -58,12 +57,15 @@ func (s *OTPService) RequestOTP(ctx context.Context, email string) error {
 		return fmt.Errorf("failed to store OTP: %w", err)
 	}
 
-	// Send OTP via messaging service
-	if err := s.sender.SendOTP(ctx, email, otp.Code); err != nil {
+	// Send the code over the configured channel. WhatsApp needs a phone on
+	// file, so fail loudly rather than silently storing a code nobody receives.
+	to := port.OTPRecipient{Email: user.Email, Phone: user.Phone}
+	if err := s.sender.SendOTP(ctx, to, otp.Code); err != nil {
 		return fmt.Errorf("failed to send OTP: %w", err)
 	}
 
-	s.audit.Record(ctx, &user.ID, "request_otp", "user", user.ID.String(), fmt.Sprintf("OTP requested for %s", email))
+	s.audit.Record(ctx, &user.ID, "request_otp", "user", user.ID.String(),
+		fmt.Sprintf("OTP requested for %s via %s", email, s.sender.Channel()))
 
 	return nil
 }

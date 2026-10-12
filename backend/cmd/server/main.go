@@ -13,13 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Prestia API
+// @title CuppoGan API
 // @version 1.0
 // @description Microcredit management system API for Argentina
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
-// @contact.email support@prestia.com.ar
+// @contact.email soporte@cuppogan.com.co
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
@@ -31,6 +31,11 @@ import (
 // @in header
 // @name Authorization
 // @description Enter your bearer token in the format: Bearer {token}
+
+// @securityDefinitions.apikey ServiceKey
+// @in header
+// @name X-API-Key
+// @description Partner service key (CuppoGan)
 func main() {
 	_ = godotenv.Load()
 	cfg := config.Load()
@@ -59,6 +64,12 @@ func main() {
 		&model.VendorPayment{},
 		&model.WithdrawalRequest{},
 		&model.OTPCode{},
+		&model.RiskProfile{},
+		&model.RiskModel{},
+		&model.RiskGradeBand{},
+		&model.RiskAssessment{},
+		&model.RiskFactor{},
+		&model.LivestockQuotaAssessment{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

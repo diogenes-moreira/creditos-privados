@@ -17,24 +17,26 @@ const (
 	CreditLineRejected CreditLineStatus = "rejected"
 )
 
+// CreditLine is a client's revolving credit facility. InterestRate is an
+// annual percentage: 45 means 45% per year.
 type CreditLine struct {
-	ID              uuid.UUID        `gorm:"type:uuid;primaryKey"`
-	ClientID        uuid.UUID        `gorm:"type:uuid;index;not null"`
-	Client          Client           `gorm:"foreignKey:ClientID"`
-	MaxAmount       decimal.Decimal  `gorm:"type:decimal(18,2);not null"`
-	UsedAmount      decimal.Decimal  `gorm:"type:decimal(18,2);not null;default:0"`
-	InterestRate    decimal.Decimal  `gorm:"type:decimal(8,4);not null"`
-	MaxInstallments int              `gorm:"not null"`
-	Status          CreditLineStatus `gorm:"type:varchar(20);not null;default:'pending'"`
-	ApprovedBy      *uuid.UUID       `gorm:"type:uuid"`
-	ApprovedAt      *time.Time       `gorm:""`
-	RejectedBy      *uuid.UUID       `gorm:"type:uuid"`
-	RejectedAt      *time.Time       `gorm:""`
+	ID                  uuid.UUID        `gorm:"type:uuid;primaryKey"`
+	ClientID            uuid.UUID        `gorm:"type:uuid;index;not null"`
+	Client              Client           `gorm:"foreignKey:ClientID"`
+	MaxAmount           decimal.Decimal  `gorm:"type:decimal(18,2);not null"`
+	UsedAmount          decimal.Decimal  `gorm:"type:decimal(18,2);not null;default:0"`
+	InterestRate        decimal.Decimal  `gorm:"type:decimal(8,4);not null"`
+	MaxInstallments     int              `gorm:"not null"`
+	Status              CreditLineStatus `gorm:"type:varchar(20);not null;default:'pending'"`
+	ApprovedBy          *uuid.UUID       `gorm:"type:uuid"`
+	ApprovedAt          *time.Time       `gorm:""`
+	RejectedBy          *uuid.UUID       `gorm:"type:uuid"`
+	RejectedAt          *time.Time       `gorm:""`
 	RejectionReason     string           `gorm:""`
 	RecalculateOnPrepay bool             `gorm:"default:false"`
 	CreatedAt           time.Time        `gorm:"not null"`
-	UpdatedAt       time.Time        `gorm:"not null"`
-	DeletedAt       gorm.DeletedAt   `gorm:"index"`
+	UpdatedAt           time.Time        `gorm:"not null"`
+	DeletedAt           gorm.DeletedAt   `gorm:"index"`
 }
 
 func NewCreditLine(clientID uuid.UUID, maxAmount, interestRate decimal.Decimal, maxInstallments int, recalculateOnPrepay bool) (*CreditLine, error) {

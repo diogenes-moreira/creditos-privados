@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -8,13 +9,15 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/ai"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/auth"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
-	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/pdf"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -30,6 +33,9 @@ type Router struct {
 	latePenaltyRate decimal.Decimal
 	country         string
 	countryInfo     config.CountryInfo
+	aiConfig        config.AIConfig
+	twilioConfig    messaging.TwilioConfig
+	partners        config.PartnersConfig
 }
 
 func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
@@ -40,6 +46,15 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		latePenaltyRate: decimal.NewFromFloat(cfg.LatePenaltyRate),
 		country:         cfg.Country,
 		countryInfo:     cfg.CountryInfo(),
+		aiConfig:        cfg.AI,
+		partners:        cfg.Partners,
+		twilioConfig: messaging.TwilioConfig{
+			AccountSID:      cfg.Twilio.AccountSID,
+			AuthToken:       cfg.Twilio.AuthToken,
+			FromNumber:      cfg.Twilio.FromNumber,
+			TemplateSID:     cfg.Twilio.TemplateSID,
+			DefaultDialCode: cfg.DialCode(),
+		},
 	}
 	r.engine.Use(middleware.CORS())
 	r.engine.Use(middleware.AuditContext())
@@ -69,10 +84,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	purchaseRepo := postgres.NewPurchaseRepository(r.db)
 	vendorPaymentRepo := postgres.NewVendorPaymentRepository(r.db)
 	otpRepo := postgres.NewOTPRepository(r.db)
+	riskProfileRepo := postgres.NewRiskProfileRepository(r.db)
+	riskModelRepo := postgres.NewRiskModelRepository(r.db)
+	riskAssessmentRepo := postgres.NewRiskAssessmentRepository(r.db)
+	creditHistoryRepo := postgres.NewCreditHistoryRepository(r.db)
+	livestockQuotaRepo := postgres.NewLivestockQuotaRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
-	otpSender := messaging.NewOTPSender()
+	otpSender := messaging.NewOTPSender(r.twilioConfig)
 	localStorage := storage.NewLocalStorage("./storage")
 	pdfGenerator := pdf.NewGenerator()
 
@@ -93,6 +113,23 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	reportRepo := postgres.NewReportRepository(r.db)
 	reportService := service.NewReportService(reportRepo)
 
+	// Credit risk. The analyzer is nil when no AI credentials are configured,
+	// in which case the risk service scores with its deterministic scorecard.
+	var riskAnalyzer port.RiskAnalyzer
+	if analyzer := ai.NewClaudeAnalyzer(ai.Config{
+		APIKey:    r.aiConfig.APIKey,
+		Model:     r.aiConfig.Model,
+		Effort:    r.aiConfig.Effort,
+		MaxTokens: r.aiConfig.MaxTokens,
+	}); analyzer != nil {
+		riskAnalyzer = analyzer
+	}
+	riskService := service.NewRiskService(
+		riskProfileRepo, riskModelRepo, riskAssessmentRepo, creditHistoryRepo,
+		clientRepo, creditLineRepo, creditService, auditService, riskAnalyzer,
+		r.country, r.countryInfo.Currency, decimal.NewFromFloat(r.defaultIVARate),
+	)
+
 	// Firebase verifier (nil in dev mode)
 	firebaseVerifier := auth.NewFirebaseTokenVerifierOrNil()
 
@@ -109,6 +146,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	auditHandler := handler.NewAuditHandler(auditService)
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
+	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
+	livestockQuotaHandler := handler.NewLivestockQuotaHandler(
+		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency))
 
 	// Base path prefix (e.g. "/demo" when behind Firebase Hosting rewrite)
 	basePath := os.Getenv("BASE_PATH")
@@ -134,6 +174,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
 	api.POST("/auth/firebase-login", authHandler.FirebaseLogin)
 
+	// Partner services (service key, not a user session). Not registered when
+	// the partner's key is not configured.
+	if r.partners.CuppoganAPIKey != "" {
+		api.POST("/livestock-quotas", middleware.RequireServiceKey("cuppogan", r.partners.CuppoganAPIKey),
+			livestockQuotaHandler.Assess)
+	} else {
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas disabled")
+	}
+
 	// Authenticated routes
 	authenticated := api.Group("")
 	authenticated.Use(middleware.AuthMiddleware(authService))
@@ -152,10 +201,16 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		clientRoutes.POST("/me/loans", loanHandler.RequestLoan)
 		clientRoutes.POST("/me/loans/:loanId/payments", paymentHandler.RecordPayment)
 		clientRoutes.GET("/me/payments", paymentHandler.GetMyPayments)
+		clientRoutes.GET("/me/risk-profile", riskHandler.GetMyRiskProfile)
+		clientRoutes.PUT("/me/risk-profile", riskHandler.SubmitMyRiskProfile)
+		clientRoutes.GET("/me/credit-availability", riskHandler.GetMyCreditAvailability)
 	}
 
 	// Loan simulation (any authenticated user)
 	authenticated.POST("/loans/simulate", loanHandler.Simulate)
+
+	// Credit-risk pre-qualification (any authenticated user, nothing stored)
+	authenticated.POST("/risk/simulate", riskHandler.SimulateRisk)
 
 	// Vendor routes
 	vendorRoutes := authenticated.Group("/me/vendor")
@@ -224,6 +279,27 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 		adminRoutes.GET("/reports/financial", reportHandler.GetFinancialReport)
 		adminRoutes.GET("/reports/portfolio", reportHandler.GetPortfolioPosition)
+
+		// Credit risk: applicant data, analysis and availability
+		adminRoutes.GET("/risk-profiles", riskHandler.AdminListRiskProfiles)
+		adminRoutes.PUT("/risk-profiles", riskHandler.AdminSubmitRiskProfile)
+		adminRoutes.GET("/clients/:id/risk-profile", riskHandler.AdminGetRiskProfile)
+		adminRoutes.GET("/clients/:id/risk-assessments", riskHandler.GetClientRiskAssessments)
+		adminRoutes.POST("/clients/:id/risk-assessments", riskHandler.EvaluateClientRisk)
+		adminRoutes.POST("/clients/:id/risk-assessments/apply", riskHandler.ApplyRiskRecommendation)
+		adminRoutes.GET("/clients/:id/credit-availability", riskHandler.GetClientCreditAvailability)
+		adminRoutes.GET("/risk-assessments/pending", riskHandler.GetPendingRiskReviews)
+
+		// Credit risk: the analysis model itself (prompt + policy guardrails)
+		adminRoutes.GET("/risk-models", riskHandler.ListRiskModels)
+		adminRoutes.POST("/risk-models", riskHandler.CreateRiskModel)
+		adminRoutes.GET("/risk-models/active", riskHandler.GetActiveRiskModel)
+		adminRoutes.GET("/risk-models/analyzer", riskHandler.GetRiskAnalyzerInfo)
+		adminRoutes.POST("/risk-models/preview", riskHandler.PreviewRiskPrompt)
+		adminRoutes.GET("/risk-models/:id", riskHandler.GetRiskModel)
+		adminRoutes.PUT("/risk-models/:id", riskHandler.UpdateRiskModel)
+		adminRoutes.POST("/risk-models/:id/activate", riskHandler.ActivateRiskModel)
+		adminRoutes.POST("/risk-models/:id/versions", riskHandler.SaveRiskModelVersion)
 
 		adminRoutes.GET("/audit", auditHandler.GetAuditLogs)
 
