@@ -581,7 +581,8 @@
       "admin": "Administrador",
       "client": "Cliente",
       "vendor": "Vendedor"
-    }
+    },
+    "createAdminOnly": "Acá solo se crean administradores. Clientes y vendedores se registran por su propio flujo, que además crea su perfil."
   },
   "reports": {
     "title": "Informes financieros",

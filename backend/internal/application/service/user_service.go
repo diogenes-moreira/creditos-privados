@@ -16,12 +16,40 @@ import (
 // so removing the row would break the financial trail; deactivation is what
 // revokes access.
 type UserService struct {
-	userRepo port.UserRepository
-	audit    *AuditService
+	userRepo   port.UserRepository
+	clientRepo port.ClientRepository
+	vendorRepo port.VendorRepository
+	audit      *AuditService
 }
 
-func NewUserService(userRepo port.UserRepository, audit *AuditService) *UserService {
-	return &UserService{userRepo: userRepo, audit: audit}
+func NewUserService(
+	userRepo port.UserRepository,
+	clientRepo port.ClientRepository,
+	vendorRepo port.VendorRepository,
+	audit *AuditService,
+) *UserService {
+	return &UserService{userRepo: userRepo, clientRepo: clientRepo, vendorRepo: vendorRepo, audit: audit}
+}
+
+// hasProfile reports whether the account has the record its role needs.
+//
+// A client is a person with a national ID, a tax ID and an address; a vendor is
+// a business. Those live in their own tables and are created by their own
+// onboarding flows. An account holding one of those roles without the matching
+// record can sign in but has nothing to show, which is how an orphan account
+// gets made.
+func (s *UserService) hasProfile(ctx context.Context, userID uuid.UUID, role model.UserRole) bool {
+	switch role {
+	case model.RoleClient:
+		c, err := s.clientRepo.FindByUserID(ctx, userID)
+		return err == nil && c != nil
+	case model.RoleVendor:
+		v, err := s.vendorRepo.FindByUserID(ctx, userID)
+		return err == nil && v != nil
+	default:
+		// Administrators carry no separate profile.
+		return true
+	}
 }
 
 // List returns users matching the filter plus the total before pagination.
@@ -50,6 +78,12 @@ func (s *UserService) ChangeRole(ctx context.Context, actorID, targetID uuid.UUI
 	user, err := s.userRepo.FindByID(ctx, targetID)
 	if err != nil {
 		return nil, fmt.Errorf("user not found")
+	}
+
+	if !s.hasProfile(ctx, user.ID, role) {
+		return nil, fmt.Errorf(
+			"%s has no %s profile: create it through that role's own registration first",
+			user.Email, role)
 	}
 
 	previous := user.Role
@@ -97,9 +131,20 @@ func (s *UserService) SetActive(ctx context.Context, actorID, targetID uuid.UUID
 	return user, nil
 }
 
-// Create registers a user directly, which is how an administrator is added
-// without going through self-registration.
+// Create registers an administrator.
+//
+// Only administrators can be created here, because they are the only role that
+// is just an account. Clients and vendors are a person or a business with an
+// identity document and an address, and their own onboarding builds both
+// records together; creating the account alone leaves one that can sign in and
+// has nothing to show.
 func (s *UserService) Create(ctx context.Context, actorID uuid.UUID, email, phone string, role model.UserRole) (*model.User, error) {
+	if role != model.RoleAdmin {
+		return nil, fmt.Errorf(
+			"only administrators can be created here: register a %s through its own flow, which also creates the profile",
+			role)
+	}
+
 	if existing, err := s.userRepo.FindByEmail(ctx, email); err == nil && existing != nil {
 		return nil, fmt.Errorf("a user with that email already exists")
 	}

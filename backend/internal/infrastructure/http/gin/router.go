@@ -157,7 +157,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	paymentHandler := handler.NewPaymentHandler(paymentService, clientRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	auditHandler := handler.NewAuditHandler(auditService)
-	userHandler := handler.NewUserHandler(service.NewUserService(userRepo, auditService))
+	userHandler := handler.NewUserHandler(service.NewUserService(userRepo, clientRepo, vendorRepo, auditService))
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)

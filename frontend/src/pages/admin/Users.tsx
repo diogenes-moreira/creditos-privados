@@ -41,7 +41,7 @@ import type { AdminUser, CreateUserRequest, UserRole } from "../../api/types";
 
 const ROLES: UserRole[] = ["admin", "client", "vendor"];
 
-const emptyForm: CreateUserRequest = { email: "", phone: "", role: "client" };
+const emptyForm: CreateUserRequest = { email: "", phone: "", role: "admin" };
 
 /**
  * Admin screen for every account in the system, whatever its role.
@@ -313,18 +313,7 @@ const Users: React.FC = () => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
-            <TextField
-              select
-              label={t("adminUsers.role")}
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-            >
-              {ROLES.map((role) => (
-                <MenuItem key={role} value={role}>
-                  {roleLabel(role)}
-                </MenuItem>
-              ))}
-            </TextField>
+            <Alert severity="info">{t("adminUsers.createAdminOnly")}</Alert>
           </Box>
         </DialogContent>
         <DialogActions>

@@ -581,7 +581,8 @@
       "admin": "Administrator",
       "client": "Client",
       "vendor": "Vendor"
-    }
+    },
+    "createAdminOnly": "Only administrators are created here. Clients and vendors are registered through their own flow, which also creates their profile."
   },
   "reports": {
     "title": "Financial Reports",
