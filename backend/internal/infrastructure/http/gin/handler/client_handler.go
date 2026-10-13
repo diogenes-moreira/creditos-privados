@@ -125,7 +125,7 @@ func (h *ClientHandler) AdminRegisterClient(c *gin.Context) {
 		return
 	}
 	client, user, err := h.clientService.Register(
-		c.Request.Context(),
+		c.Request.Context(), actorID(c),
 		req.Email,
 		req.FirstName, req.LastName,
 		req.DNI, req.CUIT, req.DateOfBirth,

@@ -8,6 +8,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,12 +72,22 @@ func (f *fakeAuth) CreateUser(_ context.Context, email, _ string) (*port.AuthUse
 	return &port.AuthUser{UID: "uid-" + email, Email: email}, nil
 }
 
-type fakeAudit struct{ port.AuditLogRepository }
+type fakeAudit struct {
+	port.AuditLogRepository
+	logs []*model.AuditLog
+}
 
-func (fakeAudit) Create(context.Context, *model.AuditLog) error { return nil }
+func (f *fakeAudit) Create(_ context.Context, l *model.AuditLog) error {
+	f.logs = append(f.logs, l)
+	return nil
+}
+
+func newClientServiceWithAudit(users *fakeUsers, clients *fakeClients, accounts *fakeAccounts, auth *fakeAuth, audit *fakeAudit) *service.ClientService {
+	return service.NewClientService(users, clients, accounts, auth, service.NewAuditService(audit), "CO")
+}
 
 func newClientService(users *fakeUsers, clients *fakeClients, accounts *fakeAccounts, auth *fakeAuth) *service.ClientService {
-	return service.NewClientService(users, clients, accounts, auth, service.NewAuditService(fakeAudit{}), "CO")
+	return newClientServiceWithAudit(users, clients, accounts, auth, &fakeAudit{})
 }
 
 func TestRegisterRejectsAnInvalidClientWithoutCreatingTheAccount(t *testing.T) {
@@ -84,7 +95,7 @@ func TestRegisterRejectsAnInvalidClientWithoutCreatingTheAccount(t *testing.T) {
 	s := newClientService(users, clients, accounts, auth)
 
 	// The NIT's check digit is wrong: 17788090's is 7.
-	_, _, err := s.Register(context.Background(), "ganadero@example.com", "Juan", "Pérez",
+	_, _, err := s.Register(context.Background(), nil, "ganadero@example.com", "Juan", "Pérez",
 		"17788090", "17788090-1", "1970-05-01", "+573000000000", "Predio La Esperanza", "Popayán", "Cauca", "Colombia", false)
 
 	require.Error(t, err)
@@ -99,7 +110,7 @@ func TestRegisterRefusesAnEmailAlreadyInUse(t *testing.T) {
 	clients, accounts, auth := &fakeClients{}, &fakeAccounts{}, &fakeAuth{}
 	s := newClientService(users, clients, accounts, auth)
 
-	_, _, err := s.Register(context.Background(), "ganadero@example.com", "Juan", "Pérez",
+	_, _, err := s.Register(context.Background(), nil, "ganadero@example.com", "Juan", "Pérez",
 		"17788090", "17788090-7", "1970-05-01", "+573000000000", "Predio La Esperanza", "Popayán", "Cauca", "Colombia", false)
 
 	require.Error(t, err)
@@ -112,7 +123,7 @@ func TestRegisterLinksTheClientToTheAccountItCreates(t *testing.T) {
 	s := newClientService(users, clients, accounts, auth)
 
 	// A natural person's NIT is the cédula plus its check digit.
-	client, user, err := s.Register(context.Background(), "ganadero@example.com", "Juan", "Pérez",
+	client, user, err := s.Register(context.Background(), nil, "ganadero@example.com", "Juan", "Pérez",
 		"17788090", "17788090-7", "1970-05-01", "+573000000000", "Predio La Esperanza", "Popayán", "Cauca", "Colombia", false)
 
 	require.NoError(t, err)
@@ -121,4 +132,32 @@ func TestRegisterLinksTheClientToTheAccountItCreates(t *testing.T) {
 	assert.Equal(t, user.ID, client.UserID)
 	assert.Equal(t, model.RoleClient, user.Role)
 	assert.Equal(t, 1, accounts.created)
+}
+
+func TestRegisterOnSomeonesBehalfIsAuditedToWhoeverDidIt(t *testing.T) {
+	audit := &fakeAudit{}
+	s := newClientServiceWithAudit(&fakeUsers{}, &fakeClients{}, &fakeAccounts{}, &fakeAuth{}, audit)
+	advisor := uuid.New()
+
+	_, user, err := s.Register(context.Background(), &advisor, "ganadero@example.com", "Juan", "Pérez",
+		"17788090", "17788090-7", "1970-05-01", "+573000000000", "Predio La Esperanza", "Popayán", "Cauca", "Colombia", false)
+
+	require.NoError(t, err)
+	require.Len(t, audit.logs, 1)
+	require.NotNil(t, audit.logs[0].UserID)
+	assert.Equal(t, advisor, *audit.logs[0].UserID, "the advisor, not the new client")
+	assert.NotEqual(t, user.ID, *audit.logs[0].UserID)
+	assert.Contains(t, audit.logs[0].Description, "on their behalf")
+}
+
+func TestSelfRegistrationIsAuditedToTheNewClient(t *testing.T) {
+	audit := &fakeAudit{}
+	s := newClientServiceWithAudit(&fakeUsers{}, &fakeClients{}, &fakeAccounts{}, &fakeAuth{}, audit)
+
+	_, user, err := s.Register(context.Background(), nil, "ganadero@example.com", "Juan", "Pérez",
+		"17788090", "17788090-7", "1970-05-01", "+573000000000", "Predio La Esperanza", "Popayán", "Cauca", "Colombia", false)
+
+	require.NoError(t, err)
+	require.Len(t, audit.logs, 1)
+	assert.Equal(t, user.ID, *audit.logs[0].UserID)
 }

@@ -162,7 +162,8 @@ const LivestockQuotaLookup: React.FC = () => {
   // Client registration validates the national ID as a cédula de ciudadanía,
   // so only a rancher found under one can be registered from here.
   const canRegister =
-    user?.role === "admin" && submitted?.idType === "CÉDULA DE CIUDADANÍA";
+    (user?.role === "admin" || user?.role === "advisor") &&
+    submitted?.idType === "CÉDULA DE CIUDADANÍA";
 
   // Whether the rancher is already a client, so the screen offers the record
   // instead of a second registration that the backend would refuse anyway.

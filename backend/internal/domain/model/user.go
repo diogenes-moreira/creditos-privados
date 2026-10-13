@@ -14,8 +14,9 @@ const (
 	RoleAdmin  UserRole = "admin"
 	RoleClient UserRole = "client"
 	RoleVendor UserRole = "vendor"
-	// RoleAdvisor serves ranchers at the counter: it can look a rancher up and
-	// quote their quota, but not move the numbers that produce it. Whoever
+	// RoleAdvisor serves ranchers at the counter: it can look a rancher up,
+	// quote their quota and register them as a client, but not move the
+	// numbers that produce the quota. Whoever
 	// sells against a quota should not be able to change the rate, the LTV or
 	// the policy cap that set it.
 	RoleAdvisor UserRole = "advisor"

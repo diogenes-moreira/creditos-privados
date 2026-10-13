@@ -57,7 +57,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	client, user, err := h.clientService.Register(
-		c.Request.Context(), req.Email,
+		c.Request.Context(), nil, req.Email,
 		req.FirstName, req.LastName, req.DNI, req.CUIT, req.DateOfBirth,
 		req.Phone, req.Address, req.City, req.Province, req.Country, req.IsPEP,
 	)

@@ -276,12 +276,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Admin routes
 
-	// Advisors serve ranchers at the counter: they look a rancher up and quote
-	// the quota, but cannot touch the parameters that produce it, approve
+	// Advisors serve ranchers at the counter: they look a rancher up, quote
+	// the quota and register them as a client, but cannot touch the parameters that produce it, approve
 	// credit, move money or manage access. Administrators can do both.
 	advisorRoutes := authenticated.Group("/admin")
 	advisorRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin, model.RoleAdvisor))
 	{
+		// Registering a client is counter work: it creates the rancher's
+		// record, not credit, and the audit entry names the advisor.
+		advisorRoutes.POST("/clients", clientHandler.AdminRegisterClient)
 		advisorRoutes.GET("/clients", clientHandler.ListClients)
 		advisorRoutes.GET("/clients/search", clientHandler.ListClients)
 		advisorRoutes.GET("/clients/:id", clientHandler.GetClient)
@@ -297,7 +300,6 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	adminRoutes := authenticated.Group("/admin")
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
 	{
-		adminRoutes.POST("/clients", clientHandler.AdminRegisterClient)
 		adminRoutes.PUT("/clients/:id", clientHandler.AdminUpdateClient)
 		adminRoutes.PUT("/clients/:id/iva-rate", clientHandler.UpdateIVARate)
 		adminRoutes.PUT("/clients/:id/comments", clientHandler.UpdateComments)

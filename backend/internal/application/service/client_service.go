@@ -38,7 +38,13 @@ func NewClientService(
 	}
 }
 
-func (s *ClientService) Register(ctx context.Context, email, firstName, lastName, dni, cuit, dobStr, phone, address, city, province, country string, isPEP bool) (*model.Client, *model.User, error) {
+// Register creates a client with its account and current account.
+//
+// registeredBy is who did it: nil when the client signs themselves up,
+// otherwise the administrator, advisor or vendor who registered them. The
+// audit entry is attributed to that person, so a registration made at the
+// counter can be traced to whoever made it.
+func (s *ClientService) Register(ctx context.Context, registeredBy *uuid.UUID, email, firstName, lastName, dni, cuit, dobStr, phone, address, city, province, country string, isPEP bool) (*model.Client, *model.User, error) {
 	dob, err := time.Parse("2006-01-02", dobStr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid date of birth format, use YYYY-MM-DD")
@@ -93,7 +99,12 @@ func (s *ClientService) Register(ctx context.Context, email, firstName, lastName
 		return nil, nil, fmt.Errorf("failed to create account: %w", err)
 	}
 
-	s.audit.Record(ctx, &user.ID, "register", "client", client.ID.String(), fmt.Sprintf("Client %s registered", client.FullName()))
+	actor, description := &user.ID, fmt.Sprintf("Client %s registered", client.FullName())
+	if registeredBy != nil {
+		actor = registeredBy
+		description = fmt.Sprintf("Client %s (%s) registered on their behalf", client.FullName(), client.DNI)
+	}
+	s.audit.Record(ctx, actor, "register", "client", client.ID.String(), description)
 
 	return client, user, nil
 }
