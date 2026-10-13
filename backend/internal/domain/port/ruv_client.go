@@ -13,9 +13,9 @@ type RUVHolding struct {
 	Code string
 	Name string
 
-	Department string
+	Department   string
 	Municipality string
-	Village    string
+	Village      string
 
 	// Cycle and Year identify the vaccination cycle this record belongs to.
 	// The RUV reports two cycles a year.

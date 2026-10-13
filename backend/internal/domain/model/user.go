@@ -17,7 +17,10 @@ const (
 )
 
 type User struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primaryKey"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey"`
+	// FirebaseUID keeps its column name for continuity: it is simply the
+	// external identity id, now generated locally since sign-in is a one-time
+	// code rather than a third-party provider.
 	FirebaseUID string         `gorm:"uniqueIndex;not null"`
 	Email       string         `gorm:"uniqueIndex;not null"`
 	Phone       string         `gorm:"index"`

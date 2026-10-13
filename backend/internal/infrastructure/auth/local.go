@@ -10,7 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// LocalAuthService implements AuthService for local development without Firebase.
+// LocalAuthService issues and verifies the product's own JWTs. It is the only
+// AuthService: identities live in this system, not in an external provider.
 type LocalAuthService struct {
 	jwtSecret       string
 	expirationHours int
@@ -23,15 +24,15 @@ func NewLocalAuthService(jwtSecret string, expirationHours int) *LocalAuthServic
 	}
 }
 
-func (s *LocalAuthService) CreateUser(_ context.Context, email, password string) (*port.FirebaseUser, error) {
+func (s *LocalAuthService) CreateUser(_ context.Context, email, password string) (*port.AuthUser, error) {
 	_ = password
-	return &port.FirebaseUser{
+	return &port.AuthUser{
 		UID:   uuid.New().String(),
 		Email: email,
 	}, nil
 }
 
-func (s *LocalAuthService) VerifyToken(_ context.Context, tokenStr string) (*port.FirebaseUser, error) {
+func (s *LocalAuthService) VerifyToken(_ context.Context, tokenStr string) (*port.AuthUser, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -50,7 +51,7 @@ func (s *LocalAuthService) VerifyToken(_ context.Context, tokenStr string) (*por
 	uid, _ := claims["sub"].(string)
 	email, _ := claims["email"].(string)
 
-	return &port.FirebaseUser{UID: uid, Email: email}, nil
+	return &port.AuthUser{UID: uid, Email: email}, nil
 }
 
 func (s *LocalAuthService) DeleteUser(_ context.Context, uid string) error {

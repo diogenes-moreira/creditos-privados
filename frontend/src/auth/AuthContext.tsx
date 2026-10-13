@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, RegisterRequest } from "../api/types";
-import { register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP, firebaseLogin as apiFirebaseLogin } from "../api/endpoints";
+import { register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP } from "../api/endpoints";
 
 interface AuthState {
   token: string | null;
@@ -10,7 +10,6 @@ interface AuthState {
   register: (data: RegisterRequest) => Promise<void>;
   requestOTP: (email: string) => Promise<void>;
   verifyOTP: (email: string, code: string) => Promise<void>;
-  firebaseLogin: (idToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -57,10 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     handleAuthResponse(response);
   }, [handleAuthResponse]);
 
-  const firebaseLogin = useCallback(async (idToken: string) => {
-    const response = await apiFirebaseLogin({ idToken });
-    handleAuthResponse(response);
-  }, [handleAuthResponse]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");
@@ -79,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         requestOTP,
         verifyOTP,
-        firebaseLogin,
         logout,
       }}
     >

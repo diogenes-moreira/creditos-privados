@@ -24,13 +24,10 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
-import { useFirebasePhoneAuth } from "../../firebase/useFirebasePhoneAuth";
-import { useFirebaseGoogleAuth } from "../../firebase/useFirebaseGoogleAuth";
-import { isFirebaseEnabled } from "../../firebase/config";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { requestOTP, verifyOTP, firebaseLogin } = useAuth();
+  const { requestOTP, verifyOTP } = useAuth();
   const { t } = useTranslation();
   const { showError } = useNotification();
 
@@ -42,28 +39,18 @@ const Login: React.FC = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { sendSMS, verifyCode, loading: smsLoading } = useFirebasePhoneAuth();
-  const { signInWithGoogle, loading: googleLoading } = useFirebaseGoogleAuth();
-
   const handleRequestOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (channel === "email" && !email) return;
-    if (channel === "phone" && !phone) return;
+    if (!email) return;
     setLoading(true);
     try {
-      if (channel === "email") {
-        await requestOTP(email);
-      } else {
-        await sendSMS(phone, "recaptcha-container");
-      }
+      await requestOTP(email);
       setOtpSent(true);
     } catch (err: unknown) {
       showError(
         getErrorMessage(
           err,
-          channel === "phone"
-            ? t("auth.smsError")
-            : t("auth.invalidCredentials")
+          t("auth.invalidCredentials")
         )
       );
     } finally {
@@ -76,13 +63,7 @@ const Login: React.FC = () => {
     if (!otpCode) return;
     setLoading(true);
     try {
-      if (channel === "email") {
-        await verifyOTP(email, otpCode);
-      } else {
-        // Phone: verify via Firebase, then send ID token to backend
-        const idToken = await verifyCode(otpCode);
-        await firebaseLogin(idToken);
-      }
+      await verifyOTP(email, otpCode);
       navigate("/dashboard");
     } catch (err: unknown) {
       showError(getErrorMessage(err, t("auth.otpError")));
@@ -91,22 +72,13 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const idToken = await signInWithGoogle();
-      await firebaseLogin(idToken);
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      showError(getErrorMessage(err, t("auth.googleError")));
-    }
-  };
 
   const resetOtpFlow = () => {
     setOtpSent(false);
     setOtpCode("");
   };
 
-  const isLoading = loading || smsLoading || googleLoading;
+  const isLoading = loading;
 
   return (
     <Box
@@ -140,45 +112,9 @@ const Login: React.FC = () => {
             </Typography>
           </Box>
 
-          {isFirebaseEnabled && (
-            <Tabs
-              value={tab}
-              onChange={(_, v) => {
-                setTab(v);
-                resetOtpFlow();
-              }}
-              variant="fullWidth"
-              sx={{ mb: 2 }}
-            >
-              <Tab label={t("auth.clientLogin")} />
-              <Tab label={t("auth.adminLogin")} />
-            </Tabs>
-          )}
-
           {/* Client/Vendor OTP Login */}
-          {(tab === 0 || !isFirebaseEnabled) && !otpSent && (
+          {!otpSent && (
             <form onSubmit={handleRequestOTP}>
-              {isFirebaseEnabled && (
-              <ToggleButtonGroup
-                value={channel}
-                exclusive
-                onChange={(_, v) => {
-                  if (v) setChannel(v);
-                }}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                <ToggleButton value="email">
-                  <EmailIcon sx={{ mr: 0.5 }} fontSize="small" />
-                  {t("auth.otpChannelEmail")}
-                </ToggleButton>
-                <ToggleButton value="phone">
-                  <PhoneIcon sx={{ mr: 0.5 }} fontSize="small" />
-                  {t("auth.otpChannelPhone")}
-                </ToggleButton>
-              </ToggleButtonGroup>
-
-              )}
 
               {channel === "email" ? (
                 <TextField
@@ -235,7 +171,7 @@ const Login: React.FC = () => {
           )}
 
           {/* OTP Verification Step */}
-          {(tab === 0 || !isFirebaseEnabled) && otpSent && (
+          {otpSent && (
             <form onSubmit={handleVerifyOTP}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 {channel === "phone"
@@ -275,27 +211,9 @@ const Login: React.FC = () => {
           )}
 
           {/* Admin Login (Google OAuth) */}
-          {tab === 1 && isFirebaseEnabled && (
-            <Box>
-              <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                startIcon={<GoogleIcon />}
-                onClick={handleGoogleLogin}
-                disabled={googleLoading}
-                sx={{ mt: 2, mb: 2, py: 1.5 }}
-              >
-                {googleLoading
-                  ? t("common.loading")
-                  : t("auth.googleSignIn")}
-              </Button>
-            </Box>
-          )}
 
         </CardContent>
       </Card>
-      <div id="recaptcha-container" />
     </Box>
   );
 };

@@ -146,13 +146,10 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		r.country, r.countryInfo.Currency, decimal.NewFromFloat(r.defaultIVARate),
 	)
 
-	// Firebase verifier (nil in dev mode)
-	firebaseVerifier := auth.NewFirebaseTokenVerifierOrNil()
-
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
 	configHandler := handler.NewConfigHandler(r.countryInfo)
-	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService, firebaseVerifier)
+	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService)
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
@@ -192,7 +189,6 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/request-otp", authHandler.RequestOTP)
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
-	api.POST("/auth/firebase-login", authHandler.FirebaseLogin)
 
 	// Partner services (service key, not a user session). Not registered when
 	// the partner's key is not configured.

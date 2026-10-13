@@ -162,21 +162,21 @@ type OverdueInstallment struct {
 }
 
 type PortfolioSummary struct {
-	TotalClients      int64
-	ActiveLoans       int64
-	TotalDisbursed    decimal.Decimal
-	TotalOutstanding  decimal.Decimal
-	TotalCollected    decimal.Decimal
-	PendingApprovals  int64
+	TotalClients     int64
+	ActiveLoans      int64
+	TotalDisbursed   decimal.Decimal
+	TotalOutstanding decimal.Decimal
+	TotalCollected   decimal.Decimal
+	PendingApprovals int64
 }
 
 type DelinquencyStats struct {
-	PAR30  decimal.Decimal
-	PAR60  decimal.Decimal
-	PAR90  decimal.Decimal
-	TotalOverdue     decimal.Decimal
-	OverdueCount     int64
-	DelinquencyRate  decimal.Decimal
+	PAR30           decimal.Decimal
+	PAR60           decimal.Decimal
+	PAR90           decimal.Decimal
+	TotalOverdue    decimal.Decimal
+	OverdueCount    int64
+	DelinquencyRate decimal.Decimal
 }
 
 type TrendPoint struct {

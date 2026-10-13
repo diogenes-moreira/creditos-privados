@@ -174,7 +174,6 @@ func TestNewOTPSenderUsesTwilioWhenItIsTheOnlyGateway(t *testing.T) {
 
 func TestNewOTPSenderFallsBackToConsole(t *testing.T) {
 	// No Twilio credentials and no Firebase credentials file in the environment.
-	t.Setenv("FIREBASE_CREDENTIALS_FILE", "")
 
 	sender := NewOTPSender(OTPProviders{})
 	require.NotNil(t, sender)

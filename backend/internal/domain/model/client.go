@@ -11,27 +11,27 @@ import (
 )
 
 type Client struct {
-	ID              uuid.UUID      `gorm:"type:uuid;primaryKey"`
-	UserID          uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"`
-	User            User           `gorm:"foreignKey:UserID"`
-	FirstName       string         `gorm:"not null"`
-	LastName        string         `gorm:"not null"`
-	DNI             string         `gorm:"column:dni;uniqueIndex;not null"`
-	CUIT            string         `gorm:"column:cuit;uniqueIndex;not null"`
-	DateOfBirth     time.Time      `gorm:"not null"`
-	Phone           string         `gorm:"not null"`
-	Address         string         `gorm:"not null"`
-	City            string         `gorm:"not null"`
-	Province        string         `gorm:"not null"`
-	Country         string         `gorm:"not null;default:'Argentina'"`
-	Comments        string         `gorm:"type:text"`
+	ID              uuid.UUID       `gorm:"type:uuid;primaryKey"`
+	UserID          uuid.UUID       `gorm:"type:uuid;uniqueIndex;not null"`
+	User            User            `gorm:"foreignKey:UserID"`
+	FirstName       string          `gorm:"not null"`
+	LastName        string          `gorm:"not null"`
+	DNI             string          `gorm:"column:dni;uniqueIndex;not null"`
+	CUIT            string          `gorm:"column:cuit;uniqueIndex;not null"`
+	DateOfBirth     time.Time       `gorm:"not null"`
+	Phone           string          `gorm:"not null"`
+	Address         string          `gorm:"not null"`
+	City            string          `gorm:"not null"`
+	Province        string          `gorm:"not null"`
+	Country         string          `gorm:"not null;default:'Argentina'"`
+	Comments        string          `gorm:"type:text"`
 	IsPEP           bool            `gorm:"not null;default:false"`
 	IVARate         decimal.Decimal `gorm:"type:decimal(5,2);not null;default:21.00"`
 	MercadoPagoLink string          `gorm:""`
 	IsBlocked       bool            `gorm:"not null;default:false"`
-	CreatedAt       time.Time      `gorm:"not null"`
-	UpdatedAt       time.Time      `gorm:"not null"`
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	CreatedAt       time.Time       `gorm:"not null"`
+	UpdatedAt       time.Time       `gorm:"not null"`
+	DeletedAt       gorm.DeletedAt  `gorm:"index"`
 }
 
 // NewClient creates a client, validating the national ID (dni) and tax ID (cuit)

@@ -174,9 +174,9 @@ func (r *DashboardRepository) OverdueInstallments(ctx context.Context, offset, l
 
 func (r *DashboardRepository) DisbursementTrend(ctx context.Context, from, to time.Time) ([]port.TrendPoint, error) {
 	type result struct {
-		Date   time.Time
-		Total  decimal.Decimal
-		Count  int64
+		Date  time.Time
+		Total decimal.Decimal
+		Count int64
 	}
 	var results []result
 	r.db.WithContext(ctx).Model(&model.Loan{}).

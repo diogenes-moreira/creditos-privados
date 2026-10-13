@@ -11,23 +11,23 @@ import (
 type PaymentMethod string
 
 const (
-	PaymentCash       PaymentMethod = "cash"
-	PaymentTransfer   PaymentMethod = "transfer"
+	PaymentCash        PaymentMethod = "cash"
+	PaymentTransfer    PaymentMethod = "transfer"
 	PaymentMercadoPago PaymentMethod = "mercado_pago"
 )
 
 type Payment struct {
-	ID            uuid.UUID       `gorm:"type:uuid;primaryKey"`
-	LoanID        uuid.UUID       `gorm:"type:uuid;index;not null"`
-	InstallmentID *uuid.UUID      `gorm:"type:uuid;index"`
-	Amount        decimal.Decimal `gorm:"type:decimal(18,2);not null"`
-	Method        PaymentMethod   `gorm:"type:varchar(20);not null"`
-	Reference     string          `gorm:""`
-	IsAdjustment  bool            `gorm:"not null;default:false"`
-	AdjustedBy    *uuid.UUID      `gorm:"type:uuid"`
-	AdjustmentNote string         `gorm:""`
-	CreatedAt     time.Time       `gorm:"not null"`
-	UpdatedAt     time.Time       `gorm:"not null"`
+	ID             uuid.UUID       `gorm:"type:uuid;primaryKey"`
+	LoanID         uuid.UUID       `gorm:"type:uuid;index;not null"`
+	InstallmentID  *uuid.UUID      `gorm:"type:uuid;index"`
+	Amount         decimal.Decimal `gorm:"type:decimal(18,2);not null"`
+	Method         PaymentMethod   `gorm:"type:varchar(20);not null"`
+	Reference      string          `gorm:""`
+	IsAdjustment   bool            `gorm:"not null;default:false"`
+	AdjustedBy     *uuid.UUID      `gorm:"type:uuid"`
+	AdjustmentNote string          `gorm:""`
+	CreatedAt      time.Time       `gorm:"not null"`
+	UpdatedAt      time.Time       `gorm:"not null"`
 }
 
 func NewPayment(loanID uuid.UUID, amount decimal.Decimal, method PaymentMethod, reference string) (*Payment, error) {

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -12,11 +11,10 @@ import (
 )
 
 type AuthHandler struct {
-	clientService    *service.ClientService
-	userRepo         port.UserRepository
-	authService      *auth.LocalAuthService
-	otpService       *service.OTPService
-	firebaseVerifier *auth.FirebaseTokenVerifier
+	clientService *service.ClientService
+	userRepo      port.UserRepository
+	authService   *auth.LocalAuthService
+	otpService    *service.OTPService
 }
 
 func NewAuthHandler(
@@ -24,14 +22,12 @@ func NewAuthHandler(
 	userRepo port.UserRepository,
 	authService *auth.LocalAuthService,
 	otpService *service.OTPService,
-	firebaseVerifier *auth.FirebaseTokenVerifier,
 ) *AuthHandler {
 	return &AuthHandler{
-		clientService:    clientService,
-		userRepo:         userRepo,
-		authService:      authService,
-		otpService:       otpService,
-		firebaseVerifier: firebaseVerifier,
+		clientService: clientService,
+		userRepo:      userRepo,
+		authService:   authService,
+		otpService:    otpService,
 	}
 }
 
@@ -158,87 +154,6 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate token"})
 		return
 	}
-
-	c.JSON(http.StatusOK, dto.AuthResponse{
-		Token: token,
-		User:  dto.ToUserResponse(user),
-	})
-}
-
-// FirebaseLogin godoc
-// @Summary Authenticate via Firebase ID token
-// @Description Verifies a Firebase ID token (from Google OAuth or Phone Auth) and returns a JWT token
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param request body dto.FirebaseLoginRequest true "Firebase ID token"
-// @Success 200 {object} dto.AuthResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 401 {object} dto.ErrorResponse
-// @Failure 403 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /auth/firebase-login [post]
-func (h *AuthHandler) FirebaseLogin(c *gin.Context) {
-	var req dto.FirebaseLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	if h.firebaseVerifier == nil {
-		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: "Firebase authentication is not configured"})
-		return
-	}
-
-	verified, err := h.firebaseVerifier.VerifyIDToken(c.Request.Context(), req.IDToken)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "invalid Firebase token"})
-		return
-	}
-
-	ctx := c.Request.Context()
-
-	// Try to find user by Firebase UID first
-	user, err := h.userRepo.FindByFirebaseUID(ctx, verified.UID)
-	if err != nil {
-		// Try by email
-		if verified.Email != "" {
-			user, err = h.userRepo.FindByEmail(ctx, verified.Email)
-		}
-		// Try by phone
-		if err != nil && verified.Phone != "" {
-			user, err = h.userRepo.FindByPhone(ctx, verified.Phone)
-		}
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "no account found for this credential"})
-			return
-		}
-		// Link Firebase UID to the found user
-		user.FirebaseUID = verified.UID
-		_ = h.userRepo.Update(ctx, user)
-	}
-
-	if !user.IsActive {
-		log.Printf("FirebaseLogin: user %s is deactivated", user.Email)
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "account is deactivated"})
-		return
-	}
-
-	// Google OAuth sign-in is restricted to admins only
-	if verified.SignInProvider == "google.com" && !user.IsAdmin() {
-		log.Printf("FirebaseLogin: user %s (role=%s) attempted Google sign-in but is not admin", user.Email, user.Role)
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Google sign-in is only available for administrators"})
-		return
-	}
-
-	token, err := h.authService.GenerateToken(user.FirebaseUID, user.Email, string(user.Role))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate token"})
-		return
-	}
-
-	user.RecordLogin()
-	_ = h.userRepo.Update(ctx, user)
 
 	c.JSON(http.StatusOK, dto.AuthResponse{
 		Token: token,

@@ -124,7 +124,7 @@ type KapsoConfig struct {
 }
 
 // TwilioConfig configures WhatsApp delivery of one-time login codes through
-// Twilio. With no credentials the OTP sender falls back to Firebase email links
+// Twilio. With no credentials the OTP sender falls back to another configured
 // and then to the console, so local development needs no Twilio account.
 type TwilioConfig struct {
 	AccountSID  string

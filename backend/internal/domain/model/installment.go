@@ -11,10 +11,10 @@ import (
 type InstallmentStatus string
 
 const (
-	InstallmentPending  InstallmentStatus = "pending"
-	InstallmentPartial  InstallmentStatus = "partial"
-	InstallmentPaid     InstallmentStatus = "paid"
-	InstallmentOverdue  InstallmentStatus = "overdue"
+	InstallmentPending InstallmentStatus = "pending"
+	InstallmentPartial InstallmentStatus = "partial"
+	InstallmentPaid    InstallmentStatus = "paid"
+	InstallmentOverdue InstallmentStatus = "overdue"
 )
 
 type Installment struct {

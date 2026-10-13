@@ -11,12 +11,12 @@ import (
 )
 
 type ClientHandler struct {
-	clientService   *service.ClientService
-	creditService   *service.CreditService
-	paymentService  *service.PaymentService
-	purchaseRepo    port.PurchaseRepository
-	accountRepo     port.AccountRepository
-	movementRepo    port.MovementRepository
+	clientService  *service.ClientService
+	creditService  *service.CreditService
+	paymentService *service.PaymentService
+	purchaseRepo   port.PurchaseRepository
+	accountRepo    port.AccountRepository
+	movementRepo   port.MovementRepository
 }
 
 func NewClientHandler(

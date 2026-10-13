@@ -466,10 +466,6 @@ export interface VerifyOTPRequest {
 }
 
 // ---- Firebase Auth ----
-export interface FirebaseLoginRequest {
-  idToken: string;
-}
-
 // ---- Pagination ----
 export interface PaginatedResponse<T> {
   data: T[];

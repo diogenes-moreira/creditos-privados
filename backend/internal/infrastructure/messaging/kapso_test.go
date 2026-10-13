@@ -165,7 +165,6 @@ func TestKapsoChannel(t *testing.T) {
 }
 
 func TestNewOTPSenderProviderSelection(t *testing.T) {
-	t.Setenv("FIREBASE_CREDENTIALS_FILE", "")
 
 	t.Run("explicit kapso", func(t *testing.T) {
 		s := NewOTPSender(OTPProviders{

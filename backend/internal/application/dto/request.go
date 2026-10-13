@@ -202,10 +202,6 @@ type VerifyOTPRequest struct {
 	Code    string `json:"code" binding:"required,len=6"`
 }
 
-type FirebaseLoginRequest struct {
-	IDToken string `json:"idToken" binding:"required"`
-}
-
 // CreateUserRequest registers a user with an explicit role.
 type CreateUserRequest struct {
 	Email string `json:"email" binding:"required,email"`

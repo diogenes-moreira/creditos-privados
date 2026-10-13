@@ -10,14 +10,14 @@ import (
 )
 
 type CurrentAccount struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey"`
-	ClientID  uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"`
-	Client    Client         `gorm:"foreignKey:ClientID"`
+	ID        uuid.UUID       `gorm:"type:uuid;primaryKey"`
+	ClientID  uuid.UUID       `gorm:"type:uuid;uniqueIndex;not null"`
+	Client    Client          `gorm:"foreignKey:ClientID"`
 	Balance   decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
-	CreatedAt time.Time      `gorm:"not null"`
-	UpdatedAt time.Time      `gorm:"not null"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Movements []Movement     `gorm:"foreignKey:AccountID"`
+	CreatedAt time.Time       `gorm:"not null"`
+	UpdatedAt time.Time       `gorm:"not null"`
+	DeletedAt gorm.DeletedAt  `gorm:"index"`
+	Movements []Movement      `gorm:"foreignKey:AccountID"`
 }
 
 func NewCurrentAccount(clientID uuid.UUID) *CurrentAccount {

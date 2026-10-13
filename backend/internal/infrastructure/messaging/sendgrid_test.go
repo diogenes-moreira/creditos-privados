@@ -136,7 +136,6 @@ func TestSendGridChannel(t *testing.T) {
 }
 
 func TestNewOTPSenderSelectsSendGrid(t *testing.T) {
-	t.Setenv("FIREBASE_CREDENTIALS_FILE", "")
 
 	t.Run("explicit sendgrid wins over whatsapp", func(t *testing.T) {
 		s := NewOTPSender(OTPProviders{
