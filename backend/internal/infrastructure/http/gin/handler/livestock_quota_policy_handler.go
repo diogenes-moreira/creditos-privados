@@ -22,17 +22,17 @@ func NewLivestockQuotaPolicyHandler(policies *service.LivestockQuotaPolicyServic
 
 // GetActiveLivestockQuotaPolicy godoc
 // @Summary Get the active livestock quota parameters
-// @Description Returns the parameter set every new quota is computed with, seeding the shipped defaults the first time it is asked for
+// @Description Returns the parameter set every new quota is computed with. The shipped defaults are stored at startup, so a 404 means that seeding failed and quotas are running on the built-in defaults
 // @Tags Livestock quota policies
 // @Produce json
 // @Success 200 {object} dto.LivestockQuotaPolicyResponse
-// @Failure 500 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
 // @Security BearerAuth
 // @Router /admin/livestock-quota-policies/active [get]
 func (h *LivestockQuotaPolicyHandler) GetActiveLivestockQuotaPolicy(c *gin.Context) {
-	p, err := h.policies.EnsureDefaultPolicy(c.Request.Context(), actorID(c))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+	p := h.policies.ActivePolicy(c.Request.Context())
+	if p == nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "no livestock quota policy is active"})
 		return
 	}
 	c.JSON(http.StatusOK, dto.ToLivestockQuotaPolicyResponse(p))

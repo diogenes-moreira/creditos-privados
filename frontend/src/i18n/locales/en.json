@@ -892,7 +892,9 @@
         "milkingShare": "The lactation share must be a fraction between 0 and 1.",
         "negative": "Rates, prices and headroom cannot be negative.",
         "negativeFactor": "UGG factors cannot be negative."
-      }
+      },
+      "noneActiveTitle": "No active parameters",
+      "noneActiveBody": "The default parameters were not stored when the server started, so quotas are being computed with the built-in defaults. Restart the service; if this persists, check the database connection in the logs."
     },
     "lookup": {
       "title": "Pre-approved quota lookup",

@@ -1391,7 +1391,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the parameter set every new quota is computed with, seeding the shipped defaults the first time it is asked for",
+                "description": "Returns the parameter set every new quota is computed with. The shipped defaults are stored at startup, so a 404 means that seeding failed and quotas are running on the built-in defaults",
                 "produces": [
                     "application/json"
                 ],
@@ -1406,8 +1406,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1595,14 +1595,17 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/livestock-quotas/{id}": {
-            "get": {
+        "/admin/livestock-quotas/registry": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Reads the national ID's herds from Fedegán's vaccination registry and returns the quota with the full trace of how it was reached",
+                "description": "Reads the national ID's herds from Fedegán's vaccination registry, stores the assessment as the record of who quoted what, and returns the quota with the full trace of how it was reached",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1612,17 +1615,13 @@ const docTemplate = `{
                 "summary": "Quote a rancher's credit from the RUV",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "National ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "CÉDULA DE CIUDADANÍA (default), NIT, PASAPORTE...",
-                        "name": "idType",
-                        "in": "query"
+                        "description": "Rancher's identity",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegistryQuotaLookupRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1630,6 +1629,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.RegistryQuotaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
@@ -6402,6 +6407,23 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.RegistryQuotaLookupRequest": {
+            "type": "object",
+            "required": [
+                "nationalId"
+            ],
+            "properties": {
+                "idType": {
+                    "description": "IDType is the RUV's document type, e.g. \"CÉDULA DE CIUDADANÍA\" (default).",
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "nationalId": {
+                    "type": "string",
+                    "maxLength": 30
                 }
             }
         },
