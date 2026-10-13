@@ -98,18 +98,27 @@ func registryErrorStatus(err error) (int, bool) {
 
 // AssessFromRegistry godoc
 // @Summary Quote a rancher's credit from the RUV
-// @Description Reads the national ID's herds from Fedegán's vaccination registry and returns the quota with the full trace of how it was reached
+// @Description Reads the national ID's herds from Fedegán's vaccination registry, stores the assessment as the record of who quoted what, and returns the quota with the full trace of how it was reached
 // @Tags Admin Livestock Quota
+// @Accept json
 // @Produce json
-// @Param id path string true "National ID"
-// @Param idType query string false "CÉDULA DE CIUDADANÍA (default), NIT, PASAPORTE..."
+// @Param request body dto.RegistryQuotaLookupRequest true "Rancher's identity"
 // @Success 200 {object} dto.RegistryQuotaResponse
+// @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse "Not in the registry"
 // @Failure 503 {object} dto.ErrorResponse "Registry not configured"
 // @Security BearerAuth
-// @Router /admin/livestock-quotas/{id} [get]
+// @Router /admin/livestock-quotas/registry [post]
+//
+// It is a POST because every call queries the RUV and stores an assessment: a
+// GET would be repeated by anything that treats reads as safe to replay.
 func (h *LivestockQuotaHandler) AssessFromRegistry(c *gin.Context) {
-	nationalID := strings.TrimSpace(c.Param("id"))
+	var req dto.RegistryQuotaLookupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	nationalID := strings.TrimSpace(req.NationalID)
 	if nationalID == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "national id is required"})
 		return
@@ -121,7 +130,7 @@ func (h *LivestockQuotaHandler) AssessFromRegistry(c *gin.Context) {
 		requestedBy = "admin"
 	}
 
-	result, err := h.service.AssessFromRegistry(c.Request.Context(), c.Query("idType"), nationalID, requestedBy, "")
+	result, err := h.service.AssessFromRegistry(c.Request.Context(), req.IDType, nationalID, requestedBy, "")
 	switch {
 	case errors.Is(err, service.ErrNotInRegistry):
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "no RUV record for that national ID"})
