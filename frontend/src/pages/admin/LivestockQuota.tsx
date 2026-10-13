@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
+  AlertTitle,
   Box,
   Button,
   Card,
@@ -215,6 +216,17 @@ const AdminLivestockQuota: React.FC = () => {
     setDescription("");
     setParams(paramsOf(active));
   };
+
+  // The shipped defaults are stored when the server starts. Without an active
+  // policy there is nothing to edit, and quotas run on the built-in defaults.
+  if (!isLoading && !active) {
+    return (
+      <Alert severity="warning">
+        <AlertTitle>{t("livestock.policy.noneActiveTitle")}</AlertTitle>
+        {t("livestock.policy.noneActiveBody")}
+      </Alert>
+    );
+  }
 
   if (isLoading || !active || !params) {
     return (

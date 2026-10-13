@@ -100,3 +100,62 @@ func TestPartnerRegistryQuotaRequiresTheServiceKeyAndANationalID(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, postRegistry(t, r, "", map[string]any{"nationalId": "1"}).Code)
 	assert.Equal(t, http.StatusBadRequest, postRegistry(t, r, testServiceKey, map[string]any{}).Code)
 }
+
+func newAdvisorLookupRouter(repo *memoryLivestockQuotaRepo, ruv port.RUVClient) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	s := service.NewLivestockQuotaService(repo, "COP").WithRegistry(ruv)
+	r.POST("/admin/livestock-quotas/registry", func(c *gin.Context) {
+		c.Set("email", "asesor@example.com")
+		c.Next()
+	}, handler.NewLivestockQuotaHandler(s).AssessFromRegistry)
+	return r
+}
+
+func TestAdvisorLookupTakesTheNationalIDInTheBodyAndRecordsWhoAsked(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	ruv := &fakeRUV{ranchers: map[string]*port.RUVRancher{"17788090": caucaRancher()}}
+	r := newAdvisorLookupRouter(repo, ruv)
+
+	raw, err := json.Marshal(map[string]any{"nationalId": " 17788090 ", "idType": "NIT"})
+	require.NoError(t, err)
+	req := httptest.NewRequest(http.MethodPost, "/admin/livestock-quotas/registry", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, []string{"NIT|17788090"}, ruv.asked)
+	require.Len(t, repo.saved, 1)
+	assert.Equal(t, "asesor@example.com", repo.saved[0].RequestedBy)
+}
+
+func TestAdvisorLookupIsNotReachableByGet(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	ruv := &fakeRUV{ranchers: map[string]*port.RUVRancher{"17788090": caucaRancher()}}
+	r := newAdvisorLookupRouter(repo, ruv)
+
+	// The national ID must not ride in a URL, and a replayable read must not
+	// query the registry or store an assessment.
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/admin/livestock-quotas/17788090", nil))
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Empty(t, ruv.asked)
+	assert.Empty(t, repo.saved)
+}
+
+func TestAdvisorLookupRejectsAMissingNationalID(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	ruv := &fakeRUV{}
+	r := newAdvisorLookupRouter(repo, ruv)
+
+	for _, body := range []string{`{}`, `{"nationalId":"   "}`} {
+		req := httptest.NewRequest(http.MethodPost, "/admin/livestock-quotas/registry", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code, body)
+	}
+	assert.Empty(t, ruv.asked)
+}
