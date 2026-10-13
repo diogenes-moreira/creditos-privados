@@ -166,8 +166,8 @@ func TestNormalizePhone(t *testing.T) {
 	}
 }
 
-func TestNewOTPSenderPrefersTwilio(t *testing.T) {
-	sender := NewOTPSender(testTwilioConfig())
+func TestNewOTPSenderUsesTwilioWhenItIsTheOnlyGateway(t *testing.T) {
+	sender := NewOTPSender(OTPProviders{Twilio: testTwilioConfig()})
 	require.NotNil(t, sender)
 	assert.Equal(t, "whatsapp", sender.Channel())
 }
@@ -176,7 +176,7 @@ func TestNewOTPSenderFallsBackToConsole(t *testing.T) {
 	// No Twilio credentials and no Firebase credentials file in the environment.
 	t.Setenv("FIREBASE_CREDENTIALS_FILE", "")
 
-	sender := NewOTPSender(TwilioConfig{})
+	sender := NewOTPSender(OTPProviders{})
 	require.NotNil(t, sender)
 	assert.Equal(t, "console", sender.Channel())
 }

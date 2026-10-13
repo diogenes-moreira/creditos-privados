@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -68,13 +69,47 @@ func (s *ConsoleOTPSender) SendOTP(_ context.Context, to port.OTPRecipient, code
 	return nil
 }
 
-// NewOTPSender picks the delivery channel from configuration: Twilio WhatsApp
-// when credentials are present, then Firebase email links, and finally the
-// console so local development needs no accounts at all.
-func NewOTPSender(twilio TwilioConfig) port.OTPSender {
-	if sender := NewTwilioWhatsAppSender(twilio); sender != nil {
+// OTPProviders carries every delivery option the deployment may have
+// configured. Which one is used is decided by OTPProvider, falling back to
+// whatever is actually configured.
+type OTPProviders struct {
+	// Provider names the WhatsApp gateway to use: "kapso" or "twilio".
+	// Empty picks whichever one is configured, preferring Kapso.
+	Provider string
+	Kapso    KapsoConfig
+	Twilio   TwilioConfig
+}
+
+// NewOTPSender picks the delivery channel from configuration. WhatsApp goes
+// through the selected gateway; without one it falls back to Firebase email
+// links and finally the console, so local development needs no accounts.
+func NewOTPSender(p OTPProviders) port.OTPSender {
+	kapso := NewKapsoWhatsAppSender(p.Kapso)
+	twilio := NewTwilioWhatsAppSender(p.Twilio)
+
+	switch strings.ToLower(strings.TrimSpace(p.Provider)) {
+	case "kapso":
+		if kapso != nil {
+			log.Println("OTP delivery: Kapso WhatsApp")
+			return kapso
+		}
+		log.Println("Warning: OTP_PROVIDER=kapso but Kapso is not configured")
+	case "twilio":
+		if twilio != nil {
+			log.Println("OTP delivery: Twilio WhatsApp")
+			return twilio
+		}
+		log.Println("Warning: OTP_PROVIDER=twilio but Twilio is not configured")
+	}
+
+	// No explicit choice, or the chosen one is not configured.
+	if kapso != nil {
+		log.Println("OTP delivery: Kapso WhatsApp")
+		return kapso
+	}
+	if twilio != nil {
 		log.Println("OTP delivery: Twilio WhatsApp")
-		return sender
+		return twilio
 	}
 
 	if credFile := os.Getenv("FIREBASE_CREDENTIALS_FILE"); credFile != "" {
@@ -87,6 +122,6 @@ func NewOTPSender(twilio TwilioConfig) port.OTPSender {
 		return sender
 	}
 
-	log.Println("OTP delivery: console (no Twilio or Firebase credentials configured)")
+	log.Println("OTP delivery: console (no WhatsApp gateway or Firebase credentials configured)")
 	return NewConsoleOTPSender()
 }

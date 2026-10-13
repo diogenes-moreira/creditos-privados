@@ -6,12 +6,16 @@ import (
 )
 
 type Config struct {
-	DB              DBConfig
-	Server          ServerConfig
-	JWT             JWTConfig
-	GCS             GCSConfig
-	AI              AIConfig
-	Twilio          TwilioConfig
+	DB     DBConfig
+	Server ServerConfig
+	JWT    JWTConfig
+	GCS    GCSConfig
+	AI     AIConfig
+	Twilio TwilioConfig
+	Kapso  KapsoConfig
+	// OTPProvider selects the WhatsApp gateway: "kapso" or "twilio". Empty
+	// uses whichever is configured.
+	OTPProvider     string
 	Partners        PartnersConfig
 	Country         string
 	DefaultIVARate  float64
@@ -100,6 +104,16 @@ type JWTConfig struct {
 	ExpirationHours int
 }
 
+// KapsoConfig configures WhatsApp delivery through Kapso, which fronts the
+// WhatsApp Cloud API with Meta's own request shape. PhoneNumberID is the
+// connected number's id, not the number itself.
+type KapsoConfig struct {
+	APIKey           string
+	PhoneNumberID    string
+	TemplateName     string
+	TemplateLanguage string
+}
+
 // TwilioConfig configures WhatsApp delivery of one-time login codes through
 // Twilio. With no credentials the OTP sender falls back to Firebase email links
 // and then to the console, so local development needs no Twilio account.
@@ -177,6 +191,13 @@ func Load() *Config {
 			Effort:    getEnv("RISK_ANALYSIS_EFFORT", "high"),
 			MaxTokens: getEnvInt("RISK_ANALYSIS_MAX_TOKENS", 16000),
 		},
+		Kapso: KapsoConfig{
+			APIKey:           getEnv("KAPSO_API_KEY", ""),
+			PhoneNumberID:    getEnv("KAPSO_PHONE_NUMBER_ID", ""),
+			TemplateName:     getEnv("KAPSO_TEMPLATE_NAME", ""),
+			TemplateLanguage: getEnv("KAPSO_TEMPLATE_LANGUAGE", ""),
+		},
+		OTPProvider: getEnv("OTP_PROVIDER", ""),
 		Twilio: TwilioConfig{
 			AccountSID:  getEnv("TWILIO_ACCOUNT_SID", ""),
 			AuthToken:   getEnv("TWILIO_AUTH_TOKEN", ""),

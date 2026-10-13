@@ -34,7 +34,7 @@ type Router struct {
 	country         string
 	countryInfo     config.CountryInfo
 	aiConfig        config.AIConfig
-	twilioConfig    messaging.TwilioConfig
+	otpProviders    messaging.OTPProviders
 	partners        config.PartnersConfig
 }
 
@@ -48,12 +48,22 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		countryInfo:     cfg.CountryInfo(),
 		aiConfig:        cfg.AI,
 		partners:        cfg.Partners,
-		twilioConfig: messaging.TwilioConfig{
-			AccountSID:      cfg.Twilio.AccountSID,
-			AuthToken:       cfg.Twilio.AuthToken,
-			FromNumber:      cfg.Twilio.FromNumber,
-			TemplateSID:     cfg.Twilio.TemplateSID,
-			DefaultDialCode: cfg.DialCode(),
+		otpProviders: messaging.OTPProviders{
+			Provider: cfg.OTPProvider,
+			Kapso: messaging.KapsoConfig{
+				APIKey:           cfg.Kapso.APIKey,
+				PhoneNumberID:    cfg.Kapso.PhoneNumberID,
+				TemplateName:     cfg.Kapso.TemplateName,
+				TemplateLanguage: cfg.Kapso.TemplateLanguage,
+				DefaultDialCode:  cfg.DialCode(),
+			},
+			Twilio: messaging.TwilioConfig{
+				AccountSID:      cfg.Twilio.AccountSID,
+				AuthToken:       cfg.Twilio.AuthToken,
+				FromNumber:      cfg.Twilio.FromNumber,
+				TemplateSID:     cfg.Twilio.TemplateSID,
+				DefaultDialCode: cfg.DialCode(),
+			},
 		},
 	}
 	r.engine.Use(middleware.CORS())
@@ -92,7 +102,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
-	otpSender := messaging.NewOTPSender(r.twilioConfig)
+	otpSender := messaging.NewOTPSender(r.otpProviders)
 	localStorage := storage.NewLocalStorage("./storage")
 	pdfGenerator := pdf.NewGenerator()
 

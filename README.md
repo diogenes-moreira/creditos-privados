@@ -150,7 +150,12 @@ npm run dev    # http://localhost:4321
 | `GCS_BUCKET` | Bucket de Google Cloud Storage (opcional en dev) | - |
 | `GCS_CREDENTIALS_FILE` | Credenciales de GCS (opcional en dev) | - |
 | `LOCAL_STORAGE_PATH` | Path de almacenamiento local (fallback) | `./storage` |
-| `TWILIO_ACCOUNT_SID` | Habilita el envío del OTP por WhatsApp (opcional) | - |
+| `OTP_PROVIDER` | Gateway de WhatsApp: `kapso` o `twilio` (vacío = el que esté configurado) | - |
+| `KAPSO_API_KEY` | Habilita el envío del OTP por WhatsApp vía Kapso | - |
+| `KAPSO_PHONE_NUMBER_ID` | ID del número conectado en Kapso (no el número) | - |
+| `KAPSO_TEMPLATE_NAME` | Plantilla aprobada con el código en `{{1}}` | - |
+| `KAPSO_TEMPLATE_LANGUAGE` | Idioma de la plantilla | `es` |
+| `TWILIO_ACCOUNT_SID` | Habilita el envío del OTP por WhatsApp vía Twilio | - |
 | `TWILIO_AUTH_TOKEN` | Token de Twilio | - |
 | `TWILIO_WHATSAPP_FROM` | Remitente WhatsApp de Twilio en E.164 | - |
 | `TWILIO_WHATSAPP_TEMPLATE_SID` | Template aprobado (`HX...`) con el código en `{{1}}` | - |
