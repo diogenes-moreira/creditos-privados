@@ -14,6 +14,11 @@ const (
 	RoleAdmin  UserRole = "admin"
 	RoleClient UserRole = "client"
 	RoleVendor UserRole = "vendor"
+	// RoleAdvisor serves ranchers at the counter: it can look a rancher up and
+	// quote their quota, but not move the numbers that produce it. Whoever
+	// sells against a quota should not be able to change the rate, the LTV or
+	// the policy cap that set it.
+	RoleAdvisor UserRole = "advisor"
 )
 
 type User struct {
@@ -39,7 +44,7 @@ func NewUser(firebaseUID, email string, role UserRole) (*User, error) {
 	if email == "" {
 		return nil, fmt.Errorf("email is required")
 	}
-	if role != RoleAdmin && role != RoleClient && role != RoleVendor {
+	if !ValidRole(role) {
 		return nil, fmt.Errorf("invalid role: %s", role)
 	}
 
@@ -54,7 +59,7 @@ func NewUser(firebaseUID, email string, role UserRole) (*User, error) {
 
 // ValidRole reports whether a role is one the system knows.
 func ValidRole(role UserRole) bool {
-	return role == RoleAdmin || role == RoleClient || role == RoleVendor
+	return role == RoleAdmin || role == RoleClient || role == RoleVendor || role == RoleAdvisor
 }
 
 // ChangeRole moves the user to another role.
@@ -85,6 +90,11 @@ func (u *User) RecordLogin() {
 
 func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
+}
+
+// IsAdvisor reports whether the user serves ranchers at the counter.
+func (u *User) IsAdvisor() bool {
+	return u.Role == RoleAdvisor
 }
 
 func (u *User) IsVendor() bool {

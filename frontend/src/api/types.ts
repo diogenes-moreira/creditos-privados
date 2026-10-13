@@ -26,7 +26,7 @@ export interface AuthResponse {
 export interface User {
   id: string;
   email: string;
-  role: "admin" | "client" | "vendor";
+  role: "admin" | "client" | "vendor" | "advisor";
   firstName?: string;
   lastName?: string;
 }
@@ -678,7 +678,7 @@ export interface RiskAnalyzerInfo {
 }
 
 // ---- Admin: user management ----
-export type UserRole = "admin" | "client" | "vendor";
+export type UserRole = "admin" | "client" | "vendor" | "advisor";
 
 /** A user account as returned by the admin user endpoints. */
 export interface AdminUser {

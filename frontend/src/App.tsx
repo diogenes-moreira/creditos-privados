@@ -178,7 +178,7 @@ const App: React.FC = () => {
         </ProtectedRoute>
       } />
       <Route path="/admin/livestock-quota-lookup" element={
-        <ProtectedRoute requiredRole="admin">
+        <ProtectedRoute requiredRole={["admin", "advisor"]}>
           <AppLayout><AdminLivestockQuotaLookup /></AppLayout>
         </ProtectedRoute>
       } />

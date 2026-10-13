@@ -39,7 +39,11 @@ import { getErrorMessage } from "../../api/errorUtils";
 import { useAuth } from "../../auth/AuthContext";
 import type { AdminUser, CreateUserRequest, UserRole } from "../../api/types";
 
-const ROLES: UserRole[] = ["admin", "client", "vendor"];
+const ROLES: UserRole[] = ["admin", "advisor", "client", "vendor"];
+
+// Roles that are only an account. Clients and vendors are a person or a
+// business, and their own onboarding creates the profile alongside the account.
+const STAFF_ROLES: UserRole[] = ["admin", "advisor"];
 
 const emptyForm: CreateUserRequest = { email: "", phone: "", role: "admin" };
 
@@ -313,7 +317,19 @@ const Users: React.FC = () => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
-            <Alert severity="info">{t("adminUsers.createAdminOnly")}</Alert>
+            <TextField
+              select
+              label={t("adminUsers.role")}
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+            >
+              {STAFF_ROLES.map((role) => (
+                <MenuItem key={role} value={role}>
+                  {roleLabel(role)}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Alert severity="info">{t("adminUsers.createStaffOnly")}</Alert>
           </Box>
         </DialogContent>
         <DialogActions>

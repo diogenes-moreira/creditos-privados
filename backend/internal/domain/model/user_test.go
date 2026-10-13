@@ -201,7 +201,7 @@ func TestUserChangeRole(t *testing.T) {
 }
 
 func TestValidRole(t *testing.T) {
-	for _, r := range []model.UserRole{model.RoleAdmin, model.RoleClient, model.RoleVendor} {
+	for _, r := range []model.UserRole{model.RoleAdmin, model.RoleClient, model.RoleVendor, model.RoleAdvisor} {
 		assert.True(t, model.ValidRole(r), string(r))
 	}
 	for _, r := range []model.UserRole{"", "superuser", "Admin"} {

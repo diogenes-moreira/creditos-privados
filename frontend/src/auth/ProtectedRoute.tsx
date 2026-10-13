@@ -3,9 +3,12 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { CircularProgress, Box } from "@mui/material";
 
+type Role = "admin" | "client" | "vendor" | "advisor";
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "admin" | "client" | "vendor";
+  /** A single role, or any of several. */
+  requiredRole?: Role | Role[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
@@ -24,9 +27,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
-    const redirectPath = user?.role === "admin" ? "/admin/dashboard" : user?.role === "vendor" ? "/vendor/dashboard" : "/dashboard";
-    return <Navigate to={redirectPath} replace />;
+  if (requiredRole) {
+    const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!user || !allowed.includes(user.role as Role)) {
+      const redirectPath =
+        user?.role === "admin"
+          ? "/admin/dashboard"
+          : user?.role === "advisor"
+            ? "/admin/livestock-quota-lookup"
+            : user?.role === "vendor"
+              ? "/vendor/dashboard"
+              : "/dashboard";
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   return <>{children}</>;

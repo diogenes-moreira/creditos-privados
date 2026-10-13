@@ -267,24 +267,34 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	}
 
 	// Admin routes
+
+	// Advisors serve ranchers at the counter: they look a rancher up and quote
+	// the quota, but cannot touch the parameters that produce it, approve
+	// credit, move money or manage access. Administrators can do both.
+	advisorRoutes := authenticated.Group("/admin")
+	advisorRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin, model.RoleAdvisor))
+	{
+		advisorRoutes.GET("/clients", clientHandler.ListClients)
+		advisorRoutes.GET("/clients/search", clientHandler.ListClients)
+		advisorRoutes.GET("/clients/:id", clientHandler.GetClient)
+		advisorRoutes.GET("/clients/:id/loans", clientHandler.GetClientLoans)
+		advisorRoutes.GET("/clients/:id/credit-lines", clientHandler.GetClientCreditLines)
+		advisorRoutes.GET("/clients/:id/payments", clientHandler.GetClientPayments)
+		advisorRoutes.GET("/clients/:id/purchases", clientHandler.GetClientPurchases)
+		advisorRoutes.GET("/clients/:id/account", clientHandler.GetClientAccount)
+		advisorRoutes.GET("/clients/:id/account/movements", clientHandler.GetClientMovements)
+		advisorRoutes.GET("/livestock-quotas/:id", livestockQuotaHandler.AssessFromRegistry)
+	}
+
 	adminRoutes := authenticated.Group("/admin")
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
 	{
 		adminRoutes.POST("/clients", clientHandler.AdminRegisterClient)
-		adminRoutes.GET("/clients", clientHandler.ListClients)
-		adminRoutes.GET("/clients/search", clientHandler.ListClients)
-		adminRoutes.GET("/clients/:id", clientHandler.GetClient)
 		adminRoutes.PUT("/clients/:id", clientHandler.AdminUpdateClient)
 		adminRoutes.PUT("/clients/:id/iva-rate", clientHandler.UpdateIVARate)
 		adminRoutes.PUT("/clients/:id/comments", clientHandler.UpdateComments)
 		adminRoutes.POST("/clients/:id/block", clientHandler.BlockClient)
 		adminRoutes.POST("/clients/:id/unblock", clientHandler.UnblockClient)
-		adminRoutes.GET("/clients/:id/loans", clientHandler.GetClientLoans)
-		adminRoutes.GET("/clients/:id/credit-lines", clientHandler.GetClientCreditLines)
-		adminRoutes.GET("/clients/:id/payments", clientHandler.GetClientPayments)
-		adminRoutes.GET("/clients/:id/purchases", clientHandler.GetClientPurchases)
-		adminRoutes.GET("/clients/:id/account", clientHandler.GetClientAccount)
-		adminRoutes.GET("/clients/:id/account/movements", clientHandler.GetClientMovements)
 
 		adminRoutes.POST("/credit-lines", creditHandler.CreateCreditLine)
 		adminRoutes.GET("/credit-lines/pending", creditHandler.GetPendingCreditLines)
@@ -347,7 +357,6 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 		// User administration. Accounts are deactivated, never deleted: they
 		// carry loans, payments and audit entries.
-		adminRoutes.GET("/livestock-quotas/:id", livestockQuotaHandler.AssessFromRegistry)
 
 		adminRoutes.GET("/users", userHandler.ListUsers)
 		adminRoutes.POST("/users", userHandler.CreateUser)

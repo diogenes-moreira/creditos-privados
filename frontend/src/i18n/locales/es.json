@@ -581,9 +581,10 @@
     "roles": {
       "admin": "Administrador",
       "client": "Cliente",
-      "vendor": "Vendedor"
+      "vendor": "Vendedor",
+      "advisor": "Asesor"
     },
-    "createAdminOnly": "Acá solo se crean administradores. Clientes y vendedores se registran por su propio flujo, que además crea su perfil."
+    "createStaffOnly": "Acá solo se crean cuentas internas: administradores y asesores. Clientes y vendedores se registran por su propio flujo, que además crea su perfil."
   },
   "reports": {
     "title": "Informes financieros",

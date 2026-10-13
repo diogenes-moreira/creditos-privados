@@ -581,9 +581,10 @@
     "roles": {
       "admin": "Administrator",
       "client": "Client",
-      "vendor": "Vendor"
+      "vendor": "Vendor",
+      "advisor": "Advisor"
     },
-    "createAdminOnly": "Only administrators are created here. Clients and vendors are registered through their own flow, which also creates their profile."
+    "createStaffOnly": "Only staff accounts are created here: administrators and advisors. Clients and vendors are registered through their own flow, which also creates their profile."
   },
   "reports": {
     "title": "Financial Reports",

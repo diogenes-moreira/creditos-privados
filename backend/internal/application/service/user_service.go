@@ -131,17 +131,16 @@ func (s *UserService) SetActive(ctx context.Context, actorID, targetID uuid.UUID
 	return user, nil
 }
 
-// Create registers an administrator.
+// Create registers a staff account: an administrator or an advisor.
 //
-// Only administrators can be created here, because they are the only role that
-// is just an account. Clients and vendors are a person or a business with an
-// identity document and an address, and their own onboarding builds both
-// records together; creating the account alone leaves one that can sign in and
-// has nothing to show.
+// Those are the roles that are just an account. Clients and vendors are a
+// person or a business with an identity document and an address, and their own
+// onboarding builds both records together; creating the account alone leaves
+// one that can sign in and has nothing to show.
 func (s *UserService) Create(ctx context.Context, actorID uuid.UUID, email, phone string, role model.UserRole) (*model.User, error) {
-	if role != model.RoleAdmin {
+	if role != model.RoleAdmin && role != model.RoleAdvisor {
 		return nil, fmt.Errorf(
-			"only administrators can be created here: register a %s through its own flow, which also creates the profile",
+			"only staff accounts can be created here: register a %s through its own flow, which also creates the profile",
 			role)
 	}
 

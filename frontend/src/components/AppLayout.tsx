@@ -97,7 +97,20 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.users"), path: "/admin/users", icon: <UsersIcon /> },
   ];
 
-  const navItems = user?.role === "admin" ? adminNavItemsI18n : user?.role === "vendor" ? vendorNavItemsI18n : clientNavItemsI18n;
+  // An advisor only gets the counter tools: looking a rancher up and quoting
+  // their quota. Everything else on the admin menu changes policy or money.
+  const advisorNavItemsI18n = adminNavItemsI18n.filter((item) =>
+    item.path === "/admin/livestock-quota-lookup" || item.path === "/admin/clients"
+  );
+
+  const navItems =
+    user?.role === "admin"
+      ? adminNavItemsI18n
+      : user?.role === "advisor"
+        ? advisorNavItemsI18n
+        : user?.role === "vendor"
+          ? vendorNavItemsI18n
+          : clientNavItemsI18n;
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 

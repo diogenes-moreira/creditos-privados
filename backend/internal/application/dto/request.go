@@ -202,13 +202,13 @@ type VerifyOTPRequest struct {
 	Code    string `json:"code" binding:"required,len=6"`
 }
 
-// CreateUserRequest registers an administrator. Only that role is accepted:
-// clients and vendors are created by their own onboarding, which builds the
-// profile alongside the account.
+// CreateUserRequest registers a staff account. Only administrator and advisor
+// are accepted: clients and vendors are created by their own onboarding, which
+// builds the profile alongside the account.
 type CreateUserRequest struct {
 	Email string `json:"email" binding:"required,email"`
 	Phone string `json:"phone"`
-	Role  string `json:"role" binding:"required,oneof=admin"`
+	Role  string `json:"role" binding:"required,oneof=admin advisor"`
 }
 
 // ChangeRoleRequest moves a user to another role.
