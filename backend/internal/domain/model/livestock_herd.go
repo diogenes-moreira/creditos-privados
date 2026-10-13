@@ -204,10 +204,17 @@ type UGGLine struct {
 	UGG      decimal.Decimal
 }
 
-// UGG converts the herd to Unidad Gran Ganado under the given typology.
+// UGG converts the herd to Unidad Gran Ganado under the given typology, using
+// the shipped factor matrix.
 func (c HerdClassification) UGG(typology LivestockTypology) decimal.Decimal {
+	return c.UGGWith(FactorsFor(typology))
+}
+
+// UGGWith converts the herd using an explicit factor row, which is how the
+// engine applies an operator-edited matrix.
+func (c HerdClassification) UGGWith(f UGGFactors) decimal.Decimal {
 	total := decimal.Zero
-	for _, line := range c.UGGBreakdown(typology) {
+	for _, line := range c.UGGBreakdownWith(f) {
 		total = total.Add(line.UGG)
 	}
 	return total
@@ -215,7 +222,11 @@ func (c HerdClassification) UGG(typology LivestockTypology) decimal.Decimal {
 
 // UGGBreakdown itemizes the UGG conversion per category.
 func (c HerdClassification) UGGBreakdown(typology LivestockTypology) []UGGLine {
-	f := FactorsFor(typology)
+	return c.UGGBreakdownWith(FactorsFor(typology))
+}
+
+// UGGBreakdownWith itemizes the conversion under an explicit factor row.
+func (c HerdClassification) UGGBreakdownWith(f UGGFactors) []UGGLine {
 	line := func(category string, head int, factor decimal.Decimal) UGGLine {
 		return UGGLine{
 			Category: category,

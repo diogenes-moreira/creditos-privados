@@ -28,6 +28,7 @@ import AuditLog from "./pages/admin/AuditLog";
 import Collections from "./pages/admin/Collections";
 import Reports from "./pages/admin/Reports";
 import AdminRiskModel from "./pages/admin/RiskModel";
+import AdminLivestockQuota from "./pages/admin/LivestockQuota";
 import VendorListAdmin from "./pages/admin/VendorList";
 import UsersAdmin from "./pages/admin/Users";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
@@ -168,6 +169,11 @@ const App: React.FC = () => {
       <Route path="/admin/risk-model" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><AdminRiskModel /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/livestock-quota" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><AdminLivestockQuota /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/audit" element={

@@ -33,8 +33,10 @@ var ErrInvalidLivestockQuotaRequest = errors.New("invalid livestock quota reques
 // LivestockQuotaService runs the livestock quota engine for partner services
 // and stores every result.
 type LivestockQuotaService struct {
-	repo     port.LivestockQuotaRepository
-	params   model.QuotaParams
+	repo port.LivestockQuotaRepository
+	// policies supplies the operator-edited parameters. It is optional: with no
+	// policy service wired in, the engine runs on the shipped defaults.
+	policies *LivestockQuotaPolicyService
 	yields   model.LivestockYields
 	currency string
 }
@@ -42,10 +44,24 @@ type LivestockQuotaService struct {
 func NewLivestockQuotaService(repo port.LivestockQuotaRepository, currency string) *LivestockQuotaService {
 	return &LivestockQuotaService{
 		repo:     repo,
-		params:   model.DefaultQuotaParams(),
 		yields:   model.DefaultLivestockYields(),
 		currency: currency,
 	}
+}
+
+// WithPolicies makes the engine run on the active stored parameters.
+func (s *LivestockQuotaService) WithPolicies(policies *LivestockQuotaPolicyService) *LivestockQuotaService {
+	s.policies = policies
+	return s
+}
+
+// params resolves the parameters for one assessment: the active policy's when
+// one is stored, the shipped defaults otherwise.
+func (s *LivestockQuotaService) params(ctx context.Context) model.QuotaParams {
+	if s.policies == nil {
+		return model.DefaultQuotaParams()
+	}
+	return s.policies.ActiveParams(ctx)
 }
 
 // Assess computes and stores the quota. requestedBy names the partner service.
@@ -54,7 +70,7 @@ func (s *LivestockQuotaService) Assess(ctx context.Context, req LivestockQuotaRe
 	if err != nil {
 		return nil, model.LivestockAssessment{}, err
 	}
-	assessment := model.AssessQuota(applicant, s.params, s.yields)
+	assessment := model.AssessQuota(applicant, s.params(ctx), s.yields)
 	record, err := model.NewLivestockQuotaAssessment(applicant, assessment, s.currency, requestedBy, req.Reference)
 	if err != nil {
 		return nil, model.LivestockAssessment{}, err

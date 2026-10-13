@@ -711,3 +711,83 @@ export interface CreateUserRequest {
   phone?: string;
   role: UserRole;
 }
+
+// ---- Admin: livestock quota parameters ----
+
+/** One typology's row of the UGG conversion matrix. */
+export interface LivestockUGGFactor {
+  typology: string;
+  calves: string;
+  growing: string;
+  breeding: string;
+  fattening: string;
+  cull: string;
+}
+
+/**
+ * Every assumption the livestock quota engine takes. Amounts, rates and factors
+ * are decimal strings: money never travels as a float.
+ */
+export interface LivestockQuotaParams {
+  priceCalfPerKg: string;
+  priceGrowingPerKg: string;
+  priceFatteningPerKg: string;
+  weightCalfKg: string;
+  weightGrowingKg: string;
+  weightFatteningKg: string;
+
+  milkingShare: string;
+  pricePerLitre: string;
+
+  vaccineCostPerUggYear: string;
+  saltCostPerUggYear: string;
+  supplementCostPerUggYear: string;
+  vetCostPerUggYear: string;
+  dailyWage: string;
+
+  labourRegime: LivestockLabourRegime;
+  uggThresholdFamily: string;
+  uggThresholdOccasional: string;
+  uggThresholdPartial: string;
+  occasionalDaysPerMonth: number;
+
+  fenceCostPerHaYear: string;
+  infraCostPerUggYear: string;
+  hectaresPerUgg: string;
+
+  ltvPercent: string;
+  annualRatePct: string;
+  capitalCostPct: string;
+  maxQuota: string;
+  termMonths: number;
+  applyInputCeiling: boolean;
+  inputHeadroom: string;
+
+  factors: LivestockUGGFactor[];
+}
+
+export type LivestockLabourRegime = "auto" | "familiar" | "formal";
+
+/** One stored, versioned parameter set of the livestock quota engine. */
+export interface LivestockQuotaPolicy extends LivestockQuotaParams {
+  id: string;
+  name: string;
+  version: number;
+  description?: string;
+  isActive: boolean;
+  /** The typologies the matrix must cover, in presentation order. */
+  typologies: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveLivestockQuotaPolicyVersionRequest {
+  description?: string;
+  params: LivestockQuotaParams;
+  activate: boolean;
+}
+
+export interface UpdateLivestockQuotaPolicyRequest {
+  description?: string;
+  params: LivestockQuotaParams;
+}

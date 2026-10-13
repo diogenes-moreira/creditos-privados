@@ -65,6 +65,9 @@ import type {
   UserListResponse,
   CreateUserRequest,
   UserRole,
+  LivestockQuotaPolicy,
+  SaveLivestockQuotaPolicyVersionRequest,
+  UpdateLivestockQuotaPolicyRequest,
 } from "./types";
 
 // ==================== Auth ====================
@@ -688,5 +691,50 @@ export const adminChangeUserRole = async (id: string, role: UserRole): Promise<A
 /** Accounts are deactivated, never deleted: they carry loans, payments and audit entries. */
 export const adminSetUserActive = async (id: string, active: boolean): Promise<AdminUser> => {
   const res = await apiClient.put(`/admin/users/${id}/active`, { active });
+  return res.data;
+};
+
+// ==================== Admin: Livestock quota parameters ====================
+
+/** The parameter set every new quota is computed with. */
+export const adminGetActiveLivestockQuotaPolicy = async (): Promise<LivestockQuotaPolicy> => {
+  const res = await apiClient.get("/admin/livestock-quota-policies/active");
+  return res.data;
+};
+
+export const adminGetLivestockQuotaPolicies = async (
+  page = 1,
+  pageSize = 20
+): Promise<PaginatedResponse<LivestockQuotaPolicy>> => {
+  const res = await apiClient.get("/admin/livestock-quota-policies", {
+    params: { offset: (page - 1) * pageSize, limit: pageSize },
+  });
+  return res.data;
+};
+
+export const adminGetLivestockQuotaPolicy = async (id: string): Promise<LivestockQuotaPolicy> => {
+  const res = await apiClient.get(`/admin/livestock-quota-policies/${id}`);
+  return res.data;
+};
+
+/** Derives a new version: the running one keeps serving until it is activated. */
+export const adminSaveLivestockQuotaPolicyVersion = async (
+  id: string,
+  data: SaveLivestockQuotaPolicyVersionRequest
+): Promise<LivestockQuotaPolicy> => {
+  const res = await apiClient.post(`/admin/livestock-quota-policies/${id}/versions`, data);
+  return res.data;
+};
+
+export const adminUpdateLivestockQuotaPolicy = async (
+  id: string,
+  data: UpdateLivestockQuotaPolicyRequest
+): Promise<LivestockQuotaPolicy> => {
+  const res = await apiClient.put(`/admin/livestock-quota-policies/${id}`, data);
+  return res.data;
+};
+
+export const adminActivateLivestockQuotaPolicy = async (id: string): Promise<LivestockQuotaPolicy> => {
+  const res = await apiClient.post(`/admin/livestock-quota-policies/${id}/activate`);
   return res.data;
 };

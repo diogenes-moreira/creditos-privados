@@ -429,7 +429,7 @@ type LivestockAssessment struct {
 func AssessQuota(applicant LivestockApplicant, p QuotaParams, yields LivestockYields) LivestockAssessment {
 	classification := applicant.Herd.Classify()
 	typology := classification.Typology()
-	ugg := classification.UGG(typology)
+	ugg := classification.UGGWith(p.FactorsFor(typology))
 
 	score := applicant.BehaviourScore(classification)
 	income := ProjectIncome(classification, typology, applicant.Department, p, yields)

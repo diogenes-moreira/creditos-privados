@@ -196,6 +196,20 @@ type QuotaParams struct {
 	TermMonths        int
 	ApplyInputCeiling bool
 	InputHeadroom     decimal.Decimal
+
+	// UGGFactors is the typology x category conversion matrix. An empty map
+	// means the shipped DefaultUGGFactors, so a QuotaParams built without it
+	// behaves exactly as it did before the matrix became editable.
+	UGGFactors map[LivestockTypology]UGGFactors
+}
+
+// FactorsFor returns the UGG factors a typology converts with, falling back to
+// the shipped matrix for a typology the parameters do not cover.
+func (p QuotaParams) FactorsFor(typology LivestockTypology) UGGFactors {
+	if f, ok := p.UGGFactors[typology]; ok {
+		return f
+	}
+	return FactorsFor(typology)
 }
 
 // DefaultQuotaParams returns the CuppoGan pilot parameters.
@@ -236,6 +250,8 @@ func DefaultQuotaParams() QuotaParams {
 		TermMonths:        3,
 		ApplyInputCeiling: true,
 		InputHeadroom:     f(1.15),
+
+		UGGFactors: DefaultUGGFactors(),
 	}
 }
 

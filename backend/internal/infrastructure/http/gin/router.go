@@ -104,6 +104,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	riskAssessmentRepo := postgres.NewRiskAssessmentRepository(r.db)
 	creditHistoryRepo := postgres.NewCreditHistoryRepository(r.db)
 	livestockQuotaRepo := postgres.NewLivestockQuotaRepository(r.db)
+	livestockPolicyRepo := postgres.NewLivestockQuotaPolicyRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
@@ -163,8 +164,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
+	livestockPolicyService := service.NewLivestockQuotaPolicyService(livestockPolicyRepo, auditService)
 	livestockQuotaHandler := handler.NewLivestockQuotaHandler(
-		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency))
+		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency).
+			WithPolicies(livestockPolicyService))
+	livestockPolicyHandler := handler.NewLivestockQuotaPolicyHandler(livestockPolicyService)
 
 	// Optional path prefix for when the service is mounted under a sub-path.
 	// Empty by default: the app is served from the root.
@@ -316,6 +320,15 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.PUT("/risk-models/:id", riskHandler.UpdateRiskModel)
 		adminRoutes.POST("/risk-models/:id/activate", riskHandler.ActivateRiskModel)
 		adminRoutes.POST("/risk-models/:id/versions", riskHandler.SaveRiskModelVersion)
+
+		// Livestock quota engine: the parameters it computes quotas with
+		adminRoutes.GET("/livestock-quota-policies", livestockPolicyHandler.ListLivestockQuotaPolicies)
+		adminRoutes.POST("/livestock-quota-policies", livestockPolicyHandler.CreateLivestockQuotaPolicy)
+		adminRoutes.GET("/livestock-quota-policies/active", livestockPolicyHandler.GetActiveLivestockQuotaPolicy)
+		adminRoutes.GET("/livestock-quota-policies/:id", livestockPolicyHandler.GetLivestockQuotaPolicy)
+		adminRoutes.PUT("/livestock-quota-policies/:id", livestockPolicyHandler.UpdateLivestockQuotaPolicy)
+		adminRoutes.POST("/livestock-quota-policies/:id/activate", livestockPolicyHandler.ActivateLivestockQuotaPolicy)
+		adminRoutes.POST("/livestock-quota-policies/:id/versions", livestockPolicyHandler.SaveLivestockQuotaPolicyVersion)
 
 		// User administration. Accounts are deactivated, never deleted: they
 		// carry loans, payments and audit entries.
