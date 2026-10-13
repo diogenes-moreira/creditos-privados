@@ -1,13 +1,20 @@
-// Command createadmin grants one email administrator access.
+// Command usertool performs the account operations the product deliberately
+// does not expose over HTTP.
 //
-// It exists because seeding is all-or-nothing: cmd/seed also inserts fifty
-// synthetic clients and their portfolios, which does not belong in a real
-// deployment. This creates or promotes exactly one account and nothing else.
+// Seeding is all-or-nothing: cmd/seed also inserts fifty synthetic clients and
+// their portfolios, which does not belong in a real deployment. This acts on
+// exactly one account.
 //
-// It is idempotent: an existing user is promoted to admin and reactivated
-// rather than duplicated.
+// ACTION=promote (default) creates or promotes one email to administrator. It
+// is idempotent: an existing user is promoted and reactivated, not duplicated.
 //
-//	ADMIN_EMAIL=someone@example.com ADMIN_PHONE=+57... go run ./cmd/createadmin
+// ACTION=remove soft-deletes one account. There is no delete endpoint and there
+// should not be: a user carries loans, payments and audit entries, so removing
+// the row would break the financial trail. This is for operational cleanup of
+// records created in error, and it is a soft delete precisely so the audit
+// entries that reference the user still resolve.
+//
+//	ADMIN_EMAIL=someone@example.com ACTION=remove go run ./cmd/usertool
 package main
 
 import (
@@ -30,6 +37,13 @@ func main() {
 		log.Fatal("ADMIN_EMAIL is required")
 	}
 	phone := strings.TrimSpace(os.Getenv("ADMIN_PHONE"))
+	action := strings.ToLower(strings.TrimSpace(os.Getenv("ACTION")))
+	if action == "" {
+		action = "promote"
+	}
+	if action != "promote" && action != "remove" {
+		log.Fatalf("ACTION must be promote or remove, got %q", action)
+	}
 
 	cfg := config.Load()
 	db, err := postgres.NewConnection(cfg.DB)
@@ -44,7 +58,22 @@ func main() {
 	}
 
 	var existing model.User
-	if err := db.Where("email = ?", email).First(&existing).Error; err == nil {
+	found := db.Where("email = ?", email).First(&existing).Error == nil
+
+	if action == "remove" {
+		if !found {
+			log.Fatalf("No user with email %s", email)
+		}
+		// Soft delete: GORM sets deleted_at, so listings skip it while the
+		// audit entries that reference this id still resolve.
+		if err := db.Delete(&existing).Error; err != nil {
+			log.Fatalf("Failed to remove %s: %v", email, err)
+		}
+		log.Printf("Account removed: %s (ID: %s, role was %s)", email, existing.ID, existing.Role)
+		return
+	}
+
+	if found {
 		existing.Role = model.RoleAdmin
 		existing.IsActive = true
 		if phone != "" {
