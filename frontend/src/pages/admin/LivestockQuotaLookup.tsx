@@ -171,8 +171,10 @@ const LivestockQuotaLookup: React.FC = () => {
       // Most of the target population has no RUV record. That is ordinary.
       return (
         <Alert severity="info">
-          <AlertTitle>{t("livestock.lookup.notFoundTitle")}</AlertTitle>
-          {t("livestock.lookup.notFoundBody", { nationalId: submitted?.nationalId })}
+          <AlertTitle>
+            {t("livestock.lookup.notFoundTitle", { nationalId: submitted?.nationalId })}
+          </AlertTitle>
+          {t("livestock.lookup.notFoundBody")}
         </Alert>
       );
     }
