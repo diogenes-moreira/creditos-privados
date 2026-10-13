@@ -73,11 +73,12 @@ func (s *ConsoleOTPSender) SendOTP(_ context.Context, to port.OTPRecipient, code
 // configured. Which one is used is decided by OTPProvider, falling back to
 // whatever is actually configured.
 type OTPProviders struct {
-	// Provider names the WhatsApp gateway to use: "kapso" or "twilio".
-	// Empty picks whichever one is configured, preferring Kapso.
+	// Provider names the channel to use: "kapso", "twilio" or "sendgrid".
+	// Empty picks whichever is configured, preferring WhatsApp over email.
 	Provider string
 	Kapso    KapsoConfig
 	Twilio   TwilioConfig
+	SendGrid SendGridConfig
 }
 
 // NewOTPSender picks the delivery channel from configuration. WhatsApp goes
@@ -86,8 +87,15 @@ type OTPProviders struct {
 func NewOTPSender(p OTPProviders) port.OTPSender {
 	kapso := NewKapsoWhatsAppSender(p.Kapso)
 	twilio := NewTwilioWhatsAppSender(p.Twilio)
+	sendgrid := NewSendGridOTPSender(p.SendGrid)
 
 	switch strings.ToLower(strings.TrimSpace(p.Provider)) {
+	case "sendgrid":
+		if sendgrid != nil {
+			log.Println("OTP delivery: SendGrid email")
+			return sendgrid
+		}
+		log.Println("Warning: OTP_PROVIDER=sendgrid but SendGrid is not configured")
 	case "kapso":
 		if kapso != nil {
 			log.Println("OTP delivery: Kapso WhatsApp")
@@ -110,6 +118,10 @@ func NewOTPSender(p OTPProviders) port.OTPSender {
 	if twilio != nil {
 		log.Println("OTP delivery: Twilio WhatsApp")
 		return twilio
+	}
+	if sendgrid != nil {
+		log.Println("OTP delivery: SendGrid email")
+		return sendgrid
 	}
 
 	if credFile := os.Getenv("FIREBASE_CREDENTIALS_FILE"); credFile != "" {

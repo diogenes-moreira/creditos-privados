@@ -150,7 +150,10 @@ npm run dev    # http://localhost:4321
 | `GCS_BUCKET` | Bucket de Google Cloud Storage (opcional en dev) | - |
 | `GCS_CREDENTIALS_FILE` | Credenciales de GCS (opcional en dev) | - |
 | `LOCAL_STORAGE_PATH` | Path de almacenamiento local (fallback) | `./storage` |
-| `OTP_PROVIDER` | Gateway de WhatsApp: `kapso` o `twilio` (vacío = el que esté configurado) | - |
+| `OTP_PROVIDER` | Canal del OTP: `kapso`, `twilio` o `sendgrid` (vacío = el que esté configurado) | - |
+| `SENDGRID_API_KEY` | Habilita el envío del OTP por correo | - |
+| `SENDGRID_FROM_EMAIL` | Remitente verificado o de dominio autenticado | - |
+| `SENDGRID_FROM_NAME` | Nombre del remitente | `CuppoGan` |
 | `KAPSO_API_KEY` | Habilita el envío del OTP por WhatsApp vía Kapso | - |
 | `KAPSO_PHONE_NUMBER_ID` | ID del número conectado en Kapso (no el número) | - |
 | `KAPSO_TEMPLATE_NAME` | Plantilla aprobada con el código en `{{1}}` | - |

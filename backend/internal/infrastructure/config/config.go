@@ -6,15 +6,16 @@ import (
 )
 
 type Config struct {
-	DB     DBConfig
-	Server ServerConfig
-	JWT    JWTConfig
-	GCS    GCSConfig
-	AI     AIConfig
-	Twilio TwilioConfig
-	Kapso  KapsoConfig
-	// OTPProvider selects the WhatsApp gateway: "kapso" or "twilio". Empty
-	// uses whichever is configured.
+	DB       DBConfig
+	Server   ServerConfig
+	JWT      JWTConfig
+	GCS      GCSConfig
+	AI       AIConfig
+	Twilio   TwilioConfig
+	Kapso    KapsoConfig
+	SendGrid SendGridConfig
+	// OTPProvider selects the delivery channel: "kapso", "twilio" or
+	// "sendgrid". Empty uses whichever is configured.
 	OTPProvider     string
 	Partners        PartnersConfig
 	Country         string
@@ -102,6 +103,14 @@ type ServerConfig struct {
 type JWTConfig struct {
 	Secret          string
 	ExpirationHours int
+}
+
+// SendGridConfig configures one-time codes delivered by email. FromEmail must
+// be a verified sender identity in SendGrid.
+type SendGridConfig struct {
+	APIKey    string
+	FromEmail string
+	FromName  string
 }
 
 // KapsoConfig configures WhatsApp delivery through Kapso, which fronts the
@@ -196,6 +205,11 @@ func Load() *Config {
 			PhoneNumberID:    getEnv("KAPSO_PHONE_NUMBER_ID", ""),
 			TemplateName:     getEnv("KAPSO_TEMPLATE_NAME", ""),
 			TemplateLanguage: getEnv("KAPSO_TEMPLATE_LANGUAGE", ""),
+		},
+		SendGrid: SendGridConfig{
+			APIKey:    getEnv("SENDGRID_API_KEY", ""),
+			FromEmail: getEnv("SENDGRID_FROM_EMAIL", ""),
+			FromName:  getEnv("SENDGRID_FROM_NAME", "CuppoGan"),
 		},
 		OTPProvider: getEnv("OTP_PROVIDER", ""),
 		Twilio: TwilioConfig{

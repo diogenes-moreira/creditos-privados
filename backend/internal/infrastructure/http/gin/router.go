@@ -57,6 +57,11 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 				TemplateLanguage: cfg.Kapso.TemplateLanguage,
 				DefaultDialCode:  cfg.DialCode(),
 			},
+			SendGrid: messaging.SendGridConfig{
+				APIKey:    cfg.SendGrid.APIKey,
+				FromEmail: cfg.SendGrid.FromEmail,
+				FromName:  cfg.SendGrid.FromName,
+			},
 			Twilio: messaging.TwilioConfig{
 				AccountSID:      cfg.Twilio.AccountSID,
 				AuthToken:       cfg.Twilio.AuthToken,
