@@ -26,6 +26,7 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import { useFirebasePhoneAuth } from "../../firebase/useFirebasePhoneAuth";
 import { useFirebaseGoogleAuth } from "../../firebase/useFirebaseGoogleAuth";
+import { isFirebaseEnabled } from "../../firebase/config";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -139,22 +140,25 @@ const Login: React.FC = () => {
             </Typography>
           </Box>
 
-          <Tabs
-            value={tab}
-            onChange={(_, v) => {
-              setTab(v);
-              resetOtpFlow();
-            }}
-            variant="fullWidth"
-            sx={{ mb: 2 }}
-          >
-            <Tab label={t("auth.clientLogin")} />
-            <Tab label={t("auth.adminLogin")} />
-          </Tabs>
+          {isFirebaseEnabled && (
+            <Tabs
+              value={tab}
+              onChange={(_, v) => {
+                setTab(v);
+                resetOtpFlow();
+              }}
+              variant="fullWidth"
+              sx={{ mb: 2 }}
+            >
+              <Tab label={t("auth.clientLogin")} />
+              <Tab label={t("auth.adminLogin")} />
+            </Tabs>
+          )}
 
           {/* Client/Vendor OTP Login */}
-          {tab === 0 && !otpSent && (
+          {(tab === 0 || !isFirebaseEnabled) && !otpSent && (
             <form onSubmit={handleRequestOTP}>
+              {isFirebaseEnabled && (
               <ToggleButtonGroup
                 value={channel}
                 exclusive
@@ -173,6 +177,8 @@ const Login: React.FC = () => {
                   {t("auth.otpChannelPhone")}
                 </ToggleButton>
               </ToggleButtonGroup>
+
+              )}
 
               {channel === "email" ? (
                 <TextField
@@ -229,7 +235,7 @@ const Login: React.FC = () => {
           )}
 
           {/* OTP Verification Step */}
-          {tab === 0 && otpSent && (
+          {(tab === 0 || !isFirebaseEnabled) && otpSent && (
             <form onSubmit={handleVerifyOTP}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 {channel === "phone"
@@ -269,7 +275,7 @@ const Login: React.FC = () => {
           )}
 
           {/* Admin Login (Google OAuth) */}
-          {tab === 1 && (
+          {tab === 1 && isFirebaseEnabled && (
             <Box>
               <Button
                 fullWidth
