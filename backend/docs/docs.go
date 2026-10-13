@@ -12,7 +12,7 @@ const docTemplate = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",
-            "email": "support@prestia.com.ar"
+            "email": "soporte@cuppogan.com.co"
         },
         "license": {
             "name": "MIT",
@@ -1302,6 +1302,351 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/livestock-quota-policies": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "List livestock quota parameter versions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaginatedResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Create a livestock quota parameter set",
+                "parameters": [
+                    {
+                        "description": "Parameter set",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateLivestockQuotaPolicyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-quota-policies/active": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the parameter set every new quota is computed with, seeding the shipped defaults the first time it is asked for",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Get the active livestock quota parameters",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-quota-policies/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Get one livestock quota parameter version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Policy UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Update a livestock quota parameter version in place",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Policy UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Parameter changes",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateLivestockQuotaPolicyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-quota-policies/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Makes this version the parameters every new quota is computed with",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Activate a livestock quota parameter version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Policy UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-quota-policies/{id}/versions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Derives a new version from an existing policy. The running version keeps serving until the new one is activated.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota policies"
+                ],
+                "summary": "Save a new version of a livestock quota parameter set",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source policy UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New version",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SaveLivestockQuotaPolicyVersionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockQuotaPolicyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-quotas/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reads the national ID's herds from Fedegán's vaccination registry and returns the quota with the full trace of how it was reached",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Livestock Quota"
+                ],
+                "summary": "Quote a rancher's credit from the RUV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "National ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CÉDULA DE CIUDADANÍA (default), NIT, PASAPORTE...",
+                        "name": "idType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegistryQuotaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not in the registry",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Registry not configured",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/loans": {
             "post": {
                 "security": [
@@ -2290,6 +2635,216 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lists every user, optionally filtered by role, activation state or a search over email and phone",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "admin, client or vendor",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by activation state",
+                        "name": "active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Match email or phone",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 50, max 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Rows to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registers a user with a role directly, which is how an administrator is added",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/active": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revokes or restores a user's access. Accounts are never deleted, so the financial trail stays intact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "Activate or deactivate a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Activation state",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetActiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/role": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Moves a user to another role. An administrator cannot change their own role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Users"
+                ],
+                "summary": "Change a user's role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New role",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangeRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/vendors": {
             "get": {
                 "security": [
@@ -2711,9 +3266,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/firebase-login": {
+        "/auth/google": {
             "post": {
-                "description": "Verifies a Firebase ID token (from Google OAuth or Phone Auth) and returns a JWT token",
+                "description": "Verifies a Google ID token and issues a session for an existing administrator. Accounts are never created here.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2723,15 +3278,15 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Authenticate via Firebase ID token",
+                "summary": "Sign in an administrator with Google",
                 "parameters": [
                     {
-                        "description": "Firebase ID token",
+                        "description": "Google ID token",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.FirebaseLoginRequest"
+                            "$ref": "#/definitions/dto.GoogleLoginRequest"
                         }
                     }
                 ],
@@ -2740,12 +3295,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
@@ -2760,66 +3309,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "description": "Validates credentials and returns a JWT token for API access. For clients, use OTP flow instead.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Authenticate a user (admin/vendor)",
-                "parameters": [
-                    {
-                        "description": "Login credentials",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "503": {
+                        "description": "Google sign-in not configured",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -3087,6 +3578,75 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/livestock-quotas/registry": {
+            "post": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Reads the national ID's herds from Fedegán's vaccination registry, runs the quota engine and stores the result. The partner sends only the identity; contact data is not returned.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Assess a rancher's livestock quota from the RUV (partner)",
+                "parameters": [
+                    {
+                        "description": "Rancher's identity",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PartnerRegistryQuotaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PartnerRegistryQuotaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not in the registry",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Registry error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Registry not configured",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -4385,6 +4945,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ChangeRoleRequest": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "client",
+                        "vendor"
+                    ]
+                }
+            }
+        },
         "dto.ClientResponse": {
             "type": "object",
             "properties": {
@@ -4472,6 +5048,27 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateLivestockQuotaPolicyRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "params"
+            ],
+            "properties": {
+                "activate": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.LivestockQuotaParamsRequest"
+                }
+            }
+        },
         "dto.CreateRiskModelRequest": {
             "type": "object",
             "required": [
@@ -4502,6 +5099,28 @@ const docTemplate = `{
                 },
                 "prompt": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "advisor"
+                    ]
                 }
             }
         },
@@ -4641,7 +5260,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.FirebaseLoginRequest": {
+        "dto.GoogleLoginRequest": {
             "type": "object",
             "required": [
                 "idToken"
@@ -4783,6 +5402,254 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.LivestockQuotaParamsRequest": {
+            "type": "object",
+            "required": [
+                "annualRatePct",
+                "capitalCostPct",
+                "factors",
+                "hectaresPerUgg",
+                "labourRegime",
+                "ltvPercent",
+                "maxQuota",
+                "milkingShare",
+                "priceCalfPerKg",
+                "priceFatteningPerKg",
+                "priceGrowingPerKg",
+                "pricePerLitre",
+                "termMonths",
+                "uggThresholdFamily",
+                "uggThresholdOccasional",
+                "uggThresholdPartial",
+                "weightCalfKg",
+                "weightFatteningKg",
+                "weightGrowingKg"
+            ],
+            "properties": {
+                "annualRatePct": {
+                    "type": "string"
+                },
+                "applyInputCeiling": {
+                    "type": "boolean"
+                },
+                "capitalCostPct": {
+                    "type": "string"
+                },
+                "dailyWage": {
+                    "type": "string"
+                },
+                "factors": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockUGGFactorRequest"
+                    }
+                },
+                "fenceCostPerHaYear": {
+                    "type": "string"
+                },
+                "hectaresPerUgg": {
+                    "type": "string"
+                },
+                "infraCostPerUggYear": {
+                    "type": "string"
+                },
+                "inputHeadroom": {
+                    "type": "string"
+                },
+                "labourRegime": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "familiar",
+                        "formal"
+                    ]
+                },
+                "ltvPercent": {
+                    "type": "string"
+                },
+                "maxQuota": {
+                    "type": "string"
+                },
+                "milkingShare": {
+                    "type": "string"
+                },
+                "occasionalDaysPerMonth": {
+                    "type": "integer",
+                    "maximum": 31,
+                    "minimum": 0
+                },
+                "priceCalfPerKg": {
+                    "type": "string"
+                },
+                "priceFatteningPerKg": {
+                    "type": "string"
+                },
+                "priceGrowingPerKg": {
+                    "type": "string"
+                },
+                "pricePerLitre": {
+                    "type": "string"
+                },
+                "saltCostPerUggYear": {
+                    "type": "string"
+                },
+                "supplementCostPerUggYear": {
+                    "type": "string"
+                },
+                "termMonths": {
+                    "type": "integer",
+                    "maximum": 60,
+                    "minimum": 1
+                },
+                "uggThresholdFamily": {
+                    "type": "string"
+                },
+                "uggThresholdOccasional": {
+                    "type": "string"
+                },
+                "uggThresholdPartial": {
+                    "type": "string"
+                },
+                "vaccineCostPerUggYear": {
+                    "type": "string"
+                },
+                "vetCostPerUggYear": {
+                    "type": "string"
+                },
+                "weightCalfKg": {
+                    "type": "string"
+                },
+                "weightFatteningKg": {
+                    "type": "string"
+                },
+                "weightGrowingKg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockQuotaPolicyResponse": {
+            "type": "object",
+            "properties": {
+                "annualRatePct": {
+                    "type": "string"
+                },
+                "applyInputCeiling": {
+                    "type": "boolean"
+                },
+                "capitalCostPct": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "dailyWage": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockUGGFactorResponse"
+                    }
+                },
+                "fenceCostPerHaYear": {
+                    "type": "string"
+                },
+                "hectaresPerUgg": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "infraCostPerUggYear": {
+                    "type": "string"
+                },
+                "inputHeadroom": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "labourRegime": {
+                    "type": "string"
+                },
+                "ltvPercent": {
+                    "type": "string"
+                },
+                "maxQuota": {
+                    "type": "string"
+                },
+                "milkingShare": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "occasionalDaysPerMonth": {
+                    "type": "integer"
+                },
+                "priceCalfPerKg": {
+                    "type": "string"
+                },
+                "priceFatteningPerKg": {
+                    "type": "string"
+                },
+                "priceGrowingPerKg": {
+                    "type": "string"
+                },
+                "pricePerLitre": {
+                    "type": "string"
+                },
+                "saltCostPerUggYear": {
+                    "type": "string"
+                },
+                "supplementCostPerUggYear": {
+                    "type": "string"
+                },
+                "termMonths": {
+                    "type": "integer"
+                },
+                "typologies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "uggThresholdFamily": {
+                    "type": "string"
+                },
+                "uggThresholdOccasional": {
+                    "type": "string"
+                },
+                "uggThresholdPartial": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "vaccineCostPerUggYear": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "vetCostPerUggYear": {
+                    "type": "string"
+                },
+                "weightCalfKg": {
+                    "type": "string"
+                },
+                "weightFatteningKg": {
+                    "type": "string"
+                },
+                "weightGrowingKg": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LivestockQuotaRequest": {
             "type": "object",
             "required": [
@@ -4843,6 +5710,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "activeCeiling": {
+                    "type": "string"
+                },
+                "activeCeilingCode": {
+                    "description": "ActiveCeilingCode is the stable key of ActiveCeiling: ltv, capacity,\ninputs or policyCap. Branch on this, not on the display text.",
                     "type": "string"
                 },
                 "ceilings": {
@@ -4914,6 +5785,55 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.LivestockUGGFactorRequest": {
+            "type": "object",
+            "required": [
+                "typology"
+            ],
+            "properties": {
+                "breeding": {
+                    "type": "string"
+                },
+                "calves": {
+                    "type": "string"
+                },
+                "cull": {
+                    "type": "string"
+                },
+                "fattening": {
+                    "type": "string"
+                },
+                "growing": {
+                    "type": "string"
+                },
+                "typology": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockUGGFactorResponse": {
+            "type": "object",
+            "properties": {
+                "breeding": {
+                    "type": "string"
+                },
+                "calves": {
+                    "type": "string"
+                },
+                "cull": {
+                    "type": "string"
+                },
+                "fattening": {
+                    "type": "string"
+                },
+                "growing": {
+                    "type": "string"
+                },
+                "typology": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LoanResponse": {
             "type": "object",
             "properties": {
@@ -4967,17 +5887,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LoginRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.MercadoPagoLinkRequest": {
             "type": "object",
             "required": [
@@ -5001,6 +5910,48 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.PartnerRegistryQuotaRequest": {
+            "type": "object",
+            "required": [
+                "nationalId"
+            ],
+            "properties": {
+                "idType": {
+                    "description": "IDType is the RUV's document type, e.g. \"CÉDULA DE CIUDADANÍA\" (default).",
+                    "type": "string",
+                    "maxLength": 60
+                },
+                "nationalId": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "reference": {
+                    "description": "Reference is the caller's identifier for the request (e.g. its onboarding ID).",
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
+        "dto.PartnerRegistryQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "$ref": "#/definitions/dto.LivestockQuotaResponse"
+                },
+                "assumptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "holdingCodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -5415,6 +6366,81 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "province": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegistryHoldingResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "cycle": {
+                    "type": "integer"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "head": {
+                    "type": "integer"
+                },
+                "municipality": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notVaccinated": {
+                    "type": "integer"
+                },
+                "vaccinatedAt": {
+                    "type": "string"
+                },
+                "village": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RegistryQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "$ref": "#/definitions/dto.LivestockQuotaResponse"
+                },
+                "assumptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rancher": {
+                    "$ref": "#/definitions/dto.RegistryRancherResponse"
+                }
+            }
+        },
+        "dto.RegistryRancherResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "holdings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RegistryHoldingResponse"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                },
+                "phone": {
                     "type": "string"
                 }
             }
@@ -5945,6 +6971,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SaveLivestockQuotaPolicyVersionRequest": {
+            "type": "object",
+            "required": [
+                "params"
+            ],
+            "properties": {
+                "activate": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.LivestockQuotaParamsRequest"
+                }
+            }
+        },
         "dto.SaveRiskModelVersionRequest": {
             "type": "object",
             "required": [
@@ -5969,6 +7012,17 @@ const docTemplate = `{
                 },
                 "prompt": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.SetActiveRequest": {
+            "type": "object",
+            "required": [
+                "active"
+            ],
+            "properties": {
+                "active": {
+                    "type": "boolean"
                 }
             }
         },
@@ -6222,6 +7276,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateLivestockQuotaPolicyRequest": {
+            "type": "object",
+            "required": [
+                "params"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.LivestockQuotaParamsRequest"
+                }
+            }
+        },
         "dto.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -6285,13 +7353,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UserListResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserResponse"
+                    }
+                }
+            }
+        },
         "dto.UserResponse": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "lastLoginAt": {
                     "type": "string"
                 },
                 "phone": {
@@ -6427,7 +7518,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Prestia API",
+	Title:            "CuppoGan API",
 	Description:      "Microcredit management system API for Argentina",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
