@@ -82,7 +82,8 @@
     "country": "País",
     "isPEP": "¿Es Persona Expuesta Políticamente (PEP)?",
     "submit": "Crear cuenta",
-    "confirmPassword": "Confirmar contraseña"
+    "confirmPassword": "Confirmar contraseña",
+    "reviewInferred": "Inferido del RUV: revisar"
   },
   "validation": {
     "invalidEmail": "Email inválido",
@@ -990,7 +991,11 @@
         "tenure_assumed_leased": "Tenencia: se supuso tierra arrendada, no propia. Es el supuesto conservador; si el ganadero es dueño, el puntaje sube.",
         "holding_status_assumed_active": "Estado del predio: se supuso activo, porque el registro no informa si fue fusionado o dado de baja.",
         "compliance_from_reported_cycles_only": "Cumplimiento: se cuenta solo sobre los ciclos que el registro reporta, así que da 100% por construcción. No dice nada sobre ciclos no reportados."
-      }
+      },
+      "registerClient": "Dar de alta como cliente",
+      "viewClient": "Ver cliente",
+      "registerFromRegistryTitle": "Datos precargados del registro de vacunación",
+      "registerFromRegistryBody": "El RUV no está pensado para el alta: el nombre se separa en nombres y apellidos por aproximación, el NIT es la cédula más su dígito de verificación (vale solo si el ganadero tiene RUT con esa cédula) y la dirección es la del predio principal. Revisá los campos marcados y completá la fecha de nacimiento, que el registro no tiene."
     }
   }
 }

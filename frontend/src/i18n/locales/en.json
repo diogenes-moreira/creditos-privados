@@ -82,7 +82,8 @@
     "country": "Country",
     "isPEP": "Politically Exposed Person (PEP)?",
     "submit": "Create account",
-    "confirmPassword": "Confirm password"
+    "confirmPassword": "Confirm password",
+    "reviewInferred": "Inferred from the RUV: please check"
   },
   "validation": {
     "invalidEmail": "Invalid email",
@@ -990,7 +991,11 @@
         "tenure_assumed_leased": "Tenure: land was assumed leased, not owned. That is the conservative assumption; if the rancher owns it, the score rises.",
         "holding_status_assumed_active": "Holding status: assumed active, because the registry does not say whether it was merged or struck off.",
         "compliance_from_reported_cycles_only": "Compliance: counted over reported cycles only, so it reads 100% by construction. It says nothing about unreported cycles."
-      }
+      },
+      "registerClient": "Register as client",
+      "viewClient": "View client",
+      "registerFromRegistryTitle": "Pre-filled from the vaccination registry",
+      "registerFromRegistryBody": "The RUV was not built for onboarding: the name is split into given names and surnames by guesswork, the NIT is the cédula plus its check digit (valid only if the rancher has a RUT under it) and the address is the main holding's. Check the highlighted fields and add the date of birth, which the registry does not hold."
     }
   }
 }

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -25,10 +26,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
-import { adminAssessLivestockQuotaFromRegistry } from "../../api/endpoints";
+import { Search as SearchIcon, PersonAdd as PersonAddIcon, Person as PersonIcon } from "@mui/icons-material";
+import { adminAssessLivestockQuotaFromRegistry, adminSearchClients } from "../../api/endpoints";
+import { useAuth } from "../../auth/AuthContext";
+import RegisterClientDialog from "../../components/RegisterClientDialog";
+import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
+import { prefillFromRegistry, type RegistryPrefill } from "../../utils/registryClient";
 import { getErrorMessage } from "../../api/errorUtils";
 import type {
+  Client,
   LivestockQuotaAssessment,
   LivestockRegistryIdType,
   RegistryQuotaResponse,
@@ -147,6 +153,36 @@ const LivestockQuotaLookup: React.FC = () => {
   });
   const { data, error } = lookup;
   const isFetching = lookup.isPending;
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const config = useCountryConfig();
+  const [prefill, setPrefill] = useState<RegistryPrefill | null>(null);
+
+  // Client registration validates the national ID as a cédula de ciudadanía,
+  // so only a rancher found under one can be registered from here.
+  const canRegister =
+    user?.role === "admin" && submitted?.idType === "CÉDULA DE CIUDADANÍA";
+
+  // Whether the rancher is already a client, so the screen offers the record
+  // instead of a second registration that the backend would refuse anyway.
+  const foundId = data?.rancher.nationalId;
+  const { data: existingClient } = useQuery<Client | null>({
+    queryKey: ["admin-clients-search", "registry", foundId],
+    queryFn: async () => {
+      const matches = await adminSearchClients(foundId!);
+      return matches.find((c) => c.dni === foundId) ?? null;
+    },
+    enabled: !!foundId,
+  });
+
+  const openRegistration = async () => {
+    if (!data) return;
+    // The place-name library is large and already split out of the bundle;
+    // load it only when it is about to be used.
+    const geo = await import("country-state-city").catch(() => undefined);
+    setPrefill(prefillFromRegistry(data.rancher, countryNameFor(config.country), geo));
+  };
 
   const assessment = data?.assessment;
   const binding = useMemo(
@@ -533,9 +569,31 @@ const LivestockQuotaLookup: React.FC = () => {
 
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {t("livestock.lookup.rancherTitle")}
-              </Typography>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                flexWrap="wrap"
+                gap={1}
+                mb={1}
+              >
+                <Typography variant="h6">{t("livestock.lookup.rancherTitle")}</Typography>
+                {existingClient ? (
+                  <Button
+                    variant="outlined"
+                    startIcon={<PersonIcon />}
+                    onClick={() => navigate(`/admin/clients/${existingClient.id}`)}
+                  >
+                    {t("livestock.lookup.viewClient")}
+                  </Button>
+                ) : (
+                  canRegister && (
+                    <Button variant="contained" startIcon={<PersonAddIcon />} onClick={openRegistration}>
+                      {t("livestock.lookup.registerClient")}
+                    </Button>
+                  )
+                )}
+              </Box>
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} sm={6} md={3}>
                   {field(t("livestock.lookup.name"), data.rancher.name || "-")}
@@ -638,6 +696,19 @@ const LivestockQuotaLookup: React.FC = () => {
           </Card>
         </Stack>
       )}
+      <RegisterClientDialog
+        open={!!prefill}
+        onClose={() => setPrefill(null)}
+        initial={prefill?.form}
+        toReview={prefill?.toReview}
+        notice={
+          <Alert severity="info">
+            <AlertTitle>{t("livestock.lookup.registerFromRegistryTitle")}</AlertTitle>
+            {t("livestock.lookup.registerFromRegistryBody")}
+          </Alert>
+        }
+        onCreated={(client) => navigate(`/admin/clients/${client.id}`)}
+      />
     </Box>
   );
 };

@@ -82,7 +82,8 @@
     "country": "País",
     "isPEP": "Pessoa Politicamente Exposta (PEP)?",
     "submit": "Criar conta",
-    "confirmPassword": "Confirmar senha"
+    "confirmPassword": "Confirmar senha",
+    "reviewInferred": "Inferido do RUV: conferir"
   },
   "validation": {
     "invalidEmail": "E-mail inválido",
@@ -990,7 +991,11 @@
         "tenure_assumed_leased": "Posse: supôs-se terra arrendada, não própria. É o suposto conservador; se o pecuarista for o dono, a pontuação sobe.",
         "holding_status_assumed_active": "Situação da propriedade: supôs-se ativa, porque o registro não informa se foi fundida ou baixada.",
         "compliance_from_reported_cycles_only": "Cumprimento: contado somente sobre os ciclos que o registro reporta, portanto dá 100% por construção. Nada diz sobre ciclos não reportados."
-      }
+      },
+      "registerClient": "Cadastrar como cliente",
+      "viewClient": "Ver cliente",
+      "registerFromRegistryTitle": "Dados pré-preenchidos do registro de vacinação",
+      "registerFromRegistryBody": "O RUV não foi feito para cadastro: o nome é separado em nomes e sobrenomes por aproximação, o NIT é a cédula mais o dígito verificador (vale só se o pecuarista tiver RUT com essa cédula) e o endereço é o da propriedade principal. Confira os campos marcados e preencha a data de nascimento, que o registro não tem."
     }
   }
 }
