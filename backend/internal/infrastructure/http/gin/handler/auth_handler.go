@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -16,6 +17,7 @@ type AuthHandler struct {
 	authService    *auth.LocalAuthService
 	otpService     *service.OTPService
 	googleVerifier *auth.GoogleVerifier
+	audit          *service.AuditService
 }
 
 func NewAuthHandler(
@@ -24,6 +26,7 @@ func NewAuthHandler(
 	authService *auth.LocalAuthService,
 	otpService *service.OTPService,
 	googleVerifier *auth.GoogleVerifier,
+	audit *service.AuditService,
 ) *AuthHandler {
 	return &AuthHandler{
 		clientService:  clientService,
@@ -31,6 +34,7 @@ func NewAuthHandler(
 		authService:    authService,
 		otpService:     otpService,
 		googleVerifier: googleVerifier,
+		audit:          audit,
 	}
 }
 
@@ -221,6 +225,9 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 
 	user.RecordLogin()
 	_ = h.userRepo.Update(c.Request.Context(), user)
+
+	h.audit.Record(c.Request.Context(), &user.ID, "google_login", "user", user.ID.String(),
+		fmt.Sprintf("Administrator %s signed in with Google", user.Email))
 
 	c.JSON(http.StatusOK, dto.AuthResponse{Token: token, User: dto.ToUserResponse(user)})
 }

@@ -155,7 +155,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	healthHandler := handler.NewHealthHandler(r.db)
 	configHandler := handler.NewConfigHandler(r.countryInfo)
 	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService,
-		auth.NewGoogleVerifierOrNil(r.googleConfig.ClientID, r.googleConfig.HostedDomain))
+		auth.NewGoogleVerifierOrNil(r.googleConfig.ClientID, r.googleConfig.HostedDomain),
+		auditService)
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
