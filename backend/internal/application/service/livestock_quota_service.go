@@ -148,7 +148,10 @@ type RegistryAssessment struct {
 // from it. Tenure is assumed leased rather than owned, because over-granting
 // credit is the more expensive mistake; every assumption is returned alongside
 // the quota rather than buried.
-func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, nationalID, requestedBy string) (*RegistryAssessment, error) {
+//
+// reference is the caller's identifier for the request (e.g. CuppoGan's
+// onboarding ID); empty means "ruv".
+func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, nationalID, requestedBy, reference string) (*RegistryAssessment, error) {
 	if s.registry == nil {
 		return nil, ErrRegistryUnavailable
 	}
@@ -171,9 +174,12 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 		SeniorityCycles: cycles,
 		CompletedCycles: cycles,
 		ReportedCycles:  cycles,
-		Reference:       "ruv",
+		Reference:       reference,
 	}
-	for _, h := range rancher.Holdings {
+	if strings.TrimSpace(req.Reference) == "" {
+		req.Reference = "ruv"
+	}
+	for _, h := range rancher.LatestHoldings() {
 		req.Holdings = append(req.Holdings, h.Herd)
 	}
 

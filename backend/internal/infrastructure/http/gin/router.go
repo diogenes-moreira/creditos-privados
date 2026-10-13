@@ -212,10 +212,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Partner services (service key, not a user session). Not registered when
 	// the partner's key is not configured.
 	if r.partners.CuppoganAPIKey != "" {
-		api.POST("/livestock-quotas", middleware.RequireServiceKey("cuppogan", r.partners.CuppoganAPIKey),
-			livestockQuotaHandler.Assess)
+		cuppogan := middleware.RequireServiceKey("cuppogan", r.partners.CuppoganAPIKey)
+		api.POST("/livestock-quotas", cuppogan, livestockQuotaHandler.Assess)
+		api.POST("/livestock-quotas/registry", cuppogan, livestockQuotaHandler.AssessFromRegistryForPartner)
 	} else {
-		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas disabled")
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas and /livestock-quotas/registry disabled")
 	}
 
 	// Authenticated routes

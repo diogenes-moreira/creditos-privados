@@ -42,10 +42,31 @@ type RUVRancher struct {
 	Holdings []RUVHolding
 }
 
-// AggregatedHerd sums every holding's animals into one herd.
+// LatestHoldings keeps each predio once, at its most recent vaccination cycle.
+// The registry returns one record per predio and cycle, so a predio vaccinated
+// in two cycles would otherwise be counted twice.
+func (r RUVRancher) LatestHoldings() []RUVHolding {
+	latest := map[string]int{}
+	var out []RUVHolding
+	for _, h := range r.Holdings {
+		i, seen := latest[h.Code]
+		if !seen {
+			latest[h.Code] = len(out)
+			out = append(out, h)
+			continue
+		}
+		if h.Year > out[i].Year || (h.Year == out[i].Year && h.Cycle > out[i].Cycle) {
+			out[i] = h
+		}
+	}
+	return out
+}
+
+// AggregatedHerd sums every predio's animals into one herd, each predio at its
+// latest cycle.
 func (r RUVRancher) AggregatedHerd() model.Herd {
 	var herd model.Herd
-	for _, h := range r.Holdings {
+	for _, h := range r.LatestHoldings() {
 		herd.Add(h.Herd)
 	}
 	return herd
@@ -55,7 +76,7 @@ func (r RUVRancher) AggregatedHerd() model.Herd {
 // whose yields best represent the operation. Ties go to the first seen.
 func (r RUVRancher) Department() string {
 	best, bestTotal := "", -1
-	for _, h := range r.Holdings {
+	for _, h := range r.LatestHoldings() {
 		if total := h.Herd.Classify().Total; total > bestTotal {
 			best, bestTotal = h.Department, total
 		}
