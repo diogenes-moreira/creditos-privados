@@ -502,3 +502,17 @@ func TestQuotaCeilingCodeIsStable(t *testing.T) {
 	assert.True(t, seen[model.CeilingCodeLTV])
 	assert.True(t, seen[model.CeilingCodePolicyCap])
 }
+
+func TestYieldLookupIgnoresCaseAccentsAndLeadingLa(t *testing.T) {
+	y := model.DefaultLivestockYields()
+	gain := func(department string) string {
+		g, ok := y.DailyGain(model.TypologyDualPurpose, department)
+		require.True(t, ok, department)
+		return g.String()
+	}
+	for _, spelling := range []string{"César", "CESAR", "cesar", "  Cesar "} {
+		assert.Equal(t, "610", gain(spelling), spelling)
+	}
+	assert.Equal(t, "660", gain("LA GUAJIRA"))
+	assert.Equal(t, "590", gain("CÓRDOBA"))
+}

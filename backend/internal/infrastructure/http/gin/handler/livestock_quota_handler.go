@@ -50,6 +50,52 @@ func (h *LivestockQuotaHandler) Assess(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToLivestockQuotaResponse(record, assessment))
 }
 
+// AssessFromRegistryForPartner godoc
+// @Summary Assess a rancher's livestock quota from the RUV (partner)
+// @Description Reads the national ID's herds from Fedegán's vaccination registry, runs the quota engine and stores the result. The partner sends only the identity; contact data is not returned.
+// @Tags Livestock quota
+// @Accept json
+// @Produce json
+// @Param request body dto.PartnerRegistryQuotaRequest true "Rancher's identity"
+// @Success 200 {object} dto.PartnerRegistryQuotaResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse "Not in the registry"
+// @Failure 502 {object} dto.ErrorResponse "Registry error"
+// @Failure 503 {object} dto.ErrorResponse "Registry not configured"
+// @Security ServiceKey
+// @Router /livestock-quotas/registry [post]
+func (h *LivestockQuotaHandler) AssessFromRegistryForPartner(c *gin.Context) {
+	var req dto.PartnerRegistryQuotaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	result, err := h.service.AssessFromRegistry(c.Request.Context(), req.IDType, strings.TrimSpace(req.NationalID),
+		c.GetString("serviceName"), req.Reference)
+	if status, ok := registryErrorStatus(err); ok {
+		c.JSON(status, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToPartnerRegistryQuotaResponse(result))
+}
+
+// registryErrorStatus maps a registry assessment error to its HTTP status.
+func registryErrorStatus(err error) (int, bool) {
+	switch {
+	case err == nil:
+		return 0, false
+	case errors.Is(err, service.ErrNotInRegistry):
+		return http.StatusNotFound, true
+	case errors.Is(err, service.ErrRegistryUnavailable):
+		return http.StatusServiceUnavailable, true
+	case errors.Is(err, service.ErrInvalidLivestockQuotaRequest):
+		return http.StatusBadRequest, true
+	default:
+		return http.StatusBadGateway, true
+	}
+}
+
 // AssessFromRegistry godoc
 // @Summary Quote a rancher's credit from the RUV
 // @Description Reads the national ID's herds from Fedegán's vaccination registry and returns the quota with the full trace of how it was reached
@@ -75,7 +121,7 @@ func (h *LivestockQuotaHandler) AssessFromRegistry(c *gin.Context) {
 		requestedBy = "admin"
 	}
 
-	result, err := h.service.AssessFromRegistry(c.Request.Context(), c.Query("idType"), nationalID, requestedBy)
+	result, err := h.service.AssessFromRegistry(c.Request.Context(), c.Query("idType"), nationalID, requestedBy, "")
 	switch {
 	case errors.Is(err, service.ErrNotInRegistry):
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "no RUV record for that national ID"})

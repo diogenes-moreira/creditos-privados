@@ -1,6 +1,11 @@
 package model
 
-import "github.com/shopspring/decimal"
+import (
+	"strings"
+	"unicode"
+
+	"github.com/shopspring/decimal"
+)
 
 // Fedegán yield data, consolidated April 2026, indexed by typology and
 // department. A fattener in Guaviare gains 810 g/day and one in Nariño 630, and
@@ -127,6 +132,14 @@ func lookupYield(table map[LivestockTypology]map[string]decimal.Decimal, typolog
 	}
 	if v, ok := row[department]; ok {
 		return v, true
+	}
+	// Registries spell departments their own way ("CESAR", "LA GUAJIRA"):
+	// match ignoring case, accents and a leading "La".
+	want := normalizeDepartment(department)
+	for name, v := range row {
+		if normalizeDepartment(name) == want {
+			return v, true
+		}
 	}
 	if len(row) == 0 {
 		return decimal.Zero, false
@@ -276,4 +289,25 @@ func (p QuotaParams) yearFraction() decimal.Decimal {
 // configured term.
 func (p QuotaParams) rotationScale() decimal.Decimal {
 	return p.periodDays().Div(decimal.NewFromInt(180))
+}
+
+// normalizeDepartment folds a department name for lookup: "LA GUAJIRA",
+// "Guajira" and "guajira" are the same, as are "CÓRDOBA" and "Cordoba".
+func normalizeDepartment(name string) string {
+	folded := strings.Map(func(r rune) rune {
+		switch r {
+		case 'á', 'Á':
+			return 'a'
+		case 'é', 'É':
+			return 'e'
+		case 'í', 'Í':
+			return 'i'
+		case 'ó', 'Ó':
+			return 'o'
+		case 'ú', 'Ú', 'ü', 'Ü':
+			return 'u'
+		}
+		return unicode.ToLower(r)
+	}, strings.Join(strings.Fields(name), " "))
+	return strings.TrimPrefix(folded, "la ")
 }

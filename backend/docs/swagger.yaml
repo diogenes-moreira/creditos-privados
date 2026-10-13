@@ -151,6 +151,17 @@ definitions:
       total:
         type: string
     type: object
+  dto.ChangeRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - client
+        - vendor
+        type: string
+    required:
+    - role
+    type: object
   dto.ClientResponse:
     properties:
       address:
@@ -210,6 +221,20 @@ definitions:
     - maxAmount
     - maxInstallments
     type: object
+  dto.CreateLivestockQuotaPolicyRequest:
+    properties:
+      activate:
+        type: boolean
+      description:
+        type: string
+      name:
+        type: string
+      params:
+        $ref: '#/definitions/dto.LivestockQuotaParamsRequest'
+    required:
+    - name
+    - params
+    type: object
   dto.CreateRiskModelRequest:
     properties:
       activate:
@@ -232,6 +257,21 @@ definitions:
     - name
     - params
     - prompt
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      phone:
+        type: string
+      role:
+        enum:
+        - admin
+        - advisor
+        type: string
+    required:
+    - email
+    - role
     type: object
   dto.CreditAvailabilityResponse:
     properties:
@@ -322,7 +362,7 @@ definitions:
       ivaCollected:
         type: string
     type: object
-  dto.FirebaseLoginRequest:
+  dto.GoogleLoginRequest:
     properties:
       idToken:
         type: string
@@ -420,6 +460,179 @@ definitions:
       policyCap:
         type: string
     type: object
+  dto.LivestockQuotaParamsRequest:
+    properties:
+      annualRatePct:
+        type: string
+      applyInputCeiling:
+        type: boolean
+      capitalCostPct:
+        type: string
+      dailyWage:
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/dto.LivestockUGGFactorRequest'
+        minItems: 1
+        type: array
+      fenceCostPerHaYear:
+        type: string
+      hectaresPerUgg:
+        type: string
+      infraCostPerUggYear:
+        type: string
+      inputHeadroom:
+        type: string
+      labourRegime:
+        enum:
+        - auto
+        - familiar
+        - formal
+        type: string
+      ltvPercent:
+        type: string
+      maxQuota:
+        type: string
+      milkingShare:
+        type: string
+      occasionalDaysPerMonth:
+        maximum: 31
+        minimum: 0
+        type: integer
+      priceCalfPerKg:
+        type: string
+      priceFatteningPerKg:
+        type: string
+      priceGrowingPerKg:
+        type: string
+      pricePerLitre:
+        type: string
+      saltCostPerUggYear:
+        type: string
+      supplementCostPerUggYear:
+        type: string
+      termMonths:
+        maximum: 60
+        minimum: 1
+        type: integer
+      uggThresholdFamily:
+        type: string
+      uggThresholdOccasional:
+        type: string
+      uggThresholdPartial:
+        type: string
+      vaccineCostPerUggYear:
+        type: string
+      vetCostPerUggYear:
+        type: string
+      weightCalfKg:
+        type: string
+      weightFatteningKg:
+        type: string
+      weightGrowingKg:
+        type: string
+    required:
+    - annualRatePct
+    - capitalCostPct
+    - factors
+    - hectaresPerUgg
+    - labourRegime
+    - ltvPercent
+    - maxQuota
+    - milkingShare
+    - priceCalfPerKg
+    - priceFatteningPerKg
+    - priceGrowingPerKg
+    - pricePerLitre
+    - termMonths
+    - uggThresholdFamily
+    - uggThresholdOccasional
+    - uggThresholdPartial
+    - weightCalfKg
+    - weightFatteningKg
+    - weightGrowingKg
+    type: object
+  dto.LivestockQuotaPolicyResponse:
+    properties:
+      annualRatePct:
+        type: string
+      applyInputCeiling:
+        type: boolean
+      capitalCostPct:
+        type: string
+      createdAt:
+        type: string
+      dailyWage:
+        type: string
+      description:
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/dto.LivestockUGGFactorResponse'
+        type: array
+      fenceCostPerHaYear:
+        type: string
+      hectaresPerUgg:
+        type: string
+      id:
+        type: string
+      infraCostPerUggYear:
+        type: string
+      inputHeadroom:
+        type: string
+      isActive:
+        type: boolean
+      labourRegime:
+        type: string
+      ltvPercent:
+        type: string
+      maxQuota:
+        type: string
+      milkingShare:
+        type: string
+      name:
+        type: string
+      occasionalDaysPerMonth:
+        type: integer
+      priceCalfPerKg:
+        type: string
+      priceFatteningPerKg:
+        type: string
+      priceGrowingPerKg:
+        type: string
+      pricePerLitre:
+        type: string
+      saltCostPerUggYear:
+        type: string
+      supplementCostPerUggYear:
+        type: string
+      termMonths:
+        type: integer
+      typologies:
+        items:
+          type: string
+        type: array
+      uggThresholdFamily:
+        type: string
+      uggThresholdOccasional:
+        type: string
+      uggThresholdPartial:
+        type: string
+      updatedAt:
+        type: string
+      vaccineCostPerUggYear:
+        type: string
+      version:
+        type: integer
+      vetCostPerUggYear:
+        type: string
+      weightCalfKg:
+        type: string
+      weightFatteningKg:
+        type: string
+      weightGrowingKg:
+        type: string
+    type: object
   dto.LivestockQuotaRequest:
     properties:
       completedCycles:
@@ -468,6 +681,11 @@ definitions:
     properties:
       activeCeiling:
         type: string
+      activeCeilingCode:
+        description: |-
+          ActiveCeilingCode is the stable key of ActiveCeiling: ltv, capacity,
+          inputs or policyCap. Branch on this, not on the display text.
+        type: string
       ceilings:
         $ref: '#/definitions/dto.LivestockQuotaCeilingsResponse'
       createdAt:
@@ -515,6 +733,38 @@ definitions:
       vaccinationRatePct:
         type: integer
     type: object
+  dto.LivestockUGGFactorRequest:
+    properties:
+      breeding:
+        type: string
+      calves:
+        type: string
+      cull:
+        type: string
+      fattening:
+        type: string
+      growing:
+        type: string
+      typology:
+        type: string
+    required:
+    - typology
+    type: object
+  dto.LivestockUGGFactorResponse:
+    properties:
+      breeding:
+        type: string
+      calves:
+        type: string
+      cull:
+        type: string
+      fattening:
+        type: string
+      growing:
+        type: string
+      typology:
+        type: string
+    type: object
   dto.LoanResponse:
     properties:
       amortizationType:
@@ -550,13 +800,6 @@ definitions:
       totalRemaining:
         type: string
     type: object
-  dto.LoginRequest:
-    properties:
-      email:
-        type: string
-    required:
-    - email
-    type: object
   dto.MercadoPagoLinkRequest:
     properties:
       link:
@@ -573,6 +816,37 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  dto.PartnerRegistryQuotaRequest:
+    properties:
+      idType:
+        description: IDType is the RUV's document type, e.g. "CÉDULA DE CIUDADANÍA"
+          (default).
+        maxLength: 60
+        type: string
+      nationalId:
+        maxLength: 30
+        type: string
+      reference:
+        description: Reference is the caller's identifier for the request (e.g. its
+          onboarding ID).
+        maxLength: 100
+        type: string
+    required:
+    - nationalId
+    type: object
+  dto.PartnerRegistryQuotaResponse:
+    properties:
+      assessment:
+        $ref: '#/definitions/dto.LivestockQuotaResponse'
+      assumptions:
+        items:
+          type: string
+        type: array
+      holdingCodes:
+        items:
+          type: string
+        type: array
     type: object
   dto.PaymentResponse:
     properties:
@@ -858,6 +1132,55 @@ definitions:
     - password
     - phone
     - province
+    type: object
+  dto.RegistryHoldingResponse:
+    properties:
+      code:
+        type: string
+      cycle:
+        type: integer
+      department:
+        type: string
+      head:
+        type: integer
+      municipality:
+        type: string
+      name:
+        type: string
+      notVaccinated:
+        type: integer
+      vaccinatedAt:
+        type: string
+      village:
+        type: string
+      year:
+        type: integer
+    type: object
+  dto.RegistryQuotaResponse:
+    properties:
+      assessment:
+        $ref: '#/definitions/dto.LivestockQuotaResponse'
+      assumptions:
+        items:
+          type: string
+        type: array
+      rancher:
+        $ref: '#/definitions/dto.RegistryRancherResponse'
+    type: object
+  dto.RegistryRancherResponse:
+    properties:
+      email:
+        type: string
+      holdings:
+        items:
+          $ref: '#/definitions/dto.RegistryHoldingResponse'
+        type: array
+      name:
+        type: string
+      nationalId:
+        type: string
+      phone:
+        type: string
     type: object
   dto.RejectCreditLineRequest:
     properties:
@@ -1217,6 +1540,17 @@ definitions:
       updatedAt:
         type: string
     type: object
+  dto.SaveLivestockQuotaPolicyVersionRequest:
+    properties:
+      activate:
+        type: boolean
+      description:
+        type: string
+      params:
+        $ref: '#/definitions/dto.LivestockQuotaParamsRequest'
+    required:
+    - params
+    type: object
   dto.SaveRiskModelVersionRequest:
     properties:
       activate:
@@ -1234,6 +1568,13 @@ definitions:
     required:
     - params
     - prompt
+    type: object
+  dto.SetActiveRequest:
+    properties:
+      active:
+        type: boolean
+    required:
+    - active
     type: object
   dto.SimulateLoanRequest:
     properties:
@@ -1413,6 +1754,15 @@ definitions:
     required:
     - ivaRate
     type: object
+  dto.UpdateLivestockQuotaPolicyRequest:
+    properties:
+      description:
+        type: string
+      params:
+        $ref: '#/definitions/dto.LivestockQuotaParamsRequest'
+    required:
+    - params
+    type: object
   dto.UpdateProfileRequest:
     properties:
       address:
@@ -1454,11 +1804,26 @@ definitions:
       province:
         type: string
     type: object
+  dto.UserListResponse:
+    properties:
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+    type: object
   dto.UserResponse:
     properties:
+      createdAt:
+        type: string
       email:
         type: string
       id:
+        type: string
+      isActive:
+        type: boolean
+      lastLoginAt:
         type: string
       phone:
         type: string
@@ -1535,14 +1900,14 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@prestia.com.ar
+    email: soporte@cuppogan.com.co
     name: API Support
   description: Microcredit management system API for Argentina
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Prestia API
+  title: CuppoGan API
   version: "1.0"
 paths:
   /admin/audit:
@@ -2353,6 +2718,225 @@ paths:
       summary: Get disbursement trends
       tags:
       - Dashboard
+  /admin/livestock-quota-policies:
+    get:
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaginatedResponse'
+      security:
+      - BearerAuth: []
+      summary: List livestock quota parameter versions
+      tags:
+      - Livestock quota policies
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Parameter set
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateLivestockQuotaPolicyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a livestock quota parameter set
+      tags:
+      - Livestock quota policies
+  /admin/livestock-quota-policies/{id}:
+    get:
+      parameters:
+      - description: Policy UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get one livestock quota parameter version
+      tags:
+      - Livestock quota policies
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Policy UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Parameter changes
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateLivestockQuotaPolicyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a livestock quota parameter version in place
+      tags:
+      - Livestock quota policies
+  /admin/livestock-quota-policies/{id}/activate:
+    post:
+      description: Makes this version the parameters every new quota is computed with
+      parameters:
+      - description: Policy UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate a livestock quota parameter version
+      tags:
+      - Livestock quota policies
+  /admin/livestock-quota-policies/{id}/versions:
+    post:
+      consumes:
+      - application/json
+      description: Derives a new version from an existing policy. The running version
+        keeps serving until the new one is activated.
+      parameters:
+      - description: Source policy UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New version
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveLivestockQuotaPolicyVersionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Save a new version of a livestock quota parameter set
+      tags:
+      - Livestock quota policies
+  /admin/livestock-quota-policies/active:
+    get:
+      description: Returns the parameter set every new quota is computed with, seeding
+        the shipped defaults the first time it is asked for
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the active livestock quota parameters
+      tags:
+      - Livestock quota policies
+  /admin/livestock-quotas/{id}:
+    get:
+      description: Reads the national ID's herds from Fedegán's vaccination registry
+        and returns the quota with the full trace of how it was reached
+      parameters:
+      - description: National ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: CÉDULA DE CIUDADANÍA (default), NIT, PASAPORTE...
+        in: query
+        name: idType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RegistryQuotaResponse'
+        "404":
+          description: Not in the registry
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "503":
+          description: Registry not configured
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Quote a rancher's credit from the RUV
+      tags:
+      - Admin Livestock Quota
   /admin/loans:
     post:
       consumes:
@@ -2979,6 +3563,143 @@ paths:
       summary: Submit a client's credit-risk data
       tags:
       - Risk
+  /admin/users:
+    get:
+      description: Lists every user, optionally filtered by role, activation state
+        or a search over email and phone
+      parameters:
+      - description: admin, client or vendor
+        in: query
+        name: role
+        type: string
+      - description: Filter by activation state
+        in: query
+        name: active
+        type: boolean
+      - description: Match email or phone
+        in: query
+        name: search
+        type: string
+      - description: Page size (default 50, max 200)
+        in: query
+        name: limit
+        type: integer
+      - description: Rows to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - Admin Users
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with a role directly, which is how an administrator
+        is added
+      parameters:
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a user
+      tags:
+      - Admin Users
+  /admin/users/{id}/active:
+    put:
+      consumes:
+      - application/json
+      description: Revokes or restores a user's access. Accounts are never deleted,
+        so the financial trail stays intact.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Activation state
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetActiveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate or deactivate a user
+      tags:
+      - Admin Users
+  /admin/users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: Moves a user to another role. An administrator cannot change their
+        own role.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangeRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change a user's role
+      tags:
+      - Admin Users
   /admin/vendors:
     get:
       parameters:
@@ -3244,19 +3965,19 @@ paths:
       summary: Record a purchase on behalf of a vendor
       tags:
       - Admin Vendors
-  /auth/firebase-login:
+  /auth/google:
     post:
       consumes:
       - application/json
-      description: Verifies a Firebase ID token (from Google OAuth or Phone Auth)
-        and returns a JWT token
+      description: Verifies a Google ID token and issues a session for an existing
+        administrator. Accounts are never created here.
       parameters:
-      - description: Firebase ID token
+      - description: Google ID token
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.FirebaseLoginRequest'
+          $ref: '#/definitions/dto.GoogleLoginRequest'
       produces:
       - application/json
       responses:
@@ -3264,10 +3985,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -3276,50 +3993,11 @@ paths:
           description: Forbidden
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
+        "503":
+          description: Google sign-in not configured
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
-      summary: Authenticate via Firebase ID token
-      tags:
-      - Auth
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Validates credentials and returns a JWT token for API access. For
-        clients, use OTP flow instead.
-      parameters:
-      - description: Login credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Authenticate a user (admin/vendor)
+      summary: Sign in an administrator with Google
       tags:
       - Auth
   /auth/register:
@@ -3498,6 +4176,52 @@ paths:
       security:
       - ServiceKey: []
       summary: Assess a rancher's livestock credit quota
+      tags:
+      - Livestock quota
+  /livestock-quotas/registry:
+    post:
+      consumes:
+      - application/json
+      description: Reads the national ID's herds from Fedegán's vaccination registry,
+        runs the quota engine and stores the result. The partner sends only the identity;
+        contact data is not returned.
+      parameters:
+      - description: Rancher's identity
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PartnerRegistryQuotaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PartnerRegistryQuotaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not in the registry
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "502":
+          description: Registry error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "503":
+          description: Registry not configured
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ServiceKey: []
+      summary: Assess a rancher's livestock quota from the RUV (partner)
       tags:
       - Livestock quota
   /loans/simulate:
