@@ -29,6 +29,9 @@ func NewOTPService(
 	}
 }
 
+// Channel names the delivery channel the OTP is sent over.
+func (s *OTPService) Channel() string { return s.sender.Channel() }
+
 func (s *OTPService) RequestOTP(ctx context.Context, email string) error {
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {

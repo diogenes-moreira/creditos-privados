@@ -124,7 +124,8 @@ func (h *AuthHandler) RequestOTP(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "OTP sent to your email", "channel": "email"})
+	ch := h.otpService.Channel()
+	c.JSON(http.StatusOK, gin.H{"message": "OTP sent via " + ch, "channel": ch})
 }
 
 // VerifyOTP godoc

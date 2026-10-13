@@ -9,7 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-const otpExpiration = 5 * time.Minute
+// otpExpiration must match the code_expiration_minutes of the approved
+// WhatsApp authentication template, which is what the recipient actually
+// reads. The template says ten minutes; a shorter window here would expire
+// codes while the message still claims they are valid.
+const otpExpiration = 10 * time.Minute
 
 type OTPCode struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
