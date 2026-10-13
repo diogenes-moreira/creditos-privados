@@ -159,6 +159,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	paymentHandler := handler.NewPaymentHandler(paymentService, clientRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	auditHandler := handler.NewAuditHandler(auditService)
+	userHandler := handler.NewUserHandler(service.NewUserService(userRepo, auditService))
 	vendorHandler := handler.NewVendorHandler(vendorService, purchaseService, vendorPaymentService, withdrawalService, pdfGenerator, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientService, creditService)
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
@@ -315,6 +316,13 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.PUT("/risk-models/:id", riskHandler.UpdateRiskModel)
 		adminRoutes.POST("/risk-models/:id/activate", riskHandler.ActivateRiskModel)
 		adminRoutes.POST("/risk-models/:id/versions", riskHandler.SaveRiskModelVersion)
+
+		// User administration. Accounts are deactivated, never deleted: they
+		// carry loans, payments and audit entries.
+		adminRoutes.GET("/users", userHandler.ListUsers)
+		adminRoutes.POST("/users", userHandler.CreateUser)
+		adminRoutes.PUT("/users/:id/role", userHandler.ChangeUserRole)
+		adminRoutes.PUT("/users/:id/active", userHandler.SetUserActive)
 
 		adminRoutes.GET("/audit", auditHandler.GetAuditLogs)
 

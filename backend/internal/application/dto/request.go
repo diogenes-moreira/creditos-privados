@@ -205,3 +205,21 @@ type VerifyOTPRequest struct {
 type FirebaseLoginRequest struct {
 	IDToken string `json:"idToken" binding:"required"`
 }
+
+// CreateUserRequest registers a user with an explicit role.
+type CreateUserRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Phone string `json:"phone"`
+	Role  string `json:"role" binding:"required,oneof=admin client vendor"`
+}
+
+// ChangeRoleRequest moves a user to another role.
+type ChangeRoleRequest struct {
+	Role string `json:"role" binding:"required,oneof=admin client vendor"`
+}
+
+// SetActiveRequest activates or deactivates a user. The pointer distinguishes
+// "set to false" from "field absent".
+type SetActiveRequest struct {
+	Active *bool `json:"active" binding:"required"`
+}

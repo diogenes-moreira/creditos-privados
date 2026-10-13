@@ -1,17 +1,34 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/shopspring/decimal"
 )
 
 func ToUserResponse(u *model.User) UserResponse {
-	return UserResponse{
-		ID:    u.ID.String(),
-		Email: u.Email,
-		Phone: u.Phone,
-		Role:  string(u.Role),
+	resp := UserResponse{
+		ID:        u.ID.String(),
+		Email:     u.Email,
+		Phone:     u.Phone,
+		Role:      string(u.Role),
+		IsActive:  u.IsActive,
+		CreatedAt: u.CreatedAt.Format(time.RFC3339),
 	}
+	if u.LastLoginAt != nil {
+		resp.LastLoginAt = u.LastLoginAt.Format(time.RFC3339)
+	}
+	return resp
+}
+
+// ToUserListResponse maps a page of users with its total.
+func ToUserListResponse(users []model.User, total int64) UserListResponse {
+	out := make([]UserResponse, 0, len(users))
+	for i := range users {
+		out = append(out, ToUserResponse(&users[i]))
+	}
+	return UserListResponse{Users: out, Total: total}
 }
 
 func ToClientResponse(c *model.Client, email string) ClientResponse {

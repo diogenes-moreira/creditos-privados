@@ -157,3 +157,54 @@ func TestUser_IsVendor(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, clientUser.IsVendor())
 }
+
+func TestUserChangeRole(t *testing.T) {
+	newUser := func(t *testing.T) *model.User {
+		t.Helper()
+		u, err := model.NewUser("uid-1", "ana@example.com", model.RoleClient)
+		require.NoError(t, err)
+		return u
+	}
+
+	t.Run("moves between known roles", func(t *testing.T) {
+		u := newUser(t)
+
+		require.NoError(t, u.ChangeRole(model.RoleAdmin))
+		assert.Equal(t, model.RoleAdmin, u.Role)
+		assert.True(t, u.IsAdmin())
+
+		require.NoError(t, u.ChangeRole(model.RoleVendor))
+		assert.True(t, u.IsVendor())
+		assert.False(t, u.IsAdmin())
+	})
+
+	t.Run("rejects an unknown role and leaves the user untouched", func(t *testing.T) {
+		u := newUser(t)
+
+		err := u.ChangeRole("superuser")
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid role")
+		// The middleware compares roles by value, so a stored unknown role
+		// would silently fail every authorization check.
+		assert.Equal(t, model.RoleClient, u.Role)
+	})
+
+	t.Run("changing role does not alter activation", func(t *testing.T) {
+		u := newUser(t)
+		u.Deactivate()
+
+		require.NoError(t, u.ChangeRole(model.RoleAdmin))
+
+		assert.False(t, u.IsActive, "a promoted user must not be reactivated implicitly")
+	})
+}
+
+func TestValidRole(t *testing.T) {
+	for _, r := range []model.UserRole{model.RoleAdmin, model.RoleClient, model.RoleVendor} {
+		assert.True(t, model.ValidRole(r), string(r))
+	}
+	for _, r := range []model.UserRole{"", "superuser", "Admin"} {
+		assert.False(t, model.ValidRole(r), string(r))
+	}
+}

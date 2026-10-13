@@ -16,6 +16,19 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	FindByPhone(ctx context.Context, phone string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
+	List(ctx context.Context, filter UserFilter) ([]model.User, int64, error)
+}
+
+// UserFilter narrows a user listing. A zero value lists everyone, newest first.
+type UserFilter struct {
+	// Role restricts to one role; empty means every role.
+	Role model.UserRole
+	// Search matches email or phone, case-insensitively.
+	Search string
+	// Active filters by activation state when set.
+	Active *bool
+	Limit  int
+	Offset int
 }
 
 type ClientRepository interface {

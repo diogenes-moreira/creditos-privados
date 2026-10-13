@@ -49,6 +49,24 @@ func NewUser(firebaseUID, email string, role UserRole) (*User, error) {
 	}, nil
 }
 
+// ValidRole reports whether a role is one the system knows.
+func ValidRole(role UserRole) bool {
+	return role == RoleAdmin || role == RoleClient || role == RoleVendor
+}
+
+// ChangeRole moves the user to another role.
+//
+// Role changes are deliberately not silent: an unknown role is rejected rather
+// than stored, because the authorization middleware compares roles by value and
+// an unrecognised one would simply fail every check.
+func (u *User) ChangeRole(role UserRole) error {
+	if !ValidRole(role) {
+		return fmt.Errorf("invalid role: %s", role)
+	}
+	u.Role = role
+	return nil
+}
+
 func (u *User) Activate() {
 	u.IsActive = true
 }

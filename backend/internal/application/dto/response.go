@@ -8,10 +8,19 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Phone string `json:"phone,omitempty"`
-	Role  string `json:"role"`
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	Phone       string `json:"phone,omitempty"`
+	Role        string `json:"role"`
+	IsActive    bool   `json:"isActive"`
+	LastLoginAt string `json:"lastLoginAt,omitempty"`
+	CreatedAt   string `json:"createdAt,omitempty"`
+}
+
+// UserListResponse is a page of users plus the total before pagination.
+type UserListResponse struct {
+	Users []UserResponse `json:"users"`
+	Total int64          `json:"total"`
 }
 
 type ClientResponse struct {
@@ -75,21 +84,21 @@ type CancellationSettlementResponse struct {
 }
 
 type LoanResponse struct {
-	ID                     string                           `json:"id"`
-	ClientID               string                           `json:"clientId"`
-	ClientName             string                           `json:"clientName,omitempty"`
-	CreditLineID           string                           `json:"creditLineId"`
-	Principal              string                           `json:"principal"`
-	InterestRate           string                           `json:"interestRate"`
-	NumInstallments        int                              `json:"numInstallments"`
-	AmortizationType       string                           `json:"amortizationType"`
-	Status                 string                           `json:"status"`
-	DisbursedAt            *string                          `json:"disbursedAt,omitempty"`
-	TotalPaid              string                           `json:"totalPaid"`
-	TotalRemaining         string                           `json:"totalRemaining"`
-	CancellationSettlement *CancellationSettlementResponse  `json:"cancellationSettlement,omitempty"`
-	Installments           []InstallmentResponse            `json:"installments,omitempty"`
-	CreatedAt              string                           `json:"createdAt"`
+	ID                     string                          `json:"id"`
+	ClientID               string                          `json:"clientId"`
+	ClientName             string                          `json:"clientName,omitempty"`
+	CreditLineID           string                          `json:"creditLineId"`
+	Principal              string                          `json:"principal"`
+	InterestRate           string                          `json:"interestRate"`
+	NumInstallments        int                             `json:"numInstallments"`
+	AmortizationType       string                          `json:"amortizationType"`
+	Status                 string                          `json:"status"`
+	DisbursedAt            *string                         `json:"disbursedAt,omitempty"`
+	TotalPaid              string                          `json:"totalPaid"`
+	TotalRemaining         string                          `json:"totalRemaining"`
+	CancellationSettlement *CancellationSettlementResponse `json:"cancellationSettlement,omitempty"`
+	Installments           []InstallmentResponse           `json:"installments,omitempty"`
+	CreatedAt              string                          `json:"createdAt"`
 }
 
 type InstallmentResponse struct {
@@ -169,10 +178,10 @@ type TrendPointResponse struct {
 }
 
 type PaginatedResponse struct {
-	Data       interface{} `json:"data"`
-	Total      int64       `json:"total"`
-	Offset     int         `json:"offset"`
-	Limit      int         `json:"limit"`
+	Data   interface{} `json:"data"`
+	Total  int64       `json:"total"`
+	Offset int         `json:"offset"`
+	Limit  int         `json:"limit"`
 }
 
 // OverdueInstallmentResponse is a collections worklist row.
