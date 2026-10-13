@@ -119,10 +119,14 @@ func CalculateNITCheckDigit(base string) int {
 
 // ValidateNIT validates a Colombian NIT, including its verification digit.
 // Accepts an optional dash/dot before the DV (e.g. "900123456-7" or "9001234567").
+//
+// A natural person's NIT is their cédula plus the check digit, and a cédula
+// can be as short as 6 digits, so the shortest valid NIT has 7. Companies'
+// NITs are 9 digits plus the DV; both shapes have to pass.
 func ValidateNIT(nit string) error {
 	cleaned := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(nit), "-", ""), ".", "")
-	if len(cleaned) < 9 || len(cleaned) > 16 {
-		return fmt.Errorf("NIT must have 9 to 16 digits, got %d", len(cleaned))
+	if len(cleaned) < 7 || len(cleaned) > 16 {
+		return fmt.Errorf("NIT must have 7 to 16 digits, got %d", len(cleaned))
 	}
 	for _, c := range cleaned {
 		if c < '0' || c > '9' {

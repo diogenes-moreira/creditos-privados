@@ -141,7 +141,12 @@ func TestValidateNIT(t *testing.T) {
 		{name: "valid NIT without dash", nit: "9001234568"},
 		{name: "valid NIT with dots and dash", nit: "900.123.456-8"},
 		{name: "invalid check digit", nit: "900123456-7", wantErr: true, errMsg: "invalid NIT check digit"},
-		{name: "too short", nit: "12345678", wantErr: true, errMsg: "NIT must have 9 to 16 digits"},
+		// A natural person's NIT is their cédula plus the DV, and older cédulas
+		// have 6 or 7 digits.
+		{name: "natural person, 6-digit cedula", nit: "123456-3"},
+		{name: "natural person, 7-digit cedula", nit: "1234567-2"},
+		{name: "natural person, 8-digit cedula", nit: "17788090-7"},
+		{name: "too short", nit: "12345", wantErr: true, errMsg: "NIT must have 7 to 16 digits"},
 		{name: "contains letters", nit: "90012345A-8", wantErr: true, errMsg: "NIT must contain only digits"},
 	}
 

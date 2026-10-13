@@ -54,6 +54,19 @@ func (s *ClientService) Register(ctx context.Context, email, firstName, lastName
 		return nil, nil, fmt.Errorf("a client with CUIT %s already exists", cuit)
 	}
 
+	if u, err := s.userRepo.FindByEmail(ctx, email); err == nil && u != nil {
+		return nil, nil, fmt.Errorf("a user with email %s already exists", email)
+	}
+
+	// Validate the client before anything is stored. The account is created
+	// first and the client after it, so a client rejected only at that point
+	// left an account with the client role and no profile, and a retry with
+	// the corrected data then failed on the address already in use.
+	client, err := model.NewClient(uuid.Nil, firstName, lastName, dni, cuit, dob, phone, address, city, province, country, isPEP, s.country)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	fbUser, err := s.authService.CreateUser(ctx, email, "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create auth user: %w", err)
@@ -68,11 +81,7 @@ func (s *ClientService) Register(ctx context.Context, email, firstName, lastName
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)
 	}
-
-	client, err := model.NewClient(user.ID, firstName, lastName, dni, cuit, dob, phone, address, city, province, country, isPEP, s.country)
-	if err != nil {
-		return nil, nil, err
-	}
+	client.UserID = user.ID
 
 	if err := s.clientRepo.Create(ctx, client); err != nil {
 		return nil, nil, fmt.Errorf("failed to create client: %w", err)
