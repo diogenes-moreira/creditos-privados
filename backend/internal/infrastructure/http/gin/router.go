@@ -1,7 +1,6 @@
 package gin
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
@@ -170,12 +169,6 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
 	livestockPolicyService := service.NewLivestockQuotaPolicyService(livestockPolicyRepo, auditService)
-	// Seed the shipped parameters once, here, rather than on the first read: a
-	// read that writes is replayed by anything that treats reads as safe. A
-	// failure is not fatal, because the engine falls back to the same defaults.
-	if _, err := livestockPolicyService.EnsureDefaultPolicy(context.Background(), nil); err != nil {
-		log.Printf("Livestock quota policy not seeded, quotas use the built-in defaults: %v", err)
-	}
 	livestockQuotaService := service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency).
 		WithPolicies(livestockPolicyService)
 	// The registry is nil when no credentials are configured, in which case the
@@ -291,7 +284,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		advisorRoutes.GET("/clients/:id/purchases", clientHandler.GetClientPurchases)
 		advisorRoutes.GET("/clients/:id/account", clientHandler.GetClientAccount)
 		advisorRoutes.GET("/clients/:id/account/movements", clientHandler.GetClientMovements)
-		advisorRoutes.POST("/livestock-quotas/registry", livestockQuotaHandler.AssessFromRegistry)
+		advisorRoutes.GET("/livestock-quotas/:id", livestockQuotaHandler.AssessFromRegistry)
 	}
 
 	adminRoutes := authenticated.Group("/admin")

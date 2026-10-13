@@ -752,10 +752,9 @@ export const adminAssessLivestockQuotaFromRegistry = async (
   nationalId: string,
   idType?: LivestockRegistryIdType
 ): Promise<RegistryQuotaResponse> => {
-  // The national ID goes in the body: a URL lands in request logs.
-  const res = await apiClient.post("/admin/livestock-quotas/registry", {
-    nationalId,
-    ...(idType ? { idType } : {}),
-  });
+  const res = await apiClient.get(
+    `/admin/livestock-quotas/${encodeURIComponent(nationalId)}`,
+    { params: idType ? { idType } : undefined }
+  );
   return res.data;
 };

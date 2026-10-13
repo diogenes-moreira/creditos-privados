@@ -4,17 +4,6 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 )
 
-// RegistryQuotaLookupRequest asks for a rancher's quota from the registry.
-//
-// The national ID travels in the body rather than the path: a URL ends up in
-// request logs, proxies and browser history, and a national ID tied to a
-// credit lookup is personal data that belongs in none of them.
-type RegistryQuotaLookupRequest struct {
-	NationalID string `json:"nationalId" binding:"required,max=30"`
-	// IDType is the RUV's document type, e.g. "CÉDULA DE CIUDADANÍA" (default).
-	IDType string `json:"idType" binding:"max=60"`
-}
-
 // RegistryHoldingResponse is one predio as the registry reports it.
 type RegistryHoldingResponse struct {
 	Code          string `json:"code"`

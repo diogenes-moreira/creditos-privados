@@ -1156,19 +1156,6 @@ definitions:
       year:
         type: integer
     type: object
-  dto.RegistryQuotaLookupRequest:
-    properties:
-      idType:
-        description: IDType is the RUV's document type, e.g. "CÉDULA DE CIUDADANÍA"
-          (default).
-        maxLength: 60
-        type: string
-      nationalId:
-        maxLength: 30
-        type: string
-    required:
-    - nationalId
-    type: object
   dto.RegistryQuotaResponse:
     properties:
       assessment:
@@ -2898,9 +2885,8 @@ paths:
       - Livestock quota policies
   /admin/livestock-quota-policies/active:
     get:
-      description: Returns the parameter set every new quota is computed with. The
-        shipped defaults are stored at startup, so a 404 means that seeding failed
-        and quotas are running on the built-in defaults
+      description: Returns the parameter set every new quota is computed with, seeding
+        the shipped defaults the first time it is asked for
       produces:
       - application/json
       responses:
@@ -2908,8 +2894,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.LivestockQuotaPolicyResponse'
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
@@ -2917,20 +2903,20 @@ paths:
       summary: Get the active livestock quota parameters
       tags:
       - Livestock quota policies
-  /admin/livestock-quotas/registry:
-    post:
-      consumes:
-      - application/json
-      description: Reads the national ID's herds from Fedegán's vaccination registry,
-        stores the assessment as the record of who quoted what, and returns the quota
-        with the full trace of how it was reached
+  /admin/livestock-quotas/{id}:
+    get:
+      description: Reads the national ID's herds from Fedegán's vaccination registry
+        and returns the quota with the full trace of how it was reached
       parameters:
-      - description: Rancher's identity
-        in: body
-        name: request
+      - description: National ID
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/dto.RegistryQuotaLookupRequest'
+        type: string
+      - description: CÉDULA DE CIUDADANÍA (default), NIT, PASAPORTE...
+        in: query
+        name: idType
+        type: string
       produces:
       - application/json
       responses:
@@ -2938,10 +2924,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.RegistryQuotaResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not in the registry
           schema:

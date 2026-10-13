@@ -892,9 +892,7 @@
         "milkingShare": "A proporção em lactação deve ser uma fração entre 0 e 1.",
         "negative": "Taxas, preços e folga não podem ser negativos.",
         "negativeFactor": "Os fatores UGG não podem ser negativos."
-      },
-      "noneActiveTitle": "Não há parâmetros ativos",
-      "noneActiveBody": "Os parâmetros padrão não foram salvos quando o servidor iniciou, então as cotas estão sendo calculadas com os valores embutidos. Reinicie o serviço; se persistir, verifique a conexão com o banco nos logs."
+      }
     },
     "lookup": {
       "title": "Consulta de cota pré-aprovada",

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -135,18 +135,20 @@ const LivestockQuotaLookup: React.FC = () => {
     idType: LivestockRegistryIdType;
   } | null>(null);
 
-  // A mutation, not a query: every lookup asks the registry and stores the
-  // assessment as the record of who quoted what, so it runs only when the
-  // advisor presses search, never on a refetch or a cache revalidation.
-  const lookup = useMutation<
-    RegistryQuotaResponse,
-    Error,
-    { nationalId: string; idType: LivestockRegistryIdType }
-  >({
-    mutationFn: (q) => adminAssessLivestockQuotaFromRegistry(q.nationalId, q.idType),
+  const {
+    data,
+    error,
+    isFetching,
+  } = useQuery<RegistryQuotaResponse>({
+    queryKey: ["livestock-quota-lookup", submitted?.nationalId, submitted?.idType],
+    queryFn: () =>
+      adminAssessLivestockQuotaFromRegistry(submitted!.nationalId, submitted!.idType),
+    enabled: !!submitted,
+    // A national ID missing from the registry is an answer, not a transient
+    // failure: retrying it only delays the answer.
+    retry: false,
+    refetchOnWindowFocus: false,
   });
-  const { data, error } = lookup;
-  const isFetching = lookup.isPending;
 
   const assessment = data?.assessment;
   const binding = useMemo(
@@ -157,9 +159,7 @@ const LivestockQuotaLookup: React.FC = () => {
   const search = () => {
     const trimmed = nationalId.trim();
     if (!trimmed) return;
-    const q = { nationalId: trimmed, idType };
-    setSubmitted(q);
-    lookup.mutate(q);
+    setSubmitted({ nationalId: trimmed, idType });
   };
 
   const assumptionText = (code: string): string =>
