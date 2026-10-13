@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   RequestOTPRequest,
   VerifyOTPRequest,
+  GoogleLoginRequest,
   Profile,
   UpdateProfileRequest,
   UpdateMercadoPagoRequest,
@@ -83,6 +84,11 @@ export const requestOTP = async (data: RequestOTPRequest): Promise<{ message: st
 
 export const verifyOTP = async (data: VerifyOTPRequest): Promise<AuthResponse> => {
   const res = await apiClient.post("/auth/verify-otp", data);
+  return res.data;
+};
+
+export const googleLogin = async (data: GoogleLoginRequest): Promise<AuthResponse> => {
+  const res = await apiClient.post("/auth/google", data);
   return res.data;
 };
 

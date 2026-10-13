@@ -36,6 +36,7 @@ type Router struct {
 	countryInfo     config.CountryInfo
 	aiConfig        config.AIConfig
 	ruvConfig       config.RUVConfig
+	googleConfig    config.GoogleOAuthConfig
 	otpProviders    messaging.OTPProviders
 	partners        config.PartnersConfig
 }
@@ -50,6 +51,7 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		countryInfo:     cfg.CountryInfo(),
 		aiConfig:        cfg.AI,
 		ruvConfig:       cfg.RUV,
+		googleConfig:    cfg.Google,
 		partners:        cfg.Partners,
 		otpProviders: messaging.OTPProviders{
 			Provider: cfg.OTPProvider,
@@ -152,7 +154,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
 	configHandler := handler.NewConfigHandler(r.countryInfo)
-	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService)
+	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService,
+		auth.NewGoogleVerifierOrNil(r.googleConfig.ClientID, r.googleConfig.HostedDomain))
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
 	creditHandler := handler.NewCreditHandler(creditService)
@@ -203,6 +206,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/request-otp", authHandler.RequestOTP)
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
+	api.POST("/auth/google", authHandler.GoogleLogin)
 
 	// Partner services (service key, not a user session). Not registered when
 	// the partner's key is not configured.

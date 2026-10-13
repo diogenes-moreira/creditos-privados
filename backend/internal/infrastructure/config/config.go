@@ -14,6 +14,7 @@ type Config struct {
 	Twilio   TwilioConfig
 	Kapso    KapsoConfig
 	RUV      RUVConfig
+	Google   GoogleOAuthConfig
 	SendGrid SendGridConfig
 	// OTPProvider selects the delivery channel: "kapso", "twilio" or
 	// "sendgrid". Empty uses whichever is configured.
@@ -104,6 +105,14 @@ type ServerConfig struct {
 type JWTConfig struct {
 	Secret          string
 	ExpirationHours int
+}
+
+// GoogleOAuthConfig enables administrator sign-in with Google. The client id is
+// public: it ships in the browser bundle by design. HostedDomain, when set,
+// restricts sign-in to one Workspace domain.
+type GoogleOAuthConfig struct {
+	ClientID     string
+	HostedDomain string
 }
 
 // RUVConfig points at Fedegán's vaccination registry. With no credentials the
@@ -228,6 +237,10 @@ func Load() *Config {
 			ClientSecret: getEnv("RUV_CLIENT_SECRET", ""),
 			Username:     getEnv("RUV_USERNAME", ""),
 			Password:     getEnv("RUV_PASSWORD", ""),
+		},
+		Google: GoogleOAuthConfig{
+			ClientID:     getEnv("GOOGLE_OAUTH_CLIENT_ID", ""),
+			HostedDomain: getEnv("GOOGLE_HOSTED_DOMAIN", ""),
 		},
 		OTPProvider: getEnv("OTP_PROVIDER", ""),
 		Twilio: TwilioConfig{

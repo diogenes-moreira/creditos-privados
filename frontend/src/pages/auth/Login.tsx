@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
+  Divider,
   Card,
   CardContent,
   Typography,
@@ -19,6 +20,7 @@ import {
   Phone as PhoneIcon,
   Google as GoogleIcon,
 } from "@mui/icons-material";
+import { isGoogleSignInEnabled, useGoogleSignIn } from "../../auth/useGoogleSignIn";
 import { useAuth } from "../../auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
@@ -27,7 +29,7 @@ import { getErrorMessage } from "../../api/errorUtils";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { requestOTP, verifyOTP } = useAuth();
+  const { requestOTP, verifyOTP, googleLogin } = useAuth();
   const { t } = useTranslation();
   const { showError } = useNotification();
 
@@ -72,6 +74,16 @@ const Login: React.FC = () => {
     }
   };
 
+
+  const handleGoogleToken = async (idToken: string) => {
+    try {
+      await googleLogin(idToken);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      showError(getErrorMessage(err, t("auth.googleError")));
+    }
+  };
+  const { ref: googleButtonRef } = useGoogleSignIn(handleGoogleToken);
 
   const resetOtpFlow = () => {
     setOtpSent(false);
@@ -212,6 +224,16 @@ const Login: React.FC = () => {
 
           {/* Admin Login (Google OAuth) */}
 
+          {isGoogleSignInEnabled && (
+            <>
+              <Divider sx={{ my: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t("auth.adminLogin")}
+                </Typography>
+              </Divider>
+              <Box sx={{ display: "flex", justifyContent: "center" }} ref={googleButtonRef} />
+            </>
+          )}
         </CardContent>
       </Card>
     </Box>

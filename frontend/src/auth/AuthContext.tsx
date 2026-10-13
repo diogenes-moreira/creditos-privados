@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { User, RegisterRequest } from "../api/types";
-import { register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP } from "../api/endpoints";
+import { register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP, googleLogin as apiGoogleLogin } from "../api/endpoints";
 
 interface AuthState {
   token: string | null;
@@ -10,6 +10,7 @@ interface AuthState {
   register: (data: RegisterRequest) => Promise<void>;
   requestOTP: (email: string) => Promise<void>;
   verifyOTP: (email: string, code: string) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -57,6 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [handleAuthResponse]);
 
 
+  const googleLogin = useCallback(async (idToken: string) => {
+    const response = await apiGoogleLogin({ idToken });
+    handleAuthResponse(response);
+  }, [handleAuthResponse]);
+
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -74,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         requestOTP,
         verifyOTP,
+        googleLogin,
         logout,
       }}
     >

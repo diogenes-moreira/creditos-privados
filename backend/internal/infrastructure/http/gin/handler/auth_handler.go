@@ -11,10 +11,11 @@ import (
 )
 
 type AuthHandler struct {
-	clientService *service.ClientService
-	userRepo      port.UserRepository
-	authService   *auth.LocalAuthService
-	otpService    *service.OTPService
+	clientService  *service.ClientService
+	userRepo       port.UserRepository
+	authService    *auth.LocalAuthService
+	otpService     *service.OTPService
+	googleVerifier *auth.GoogleVerifier
 }
 
 func NewAuthHandler(
@@ -22,12 +23,14 @@ func NewAuthHandler(
 	userRepo port.UserRepository,
 	authService *auth.LocalAuthService,
 	otpService *service.OTPService,
+	googleVerifier *auth.GoogleVerifier,
 ) *AuthHandler {
 	return &AuthHandler{
-		clientService: clientService,
-		userRepo:      userRepo,
-		authService:   authService,
-		otpService:    otpService,
+		clientService:  clientService,
+		userRepo:       userRepo,
+		authService:    authService,
+		otpService:     otpService,
+		googleVerifier: googleVerifier,
 	}
 }
 
@@ -159,4 +162,65 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		Token: token,
 		User:  dto.ToUserResponse(user),
 	})
+}
+
+// GoogleLogin godoc
+// @Summary Sign in an administrator with Google
+// @Description Verifies a Google ID token and issues a session for an existing administrator. Accounts are never created here.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.GoogleLoginRequest true "Google ID token"
+// @Success 200 {object} dto.AuthResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 503 {object} dto.ErrorResponse "Google sign-in not configured"
+// @Router /auth/google [post]
+func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	if h.googleVerifier == nil {
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{Error: "Google sign-in is not configured"})
+		return
+	}
+
+	var req dto.GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	identity, err := h.googleVerifier.Verify(c.Request.Context(), req.IDToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// A valid Google token proves who the person is, not that they may enter.
+	// The account must already exist here: nothing is created from a sign-in,
+	// or anyone with a Google account could grant themselves access.
+	user, err := h.userRepo.FindByEmail(c.Request.Context(), identity.Email)
+	if err != nil {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "this account has no access"})
+		return
+	}
+	if !user.IsActive {
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "account is deactivated"})
+		return
+	}
+	if !user.IsAdmin() {
+		// Google sign-in is the administration door. Clients and vendors use
+		// the one-time code, which reaches them where they actually are.
+		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Google sign-in is for administrators"})
+		return
+	}
+
+	token, err := h.authService.GenerateToken(user.FirebaseUID, user.Email, string(user.Role))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate token"})
+		return
+	}
+
+	user.RecordLogin()
+	_ = h.userRepo.Update(c.Request.Context(), user)
+
+	c.JSON(http.StatusOK, dto.AuthResponse{Token: token, User: dto.ToUserResponse(user)})
 }

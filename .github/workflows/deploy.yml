@@ -40,6 +40,7 @@ jobs:
       - name: Build and push image
         run: |
           docker build \
+            --build-arg VITE_GOOGLE_CLIENT_ID=${{ vars.GOOGLE_OAUTH_CLIENT_ID }} \
             -t ${{ env.IMAGE }}:${{ github.sha }} \
             -t ${{ env.IMAGE }}:latest \
             -f Dockerfile.cloud .

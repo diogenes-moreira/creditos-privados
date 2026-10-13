@@ -221,3 +221,8 @@ type ChangeRoleRequest struct {
 type SetActiveRequest struct {
 	Active *bool `json:"active" binding:"required"`
 }
+
+// GoogleLoginRequest carries the ID token issued by Google Identity Services.
+type GoogleLoginRequest struct {
+	IDToken string `json:"idToken" binding:"required"`
+}
