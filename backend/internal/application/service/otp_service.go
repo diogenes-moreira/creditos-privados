@@ -30,15 +30,15 @@ func NewOTPService(
 }
 
 func (s *OTPService) RequestOTP(ctx context.Context, email string) error {
-	// Verify the user exists and is a client
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("user not found")
 	}
 
-	if user.Role != model.RoleClient && user.Role != model.RoleVendor {
-		return fmt.Errorf("OTP login is only available for clients and vendors")
-	}
+	// Every role goes through the one-time code, administrators included.
+	// Admins used to be excluded because they signed in through the
+	// credential-less /auth/login shortcut, which has been removed: a code
+	// delivered out of band is now the only non-Firebase way in.
 
 	if !user.IsActive {
 		return fmt.Errorf("account is deactivated")
