@@ -113,6 +113,7 @@
     "vendorBalance": "Saldo",
     "vendorProfile": "Perfil",
     "vendors": "Vendedores",
+    "users": "Usuarios",
     "reports": "Informes",
     "riskProfile": "Datos financieros",
     "riskModel": "Modelo de riesgo"
@@ -546,6 +547,40 @@
     "selectCreditLine": "Seleccionar línea de crédito",
     "saleAmount": "Monto de la venta ($)",
     "saleDescription": "Descripción"
+  },
+  "adminUsers": {
+    "title": "Usuarios",
+    "description": "Administra las cuentas de todos los roles del sistema",
+    "createUser": "Crear usuario",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "role": "Rol",
+    "lastLogin": "Último ingreso",
+    "createdAt": "Creado",
+    "never": "Nunca",
+    "noUsers": "No hay usuarios",
+    "searchPlaceholder": "Buscar por correo o teléfono",
+    "allRoles": "Todos los roles",
+    "allStatuses": "Todos los estados",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "confirmActivate": "¿Activar la cuenta de {{email}}?",
+    "confirmDeactivate": "¿Desactivar la cuenta de {{email}}? Perderá el acceso, pero su historial se conserva.",
+    "ownRoleLocked": "No puedes cambiar tu propio rol",
+    "ownAccountLocked": "No puedes desactivar tu propia cuenta",
+    "noDeleteNotice": "Las cuentas no se eliminan: se desactivan, porque conservan préstamos, pagos y registros de auditoría.",
+    "userCreated": "Usuario creado",
+    "createError": "No se pudo crear el usuario",
+    "roleUpdated": "Rol actualizado",
+    "roleUpdateError": "No se pudo cambiar el rol",
+    "userActivated": "Usuario activado",
+    "userDeactivated": "Usuario desactivado",
+    "activeUpdateError": "No se pudo cambiar el estado de la cuenta",
+    "roles": {
+      "admin": "Administrador",
+      "client": "Cliente",
+      "vendor": "Vendedor"
+    }
   },
   "reports": {
     "title": "Informes financieros",

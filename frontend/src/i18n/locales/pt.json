@@ -113,6 +113,7 @@
     "vendorBalance": "Saldo",
     "vendorProfile": "Perfil",
     "vendors": "Vendedores",
+    "users": "Usuários",
     "reports": "Relatórios",
     "riskProfile": "Dados financeiros",
     "riskModel": "Modelo de risco"
@@ -546,6 +547,40 @@
     "selectCreditLine": "Selecionar linha de crédito",
     "saleAmount": "Valor da venda ($)",
     "saleDescription": "Descrição"
+  },
+  "adminUsers": {
+    "title": "Usuários",
+    "description": "Gerencie as contas de todos os perfis do sistema",
+    "createUser": "Criar usuário",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "role": "Perfil",
+    "lastLogin": "Último acesso",
+    "createdAt": "Criado",
+    "never": "Nunca",
+    "noUsers": "Nenhum usuário",
+    "searchPlaceholder": "Buscar por e-mail ou telefone",
+    "allRoles": "Todos os perfis",
+    "allStatuses": "Todos os estados",
+    "activate": "Ativar",
+    "deactivate": "Desativar",
+    "confirmActivate": "Ativar a conta de {{email}}?",
+    "confirmDeactivate": "Desativar a conta de {{email}}? Ela perderá o acesso, mas o histórico é mantido.",
+    "ownRoleLocked": "Você não pode alterar seu próprio perfil",
+    "ownAccountLocked": "Você não pode desativar sua própria conta",
+    "noDeleteNotice": "As contas não são excluídas: são desativadas, porque guardam empréstimos, pagamentos e registros de auditoria.",
+    "userCreated": "Usuário criado",
+    "createError": "Não foi possível criar o usuário",
+    "roleUpdated": "Perfil atualizado",
+    "roleUpdateError": "Não foi possível alterar o perfil",
+    "userActivated": "Usuário ativado",
+    "userDeactivated": "Usuário desativado",
+    "activeUpdateError": "Não foi possível alterar o estado da conta",
+    "roles": {
+      "admin": "Administrador",
+      "client": "Cliente",
+      "vendor": "Vendedor"
+    }
   },
   "reports": {
     "title": "Relatórios financeiros",

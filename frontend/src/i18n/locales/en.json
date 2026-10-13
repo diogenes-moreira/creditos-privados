@@ -113,6 +113,7 @@
     "vendorBalance": "Balance",
     "vendorProfile": "Profile",
     "vendors": "Vendors",
+    "users": "Users",
     "reports": "Reports",
     "riskProfile": "Financial data",
     "riskModel": "Risk model"
@@ -546,6 +547,40 @@
     "selectCreditLine": "Select credit line",
     "saleAmount": "Sale amount ($)",
     "saleDescription": "Description"
+  },
+  "adminUsers": {
+    "title": "Users",
+    "description": "Manage the accounts of every role in the system",
+    "createUser": "Create user",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "lastLogin": "Last login",
+    "createdAt": "Created",
+    "never": "Never",
+    "noUsers": "No users",
+    "searchPlaceholder": "Search by email or phone",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "confirmActivate": "Activate the account of {{email}}?",
+    "confirmDeactivate": "Deactivate the account of {{email}}? They lose access, but their history is kept.",
+    "ownRoleLocked": "You cannot change your own role",
+    "ownAccountLocked": "You cannot deactivate your own account",
+    "noDeleteNotice": "Accounts are never deleted, only deactivated: they carry loans, payments and audit entries.",
+    "userCreated": "User created",
+    "createError": "The user could not be created",
+    "roleUpdated": "Role updated",
+    "roleUpdateError": "The role could not be changed",
+    "userActivated": "User activated",
+    "userDeactivated": "User deactivated",
+    "activeUpdateError": "The account status could not be changed",
+    "roles": {
+      "admin": "Administrator",
+      "client": "Client",
+      "vendor": "Vendor"
+    }
   },
   "reports": {
     "title": "Financial Reports",

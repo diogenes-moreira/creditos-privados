@@ -29,6 +29,7 @@ import Collections from "./pages/admin/Collections";
 import Reports from "./pages/admin/Reports";
 import AdminRiskModel from "./pages/admin/RiskModel";
 import VendorListAdmin from "./pages/admin/VendorList";
+import UsersAdmin from "./pages/admin/Users";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
 
 // Vendor pages
@@ -172,6 +173,11 @@ const App: React.FC = () => {
       <Route path="/admin/audit" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><AuditLog /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><UsersAdmin /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/vendors" element={

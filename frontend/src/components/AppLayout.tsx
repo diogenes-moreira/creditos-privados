@@ -38,6 +38,7 @@ Gavel as GavelIcon,
   MoneyOff as CollectionsIcon,
   Tune as RiskModelIcon,
   FactCheck as RiskDataIcon,
+  ManageAccounts as UsersIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -89,6 +90,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.riskModel"), path: "/admin/risk-model", icon: <RiskModelIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
     { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },
+    { label: t("nav.users"), path: "/admin/users", icon: <UsersIcon /> },
   ];
 
   const navItems = user?.role === "admin" ? adminNavItemsI18n : user?.role === "vendor" ? vendorNavItemsI18n : clientNavItemsI18n;

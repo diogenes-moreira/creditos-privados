@@ -60,6 +60,11 @@ import type {
   UpdateRiskModelRequest,
   PromptPreview,
   RiskAnalyzerInfo,
+  AdminUser,
+  AdminUserFilter,
+  UserListResponse,
+  CreateUserRequest,
+  UserRole,
 } from "./types";
 
 // ==================== Auth ====================
@@ -654,5 +659,34 @@ export const adminPreviewRiskPrompt = async (prompt: string, clientId?: string):
 
 export const adminGetRiskAnalyzerInfo = async (): Promise<RiskAnalyzerInfo> => {
   const res = await apiClient.get("/admin/risk-models/analyzer");
+  return res.data;
+};
+
+// ==================== Admin: Users ====================
+
+export const adminGetUsers = async (filter: AdminUserFilter = {}): Promise<UserListResponse> => {
+  const params: Record<string, string | number | boolean> = {};
+  if (filter.role) params.role = filter.role;
+  if (filter.active !== undefined) params.active = filter.active;
+  if (filter.search) params.search = filter.search;
+  if (filter.limit !== undefined) params.limit = filter.limit;
+  if (filter.offset !== undefined) params.offset = filter.offset;
+  const res = await apiClient.get("/admin/users", { params });
+  return res.data;
+};
+
+export const adminCreateUser = async (data: CreateUserRequest): Promise<AdminUser> => {
+  const res = await apiClient.post("/admin/users", data);
+  return res.data;
+};
+
+export const adminChangeUserRole = async (id: string, role: UserRole): Promise<AdminUser> => {
+  const res = await apiClient.put(`/admin/users/${id}/role`, { role });
+  return res.data;
+};
+
+/** Accounts are deactivated, never deleted: they carry loans, payments and audit entries. */
+export const adminSetUserActive = async (id: string, active: boolean): Promise<AdminUser> => {
+  const res = await apiClient.put(`/admin/users/${id}/active`, { active });
   return res.data;
 };

@@ -676,3 +676,38 @@ export interface RiskAnalyzerInfo {
   promptDriven: boolean;
   placeholders: string[];
 }
+
+// ---- Admin: user management ----
+export type UserRole = "admin" | "client" | "vendor";
+
+/** A user account as returned by the admin user endpoints. */
+export interface AdminUser {
+  id: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  isActive: boolean;
+  lastLoginAt?: string;
+  createdAt?: string;
+}
+
+/** A page of users plus the total before pagination. */
+export interface UserListResponse {
+  users: AdminUser[];
+  total: number;
+}
+
+/** Filters accepted by the admin user listing. */
+export interface AdminUserFilter {
+  role?: UserRole;
+  active?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  phone?: string;
+  role: UserRole;
+}
