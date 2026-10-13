@@ -306,11 +306,23 @@ const (
 	CeilingPolicyCap = "Tope de política"
 )
 
+// Stable identifiers for the ceilings, for callers that must branch on which
+// one bound the quota. The constants above are display text and can be
+// translated or reworded; these cannot.
+const (
+	CeilingCodeLTV       = "ltv"
+	CeilingCodeCapacity  = "capacity"
+	CeilingCodeInputs    = "inputs"
+	CeilingCodePolicyCap = "policyCap"
+)
+
 // LivestockQuota is the assigned quota with the full trace of how it was
 // reached. ActiveCeiling answers the risk team's "why is it this number".
 type LivestockQuota struct {
 	Quota         decimal.Decimal
 	ActiveCeiling string
+	// ActiveCeilingCode is the stable identifier of ActiveCeiling.
+	ActiveCeilingCode string
 
 	LTVCeiling      decimal.Decimal
 	CapacityCeiling decimal.Decimal
@@ -367,16 +379,17 @@ func CalculateQuota(income ProjectedIncome, score BehaviourScore, costs Projecte
 
 	type ceiling struct {
 		name  string
+		code  string
 		value decimal.Decimal
 	}
 	ceilings := []ceiling{
-		{CeilingLTV, ltv},
-		{CeilingCapacity, capacity},
+		{CeilingLTV, CeilingCodeLTV, ltv},
+		{CeilingCapacity, CeilingCodeCapacity, capacity},
 	}
 	if hasInputsCeiling {
-		ceilings = append(ceilings, ceiling{CeilingInputs, inputs})
+		ceilings = append(ceilings, ceiling{CeilingInputs, CeilingCodeInputs, inputs})
 	}
-	ceilings = append(ceilings, ceiling{CeilingPolicyCap, p.MaxQuota})
+	ceilings = append(ceilings, ceiling{CeilingPolicyCap, CeilingCodePolicyCap, p.MaxQuota})
 
 	best := ceilings[0]
 	for _, c := range ceilings[1:] {
@@ -396,6 +409,7 @@ func CalculateQuota(income ProjectedIncome, score BehaviourScore, costs Projecte
 	return LivestockQuota{
 		Quota:               final,
 		ActiveCeiling:       best.name,
+		ActiveCeilingCode:   best.code,
 		LTVCeiling:          ltv,
 		CapacityCeiling:     capacity,
 		InputsCeiling:       inputs,

@@ -26,19 +26,22 @@ type LivestockScoreResponse struct {
 
 // LivestockQuotaResponse is the assigned quota with the trace of how it was reached.
 type LivestockQuotaResponse struct {
-	ID            string                         `json:"id"`
-	NationalID    string                         `json:"nationalId"`
-	Reference     string                         `json:"reference"`
-	Quota         string                         `json:"quota"`
-	Currency      string                         `json:"currency"`
-	ActiveCeiling string                         `json:"activeCeiling"`
-	Ceilings      LivestockQuotaCeilingsResponse `json:"ceilings"`
-	TermMonths    int                            `json:"termMonths"`
-	PeriodRatePct string                         `json:"periodRatePct"`
-	Score         LivestockScoreResponse         `json:"score"`
-	Typology      string                         `json:"typology"`
-	Head          int                            `json:"head"`
-	UGG           string                         `json:"ugg"`
+	ID            string `json:"id"`
+	NationalID    string `json:"nationalId"`
+	Reference     string `json:"reference"`
+	Quota         string `json:"quota"`
+	Currency      string `json:"currency"`
+	ActiveCeiling string `json:"activeCeiling"`
+	// ActiveCeilingCode is the stable key of ActiveCeiling: ltv, capacity,
+	// inputs or policyCap. Branch on this, not on the display text.
+	ActiveCeilingCode string                         `json:"activeCeilingCode"`
+	Ceilings          LivestockQuotaCeilingsResponse `json:"ceilings"`
+	TermMonths        int                            `json:"termMonths"`
+	PeriodRatePct     string                         `json:"periodRatePct"`
+	Score             LivestockScoreResponse         `json:"score"`
+	Typology          string                         `json:"typology"`
+	Head              int                            `json:"head"`
+	UGG               string                         `json:"ugg"`
 	// ProjectedIncome is the holding's expected revenue over the term.
 	ProjectedIncome string `json:"projectedIncome"`
 	// EligibleBasket is what the rancher would buy in the inputs catalogue over the term.
@@ -84,12 +87,13 @@ func ToLivestockQuotaRequest(r LivestockQuotaRequest) service.LivestockQuotaRequ
 func ToLivestockQuotaResponse(r *model.LivestockQuotaAssessment, a model.LivestockAssessment) LivestockQuotaResponse {
 	q := a.Quota
 	return LivestockQuotaResponse{
-		ID:            r.ID.String(),
-		NationalID:    r.NationalID,
-		Reference:     r.Reference,
-		Quota:         r.Quota.StringFixed(2),
-		Currency:      r.Currency,
-		ActiveCeiling: q.ActiveCeiling,
+		ID:                r.ID.String(),
+		NationalID:        r.NationalID,
+		Reference:         r.Reference,
+		Quota:             r.Quota.StringFixed(2),
+		Currency:          r.Currency,
+		ActiveCeiling:     q.ActiveCeiling,
+		ActiveCeilingCode: q.ActiveCeilingCode,
 		Ceilings: LivestockQuotaCeilingsResponse{
 			LTV:       q.LTVCeiling.StringFixed(2),
 			Capacity:  q.CapacityCeiling.StringFixed(2),

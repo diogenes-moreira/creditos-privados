@@ -29,6 +29,7 @@ import Collections from "./pages/admin/Collections";
 import Reports from "./pages/admin/Reports";
 import AdminRiskModel from "./pages/admin/RiskModel";
 import AdminLivestockQuota from "./pages/admin/LivestockQuota";
+import AdminLivestockQuotaLookup from "./pages/admin/LivestockQuotaLookup";
 import VendorListAdmin from "./pages/admin/VendorList";
 import UsersAdmin from "./pages/admin/Users";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
@@ -174,6 +175,11 @@ const App: React.FC = () => {
       <Route path="/admin/livestock-quota" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><AdminLivestockQuota /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/livestock-quota-lookup" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><AdminLivestockQuotaLookup /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/audit" element={

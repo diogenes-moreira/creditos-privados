@@ -66,6 +66,8 @@ import type {
   CreateUserRequest,
   UserRole,
   LivestockQuotaPolicy,
+  LivestockRegistryIdType,
+  RegistryQuotaResponse,
   SaveLivestockQuotaPolicyVersionRequest,
   UpdateLivestockQuotaPolicyRequest,
 } from "./types";
@@ -737,5 +739,22 @@ export const adminUpdateLivestockQuotaPolicy = async (
 
 export const adminActivateLivestockQuotaPolicy = async (id: string): Promise<LivestockQuotaPolicy> => {
   const res = await apiClient.post(`/admin/livestock-quota-policies/${id}/activate`);
+  return res.data;
+};
+
+/**
+ * Quotes a rancher straight from Fedegán's vaccination registry (RUV).
+ *
+ * A 404 means the national ID has no RUV record, which is the ordinary case
+ * for most of the target population, not a failure of the lookup.
+ */
+export const adminAssessLivestockQuotaFromRegistry = async (
+  nationalId: string,
+  idType?: LivestockRegistryIdType
+): Promise<RegistryQuotaResponse> => {
+  const res = await apiClient.get(
+    `/admin/livestock-quotas/${encodeURIComponent(nationalId)}`,
+    { params: idType ? { idType } : undefined }
+  );
   return res.data;
 };

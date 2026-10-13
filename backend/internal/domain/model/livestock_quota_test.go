@@ -472,3 +472,33 @@ func TestMilkYieldDrivesDepartmentDifference(t *testing.T) {
 	assert.True(t, antioquia.Milk.Amount.GreaterThan(caqueta.Milk.Amount))
 	assert.True(t, antioquia.Total.GreaterThan(caqueta.Total))
 }
+
+func TestQuotaCeilingCodeIsStable(t *testing.T) {
+	params := model.DefaultQuotaParams()
+	yields := model.DefaultLivestockYields()
+
+	// The display name can be translated or reworded; the code is what callers
+	// branch on, so every holding must carry one and the two must agree.
+	pairs := map[string]string{
+		model.CeilingLTV:       model.CeilingCodeLTV,
+		model.CeilingCapacity:  model.CeilingCodeCapacity,
+		model.CeilingInputs:    model.CeilingCodeInputs,
+		model.CeilingPolicyCap: model.CeilingCodePolicyCap,
+	}
+
+	seen := map[string]bool{}
+	for _, g := range goldenHoldings() {
+		got := model.AssessQuota(g.applicant(), params, yields)
+		code := got.Quota.ActiveCeilingCode
+		require.NotEmpty(t, code, "cc%s has no ceiling code", g.id)
+		assert.Equal(t, pairs[got.Quota.ActiveCeiling], code,
+			"cc%s: code must match the display name", g.id)
+		seen[code] = true
+	}
+
+	// The reference set exercises three of the four ceilings; a code that never
+	// appears would hide a mapping mistake.
+	assert.True(t, seen[model.CeilingCodeInputs])
+	assert.True(t, seen[model.CeilingCodeLTV])
+	assert.True(t, seen[model.CeilingCodePolicyCap])
+}

@@ -791,3 +791,95 @@ export interface UpdateLivestockQuotaPolicyRequest {
   description?: string;
   params: LivestockQuotaParams;
 }
+
+// ---- Admin: livestock quota lookup against Fedegán's vaccination registry ----
+
+/** Identification documents the registry accepts, with the cédula as default. */
+export type LivestockRegistryIdType =
+  | "CÉDULA DE CIUDADANÍA"
+  | "CÉDULA DE EXTRANJERÍA"
+  | "NIT"
+  | "PASAPORTE"
+  | "LIBRETA MILITAR"
+  | "TARJETA DE IDENTIDAD O REGISTRO CIVIL";
+
+/** One predio as the registry reports it. */
+export interface RegistryHolding {
+  code: string;
+  name: string;
+  department: string;
+  municipality: string;
+  village?: string;
+  cycle: number;
+  year: number;
+  vaccinatedAt?: string;
+  head: number;
+  notVaccinated: number;
+}
+
+/** Who the registry says the national ID belongs to. */
+export interface RegistryRancher {
+  nationalId: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  holdings: RegistryHolding[];
+}
+
+/**
+ * The four ceilings the quota is the minimum of. Decimal strings: money never
+ * travels as a float.
+ */
+export interface LivestockQuotaCeilings {
+  ltv: string;
+  capacity: string;
+  inputs: string;
+  policyCap: string;
+}
+
+/** The 0-100 behaviour score and the three components it is built from. */
+export interface LivestockScore {
+  score: number;
+  grade: string;
+  vaccinationRatePct: number;
+  cycleCompliancePct: number;
+  seniorityCycles: number;
+}
+
+/** An assigned quota with the full trace of how it was reached. */
+export interface LivestockQuotaAssessment {
+  id: string;
+  nationalId: string;
+  reference: string;
+  quota: string;
+  currency: string;
+  /**
+   * The ceiling that bound the quota, as the engine names it in Spanish
+   * ("LTV sobre flujo", "Capacidad de pago", "Necesidad de insumos",
+   * "Tope de política"), not as a stable code.
+   */
+  activeCeiling: string;
+  /** Stable key of activeCeiling: ltv, capacity, inputs or policyCap. */
+  activeCeilingCode?: string;
+  ceilings: LivestockQuotaCeilings;
+  termMonths: number;
+  periodRatePct: string;
+  score: LivestockScore;
+  typology: string;
+  head: number;
+  ugg: string;
+  projectedIncome: string;
+  eligibleBasket: string;
+  createdAt: string;
+}
+
+/**
+ * A quota computed from the registry. The assumptions are not decoration:
+ * three of the score's inputs are absent from the registry, so whoever reads
+ * the quota needs to know which figures were observed and which were assumed.
+ */
+export interface RegistryQuotaResponse {
+  rancher: RegistryRancher;
+  assessment: LivestockQuotaAssessment;
+  assumptions: string[];
+}
