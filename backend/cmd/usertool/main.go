@@ -100,8 +100,15 @@ func main() {
 		if phone != "" {
 			existing.Phone = phone
 		}
-		if err := db.Save(&existing).Error; err != nil {
-			log.Fatalf("Failed to promote %s: %v", email, err)
+		// Unscoped, because the default scope appends "deleted_at IS NULL" to
+		// the WHERE clause and a restore would match no rows while still
+		// reporting success.
+		res := db.Unscoped().Save(&existing)
+		if res.Error != nil {
+			log.Fatalf("Failed to update %s: %v", email, res.Error)
+		}
+		if res.RowsAffected == 0 {
+			log.Fatalf("Update of %s changed no rows", email)
 		}
 		log.Printf("Account updated: %s (ID: %s, role: %s)", email, existing.ID, role)
 		return
