@@ -96,3 +96,14 @@ func (r *UserRepository) List(ctx context.Context, filter port.UserFilter) ([]mo
 	}
 	return users, total, nil
 }
+
+// FindRemovedByEmail finds a soft-deleted account by email.
+func (r *UserRepository) FindRemovedByEmail(ctx context.Context, email string) (*model.User, error) {
+	var user model.User
+	if err := r.db.WithContext(ctx).Unscoped().
+		Where("email = ? AND deleted_at IS NOT NULL", email).
+		First(&user).Error; err != nil {
+		return nil, fmt.Errorf("no removed user with that email: %w", err)
+	}
+	return &user, nil
+}

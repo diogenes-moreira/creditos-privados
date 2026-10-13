@@ -28,6 +28,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -68,8 +69,11 @@ func main() {
 		log.Fatalf("Failed to migrate users: %v", err)
 	}
 
+	// Unscoped so a previously removed account is seen: soft deletion leaves the
+	// row in place and it still holds the unique email index, so inserting a new
+	// one with that address would collide.
 	var existing model.User
-	found := db.Where("email = ?", email).First(&existing).Error == nil
+	found := db.Unscoped().Where("email = ?", email).First(&existing).Error == nil
 
 	if action == "remove" {
 		if !found {
@@ -85,6 +89,12 @@ func main() {
 	}
 
 	if found {
+		if existing.DeletedAt.Valid {
+			// Restoring is what the operator means by creating an address that
+			// was removed before; a second row could never exist anyway.
+			existing.DeletedAt = gorm.DeletedAt{}
+			log.Printf("Restoring previously removed account: %s", email)
+		}
 		existing.Role = role
 		existing.IsActive = true
 		if phone != "" {

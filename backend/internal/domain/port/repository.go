@@ -17,6 +17,9 @@ type UserRepository interface {
 	FindByPhone(ctx context.Context, phone string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
 	List(ctx context.Context, filter UserFilter) ([]model.User, int64, error)
+	// FindRemovedByEmail finds a soft-deleted account. Its row still holds the
+	// unique email index, so creating that address again would collide.
+	FindRemovedByEmail(ctx context.Context, email string) (*model.User, error)
 }
 
 // UserFilter narrows a user listing. A zero value lists everyone, newest first.

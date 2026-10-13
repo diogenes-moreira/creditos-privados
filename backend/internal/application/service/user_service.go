@@ -147,6 +147,13 @@ func (s *UserService) Create(ctx context.Context, actorID uuid.UUID, email, phon
 	if existing, err := s.userRepo.FindByEmail(ctx, email); err == nil && existing != nil {
 		return nil, fmt.Errorf("a user with that email already exists")
 	}
+	// A removed account keeps its row, and that row still holds the unique
+	// email index, so inserting here would fail on a constraint the operator
+	// cannot see. Say what actually happened instead.
+	if removed, err := s.userRepo.FindRemovedByEmail(ctx, email); err == nil && removed != nil {
+		return nil, fmt.Errorf(
+			"%s belonged to an account that was removed; it has to be restored rather than created again", email)
+	}
 
 	// Credentials live outside this table: sign-in is a one-time code sent to
 	// the address, or a verified Firebase identity. The UID is a placeholder
