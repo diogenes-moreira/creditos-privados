@@ -5,8 +5,9 @@
 // their portfolios, which does not belong in a real deployment. This acts on
 // exactly one account.
 //
-// ACTION=promote (default) creates or promotes one email to administrator. It
-// is idempotent: an existing user is promoted and reactivated, not duplicated.
+// ACTION=promote (default) creates or promotes one email to a staff role,
+// administrator unless ADMIN_ROLE says advisor. It is idempotent: an existing
+// user is updated and reactivated, not duplicated.
 //
 // ACTION=remove soft-deletes one account. There is no delete endpoint and there
 // should not be: a user carries loans, payments and audit entries, so removing
@@ -37,6 +38,16 @@ func main() {
 		log.Fatal("ADMIN_EMAIL is required")
 	}
 	phone := strings.TrimSpace(os.Getenv("ADMIN_PHONE"))
+	role := model.UserRole(strings.ToLower(strings.TrimSpace(os.Getenv("ADMIN_ROLE"))))
+	if role == "" {
+		role = model.RoleAdmin
+	}
+	// Only staff roles: a client or vendor needs the profile its own onboarding
+	// builds, and this tool creates the account alone.
+	if role != model.RoleAdmin && role != model.RoleAdvisor {
+		log.Fatalf("ADMIN_ROLE must be admin or advisor, got %q", role)
+	}
+
 	action := strings.ToLower(strings.TrimSpace(os.Getenv("ACTION")))
 	if action == "" {
 		action = "promote"
@@ -74,7 +85,7 @@ func main() {
 	}
 
 	if found {
-		existing.Role = model.RoleAdmin
+		existing.Role = role
 		existing.IsActive = true
 		if phone != "" {
 			existing.Phone = phone
@@ -82,7 +93,7 @@ func main() {
 		if err := db.Save(&existing).Error; err != nil {
 			log.Fatalf("Failed to promote %s: %v", email, err)
 		}
-		log.Printf("Admin promoted: %s (ID: %s)", email, existing.ID)
+		log.Printf("Account updated: %s (ID: %s, role: %s)", email, existing.ID, role)
 		return
 	}
 
@@ -94,11 +105,11 @@ func main() {
 		FirebaseUID: uuid.New().String(),
 		Email:       email,
 		Phone:       phone,
-		Role:        model.RoleAdmin,
+		Role:        role,
 		IsActive:    true,
 	}
 	if err := db.Create(user).Error; err != nil {
 		log.Fatalf("Failed to create %s: %v", email, err)
 	}
-	log.Printf("Admin created: %s (ID: %s)", email, user.ID)
+	log.Printf("Account created: %s (ID: %s, role: %s)", email, user.ID, role)
 }
