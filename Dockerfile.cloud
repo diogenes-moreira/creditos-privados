@@ -34,6 +34,7 @@ RUN go mod download
 COPY backend/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/server ./cmd/server
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/seed ./cmd/seed
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/createadmin ./cmd/createadmin
 
 # Stage 3: Production image
 FROM alpine:3.19
@@ -42,7 +43,7 @@ RUN apk add --no-cache ca-certificates tzdata && \
 
 WORKDIR /app
 
-COPY --from=backend-builder /bin/server /bin/seed ./
+COPY --from=backend-builder /bin/server /bin/seed /bin/createadmin ./
 COPY --from=frontend-builder /app/frontend/dist ./public/
 
 RUN mkdir -p /app/storage && chown -R appuser:appuser /app
