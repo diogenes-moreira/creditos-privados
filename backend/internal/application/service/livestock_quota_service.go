@@ -37,6 +37,9 @@ type LivestockQuotaService struct {
 	// policies supplies the operator-edited parameters. It is optional: with no
 	// policy service wired in, the engine runs on the shipped defaults.
 	policies *LivestockQuotaPolicyService
+	// registry reads herds from the RUV. Optional: without it the service only
+	// scores herds a caller supplies.
+	registry port.RUVClient
 	yields   model.LivestockYields
 	currency string
 }
@@ -108,5 +111,85 @@ func toApplicant(req LivestockQuotaRequest) (model.LivestockApplicant, error) {
 		SeniorityCycles: req.SeniorityCycles,
 		CompletedCycles: req.CompletedCycles,
 		ReportedCycles:  req.ReportedCycles,
+	}, nil
+}
+
+// WithRegistry lets the service read herds from the RUV itself.
+func (s *LivestockQuotaService) WithRegistry(registry port.RUVClient) *LivestockQuotaService {
+	s.registry = registry
+	return s
+}
+
+// ErrNotInRegistry means the RUV holds no record for that national ID. It is a
+// normal outcome, not a failure: most of the target population is not
+// registered yet.
+var ErrNotInRegistry = errors.New("no RUV record for that national ID")
+
+// ErrRegistryUnavailable means the deployment has no registry configured.
+var ErrRegistryUnavailable = errors.New("the RUV is not configured")
+
+// RegistryAssessment is a quota computed from the registry, carrying what had
+// to be assumed because the RUV does not report it.
+type RegistryAssessment struct {
+	Record     *model.LivestockQuotaAssessment
+	Assessment model.LivestockAssessment
+	Rancher    *port.RUVRancher
+	// Assumptions names every score input that was not observed. The score
+	// moves on these, so whoever reads the quota should see them.
+	Assumptions []string
+}
+
+// AssessFromRegistry reads the rancher's herds from the RUV and scores them.
+//
+// Three of the score's inputs are not in the registry: whether the land is
+// owned or leased (10 points), the holding's status (5 points), and the
+// compliance history (30 points). A single query returns the cycles that were
+// reported, never the ones that were missed, so compliance cannot be derived
+// from it. Tenure is assumed leased rather than owned, because over-granting
+// credit is the more expensive mistake; every assumption is returned alongside
+// the quota rather than buried.
+func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, nationalID, requestedBy string) (*RegistryAssessment, error) {
+	if s.registry == nil {
+		return nil, ErrRegistryUnavailable
+	}
+	rancher, err := s.registry.FindByNationalID(ctx, idType, nationalID)
+	if err != nil {
+		return nil, fmt.Errorf("reading the RUV: %w", err)
+	}
+	if rancher == nil {
+		return nil, ErrNotInRegistry
+	}
+
+	cycles := rancher.ReportedCycles()
+	req := LivestockQuotaRequest{
+		NationalID:    rancher.NationalID,
+		Department:    rancher.Department(),
+		Tenure:        model.TenureLeased,
+		HoldingStatus: model.HoldingActive,
+		// Only reported cycles are visible, so compliance is 100% by
+		// construction and seniority is capped by what one query shows.
+		SeniorityCycles: cycles,
+		CompletedCycles: cycles,
+		ReportedCycles:  cycles,
+		Reference:       "ruv",
+	}
+	for _, h := range rancher.Holdings {
+		req.Holdings = append(req.Holdings, h.Herd)
+	}
+
+	record, assessment, err := s.Assess(ctx, req, requestedBy)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RegistryAssessment{
+		Record:     record,
+		Assessment: assessment,
+		Rancher:    rancher,
+		Assumptions: []string{
+			"tenure_assumed_leased",
+			"holding_status_assumed_active",
+			"compliance_from_reported_cycles_only",
+		},
 	}, nil
 }

@@ -13,6 +13,7 @@ type Config struct {
 	AI       AIConfig
 	Twilio   TwilioConfig
 	Kapso    KapsoConfig
+	RUV      RUVConfig
 	SendGrid SendGridConfig
 	// OTPProvider selects the delivery channel: "kapso", "twilio" or
 	// "sendgrid". Empty uses whichever is configured.
@@ -103,6 +104,16 @@ type ServerConfig struct {
 type JWTConfig struct {
 	Secret          string
 	ExpirationHours int
+}
+
+// RUVConfig points at Fedegán's vaccination registry. With no credentials the
+// quota engine still scores herds a caller supplies; it just cannot read them.
+type RUVConfig struct {
+	BaseURL      string
+	ClientID     string
+	ClientSecret string
+	Username     string
+	Password     string
 }
 
 // SendGridConfig configures one-time codes delivered by email. FromEmail must
@@ -210,6 +221,13 @@ func Load() *Config {
 			APIKey:    getEnv("SENDGRID_API_KEY", ""),
 			FromEmail: getEnv("SENDGRID_FROM_EMAIL", ""),
 			FromName:  getEnv("SENDGRID_FROM_NAME", "CuppoGan"),
+		},
+		RUV: RUVConfig{
+			BaseURL:      getEnv("RUV_BASE_URL", ""),
+			ClientID:     getEnv("RUV_CLIENT_ID", ""),
+			ClientSecret: getEnv("RUV_CLIENT_SECRET", ""),
+			Username:     getEnv("RUV_USERNAME", ""),
+			Password:     getEnv("RUV_PASSWORD", ""),
 		},
 		OTPProvider: getEnv("OTP_PROVIDER", ""),
 		Twilio: TwilioConfig{

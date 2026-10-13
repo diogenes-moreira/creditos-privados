@@ -162,6 +162,9 @@ npm run dev    # http://localhost:4321
 | `TWILIO_AUTH_TOKEN` | Token de Twilio | - |
 | `TWILIO_WHATSAPP_FROM` | Remitente WhatsApp de Twilio en E.164 | - |
 | `TWILIO_WHATSAPP_TEMPLATE_SID` | Template aprobado (`HX...`) con el código en `{{1}}` | - |
+| `RUV_BASE_URL` | Servicio del RUV de Fedegán (bureau alternativo del cupo ganadero) | - |
+| `RUV_CLIENT_ID` / `RUV_CLIENT_SECRET` | Credenciales OAuth2 del RUV | - |
+| `RUV_USERNAME` / `RUV_PASSWORD` | Usuario del RUV | - |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |

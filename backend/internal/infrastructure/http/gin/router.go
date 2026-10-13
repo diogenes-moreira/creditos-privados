@@ -18,6 +18,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/pdf"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/ruv"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -34,6 +35,7 @@ type Router struct {
 	country         string
 	countryInfo     config.CountryInfo
 	aiConfig        config.AIConfig
+	ruvConfig       config.RUVConfig
 	otpProviders    messaging.OTPProviders
 	partners        config.PartnersConfig
 }
@@ -47,6 +49,7 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		country:         cfg.Country,
 		countryInfo:     cfg.CountryInfo(),
 		aiConfig:        cfg.AI,
+		ruvConfig:       cfg.RUV,
 		partners:        cfg.Partners,
 		otpProviders: messaging.OTPProviders{
 			Provider: cfg.OTPProvider,
@@ -162,9 +165,20 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	reportHandler := handler.NewReportHandler(reportService)
 	riskHandler := handler.NewRiskHandler(riskService, clientRepo)
 	livestockPolicyService := service.NewLivestockQuotaPolicyService(livestockPolicyRepo, auditService)
-	livestockQuotaHandler := handler.NewLivestockQuotaHandler(
-		service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency).
-			WithPolicies(livestockPolicyService))
+	livestockQuotaService := service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency).
+		WithPolicies(livestockPolicyService)
+	// The registry is nil when no credentials are configured, in which case the
+	// engine still scores herds a caller supplies; it just cannot read them.
+	if registry := ruv.New(ruv.Config{
+		BaseURL:      r.ruvConfig.BaseURL,
+		ClientID:     r.ruvConfig.ClientID,
+		ClientSecret: r.ruvConfig.ClientSecret,
+		Username:     r.ruvConfig.Username,
+		Password:     r.ruvConfig.Password,
+	}); registry != nil {
+		livestockQuotaService = livestockQuotaService.WithRegistry(registry)
+	}
+	livestockQuotaHandler := handler.NewLivestockQuotaHandler(livestockQuotaService)
 	livestockPolicyHandler := handler.NewLivestockQuotaPolicyHandler(livestockPolicyService)
 
 	// Optional path prefix for when the service is mounted under a sub-path.
@@ -328,6 +342,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 		// User administration. Accounts are deactivated, never deleted: they
 		// carry loans, payments and audit entries.
+		adminRoutes.GET("/livestock-quotas/:id", livestockQuotaHandler.AssessFromRegistry)
+
 		adminRoutes.GET("/users", userHandler.ListUsers)
 		adminRoutes.POST("/users", userHandler.CreateUser)
 		adminRoutes.PUT("/users/:id/role", userHandler.ChangeUserRole)
