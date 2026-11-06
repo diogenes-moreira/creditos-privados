@@ -12,10 +12,20 @@ type PartnerRegistryQuotaRequest struct {
 	Reference string `json:"reference" binding:"max=100"`
 }
 
-// PartnerRegistryQuotaResponse is the quota a partner gets. It leaves out the
-// rancher's contact data, which the partner already holds, and keeps what it
-// needs to explain the figure: the RUV codes summed and what was assumed.
+// PartnerRancherResponse is who the RUV says the national ID belongs to, with
+// every predio and cycle reported. The partner needs the predios to fill the
+// promissory note (notification address) and to cite the RUV code to the
+// rancher; the contact data stays out, since the partner already holds it.
+type PartnerRancherResponse struct {
+	NationalID string                    `json:"nationalId"`
+	Name       string                    `json:"name"`
+	Holdings   []RegistryHoldingResponse `json:"holdings"`
+}
+
+// PartnerRegistryQuotaResponse is the quota a partner gets: the figure, the
+// predios behind it (the RUV codes summed) and what was assumed.
 type PartnerRegistryQuotaResponse struct {
+	Rancher      PartnerRancherResponse `json:"rancher"`
 	Assessment   LivestockQuotaResponse `json:"assessment"`
 	HoldingCodes []string               `json:"holdingCodes"`
 	Assumptions  []string               `json:"assumptions"`
@@ -28,6 +38,11 @@ func ToPartnerRegistryQuotaResponse(r *service.RegistryAssessment) PartnerRegist
 		codes = append(codes, h.Code)
 	}
 	return PartnerRegistryQuotaResponse{
+		Rancher: PartnerRancherResponse{
+			NationalID: r.Rancher.NationalID,
+			Name:       r.Rancher.Name,
+			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
+		},
 		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment),
 		HoldingCodes: codes,
 		Assumptions:  r.Assumptions,

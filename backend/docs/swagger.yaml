@@ -817,6 +817,17 @@ definitions:
       total:
         type: integer
     type: object
+  dto.PartnerRancherResponse:
+    properties:
+      holdings:
+        items:
+          $ref: '#/definitions/dto.RegistryHoldingResponse'
+        type: array
+      name:
+        type: string
+      nationalId:
+        type: string
+    type: object
   dto.PartnerRegistryQuotaRequest:
     properties:
       idType:
@@ -847,6 +858,8 @@ definitions:
         items:
           type: string
         type: array
+      rancher:
+        $ref: '#/definitions/dto.PartnerRancherResponse'
     type: object
   dto.PaymentResponse:
     properties:
