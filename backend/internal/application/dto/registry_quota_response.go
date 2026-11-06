@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 )
 
 // RegistryQuotaLookupRequest asks for a rancher's quota from the registry.
@@ -51,8 +52,23 @@ type RegistryQuotaResponse struct {
 
 // ToRegistryQuotaResponse maps a registry-backed assessment.
 func ToRegistryQuotaResponse(r *service.RegistryAssessment) RegistryQuotaResponse {
-	holdings := make([]RegistryHoldingResponse, 0, len(r.Rancher.Holdings))
-	for _, h := range r.Rancher.Holdings {
+	return RegistryQuotaResponse{
+		Rancher: RegistryRancherResponse{
+			NationalID: r.Rancher.NationalID,
+			Name:       r.Rancher.Name,
+			Phone:      r.Rancher.Phone,
+			Email:      r.Rancher.Email,
+			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
+		},
+		Assessment:  ToLivestockQuotaResponse(r.Record, r.Assessment),
+		Assumptions: r.Assumptions,
+	}
+}
+
+// toRegistryHoldings maps every predio and cycle the registry reported.
+func toRegistryHoldings(hs []port.RUVHolding) []RegistryHoldingResponse {
+	holdings := make([]RegistryHoldingResponse, 0, len(hs))
+	for _, h := range hs {
 		c := h.Herd.Classify()
 		holdings = append(holdings, RegistryHoldingResponse{
 			Code:          h.Code,
@@ -67,16 +83,5 @@ func ToRegistryQuotaResponse(r *service.RegistryAssessment) RegistryQuotaRespons
 			NotVaccinated: c.NotVaccinated,
 		})
 	}
-
-	return RegistryQuotaResponse{
-		Rancher: RegistryRancherResponse{
-			NationalID: r.Rancher.NationalID,
-			Name:       r.Rancher.Name,
-			Phone:      r.Rancher.Phone,
-			Email:      r.Rancher.Email,
-			Holdings:   holdings,
-		},
-		Assessment:  ToLivestockQuotaResponse(r.Record, r.Assessment),
-		Assumptions: r.Assumptions,
-	}
+	return holdings
 }

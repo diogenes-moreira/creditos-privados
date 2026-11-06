@@ -5918,6 +5918,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PartnerRancherResponse": {
+            "type": "object",
+            "properties": {
+                "holdings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RegistryHoldingResponse"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PartnerRegistryQuotaRequest": {
             "type": "object",
             "required": [
@@ -5957,6 +5974,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "rancher": {
+                    "$ref": "#/definitions/dto.PartnerRancherResponse"
                 }
             }
         },
