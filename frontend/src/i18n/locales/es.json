@@ -988,10 +988,9 @@
       "assumptionsImpact": "Esos tres supuestos pesan 45 de los 100 puntos del puntaje, y el puntaje multiplica el techo por LTV. Verificá la tenencia y el estado del predio antes de aprobar.",
       "assumptionsObserved": "Sí están observados: los predios, las cabezas por categoría, las cabezas sin vacunar y los ciclos reportados.",
       "assumption": {
-        "tenure_assumed_leased": "Tenencia: se supuso tierra arrendada, no propia. Es el supuesto conservador; si el ganadero es dueño, el puntaje sube.",
         "holding_status_assumed_active": "Estado del predio: se supuso activo, porque el registro no informa si fue fusionado o dado de baja.",
         "compliance_from_reported_cycles_only": "Cumplimiento: se cuenta solo sobre los ciclos que el registro reporta, así que da 100% por construcción. No dice nada sobre ciclos no reportados.",
-        "tenure_from_ruv_propietario": "Tenencia (escalones): el predio cuenta como propio solo si el campo \"propietario\" del RUV lo indica (sí/true, o el nombre o la cédula del ganadero). Vacío, como llega hoy, cuenta como no propio."
+        "tenure_from_ruv_propietario": "Tenencia: el predio cuenta como propio solo si el campo \"propietario\" del RUV lo indica (sí/true, o el nombre o la cédula del ganadero), tanto para el puntaje del motor como para los escalones. Vacío, como llega hoy, cuenta como arrendado: es el supuesto conservador; si el ganadero es dueño, el puntaje sube."
       },
       "registerClient": "Dar de alta como cliente",
       "viewClient": "Ver cliente",

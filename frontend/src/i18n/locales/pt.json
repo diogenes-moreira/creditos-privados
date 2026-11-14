@@ -988,10 +988,9 @@
       "assumptionsImpact": "Esses três supostos pesam 45 dos 100 pontos da pontuação, e a pontuação multiplica o teto por LTV. Verifique a posse e a situação da propriedade antes de aprovar.",
       "assumptionsObserved": "Estão observados, sim: as propriedades, as cabeças por categoria, as cabeças sem vacinar e os ciclos reportados.",
       "assumption": {
-        "tenure_assumed_leased": "Posse: supôs-se terra arrendada, não própria. É o suposto conservador; se o pecuarista for o dono, a pontuação sobe.",
         "holding_status_assumed_active": "Situação da propriedade: supôs-se ativa, porque o registro não informa se foi fundida ou baixada.",
         "compliance_from_reported_cycles_only": "Cumprimento: contado somente sobre os ciclos que o registro reporta, portanto dá 100% por construção. Nada diz sobre ciclos não reportados.",
-        "tenure_from_ruv_propietario": "Posse (faixas): a propriedade conta como própria só se o campo \"propietario\" do RUV indicar (sim/true, ou o nome ou documento do pecuarista). Vazio, como chega hoje, conta como não própria."
+        "tenure_from_ruv_propietario": "Posse: a propriedade conta como própria só se o campo \"propietario\" do RUV indicar (sim/true, ou o nome ou documento do pecuarista), tanto para a pontuação do motor quanto para as faixas. Vazio, como chega hoje, conta como arrendada: é o suposto conservador; se o pecuarista for o dono, a pontuação sobe."
       },
       "registerClient": "Cadastrar como cliente",
       "viewClient": "Ver cliente",

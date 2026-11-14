@@ -213,15 +213,16 @@ type RegistryAssessment struct {
 // owned or leased (10 points), the holding's status (5 points), and the
 // compliance history (30 points). A single query returns the cycles that were
 // reported, never the ones that were missed, so compliance cannot be derived
-// from it. Tenure is assumed leased rather than owned, because over-granting
-// credit is the more expensive mistake; every assumption is returned alongside
-// the quota rather than buried.
+// from it. Every assumption is returned alongside the quota rather than buried.
+//
+// Tenure, for the engine's score and the tiers alike, comes from the records'
+// "propietario" (port.RUVRancher.OwnsAHolding): owned only when it names the
+// rancher. Empty, as the RUV sends it today, counts as leased / not owned
+// (model.RUVHoldingOwned), because over-granting credit is the more expensive
+// mistake; the top tier stays out of reach until FEDEGÁN fills it.
 //
 // Under the tiers strategy the herd is measured on the current cycle only and
-// the holding is taken as active. Tenure comes from the records' "propietario"
-// (port.RUVRancher.OwnsAHolding): owned only when it names the rancher. Empty,
-// as the RUV sends it today, counts as not owned (model.RUVHoldingOwned), so
-// the top tier stays out of reach until FEDEGÁN fills it. A rancher found in the RUV who reaches no
+// the holding is taken as active. A rancher found in the RUV who reaches no
 // tier is still a 200 with a zero quota; only an ID the RUV does not know is
 // ErrNotInRegistry.
 //
@@ -239,11 +240,17 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 		return nil, ErrNotInRegistry
 	}
 
+	owned := rancher.OwnsAHolding() || model.RUVHoldingOwned
+	tenure := model.TenureLeased
+	if owned {
+		tenure = model.TenureOwned
+	}
+
 	cycles := rancher.ReportedCycles()
 	req := LivestockQuotaRequest{
 		NationalID:    rancher.NationalID,
 		Department:    rancher.Department(),
-		Tenure:        model.TenureLeased,
+		Tenure:        tenure,
 		HoldingStatus: model.HoldingActive,
 		// Only reported cycles are visible, so compliance is 100% by
 		// construction and seniority is capped by what one query shows.
@@ -271,7 +278,7 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 			VaccinatedHeads:        c.Total,
 			NotVaccinated:          c.NotVaccinated,
 			HoldingActive:          true,
-			OwnedHolding:           rancher.OwnsAHolding() || model.RUVHoldingOwned,
+			OwnedHolding:           owned,
 		}
 	})
 	if err != nil {
@@ -279,13 +286,10 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 	}
 
 	assumptions := []string{
-		"tenure_assumed_leased",
+		// Owned only when "propietario" says so; empty counts as not owned.
+		"tenure_from_ruv_propietario",
 		"holding_status_assumed_active",
 		"compliance_from_reported_cycles_only",
-	}
-	if outcome.Tier != nil {
-		// Owned only when "propietario" says so; empty counts as not owned.
-		assumptions = append(assumptions, "tenure_from_ruv_propietario")
 	}
 	return &RegistryAssessment{
 		Record:      outcome.Record,

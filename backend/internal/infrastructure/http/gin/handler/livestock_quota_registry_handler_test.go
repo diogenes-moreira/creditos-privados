@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -128,7 +129,7 @@ func TestPartnerRegistryQuotaGrantsTheTierMeasuredOnTheCurrentCycle(t *testing.T
 	assert.Equal(t, []dto.QuotaTierReasonResponse{
 		{Scope: "tier3", Requirement: "ownedHolding", Required: "true", Actual: "false"},
 	}, a.Tier.Reasons)
-	assert.Contains(t, resp.Assumptions, "tenure_from_ruv_propietario")
+	assertOneTenureAssumption(t, resp.Assumptions)
 	assert.Equal(t, "GANADERO DE PRUEBA", resp.Rancher.Name, "the rancher stays in the response")
 
 	require.Len(t, repo.saved, 1)
@@ -188,11 +189,51 @@ func TestPartnerRegistryQuotaUnderTheEngineStrategyGrantsTheEngineQuota(t *testi
 	assert.Equal(t, "engine", a.Strategy)
 	assert.Equal(t, a.EngineQuota, a.Quota)
 	assert.Nil(t, a.Tier)
-	assert.NotContains(t, resp.Assumptions, "tenure_from_ruv_propietario")
+	assertOneTenureAssumption(t, resp.Assumptions)
 	assert.Contains(t, []string{"ltv", "capacity", "inputs", "policyCap"}, a.ActiveCeilingCode)
 	require.Len(t, repo.saved, 1)
 	assert.Equal(t, "engine", repo.saved[0].Strategy)
 	assert.Empty(t, repo.saved[0].Tier)
+}
+
+// assertOneTenureAssumption checks that tenure is explained once, by the
+// propietario rule, whatever the strategy.
+func assertOneTenureAssumption(t *testing.T, assumptions []string) {
+	t.Helper()
+	var tenure []string
+	for _, a := range assumptions {
+		if strings.HasPrefix(a, "tenure_") {
+			tenure = append(tenure, a)
+		}
+	}
+	assert.Equal(t, []string{"tenure_from_ruv_propietario"}, tenure)
+}
+
+func TestEngineTenureComesFromPropietario(t *testing.T) {
+	assess := func(owner string) (dto.PartnerRegistryQuotaResponse, *model.LivestockQuotaAssessment) {
+		repo := &memoryLivestockQuotaRepo{}
+		r := caucaRancher()
+		r.Holdings[1].Owner = owner
+		ruv := &fakeRUV{ranchers: map[string]*port.RUVRancher{"17788090": r}}
+		resp := decodePartner(t, postRegistry(t, newRegistryRouterWith(repo, ruv, model.QuotaStrategyEngine), testServiceKey,
+			map[string]any{"nationalId": "17788090"}))
+		require.Len(t, repo.saved, 1)
+		return resp, repo.saved[0]
+	}
+
+	leased, leasedRecord := assess("")
+	owned, ownedRecord := assess("GANADERO DE PRUEBA")
+
+	assert.Contains(t, leasedRecord.Applicant, `"Tenure":"Arrendada"`)
+	assert.Contains(t, ownedRecord.Applicant, `"Tenure":"Propia"`)
+	// Owned land scores higher than leased, and the score scales the LTV ceiling.
+	assert.Greater(t, owned.Assessment.Score.Score, leased.Assessment.Score.Score)
+	assert.True(t, decimal.RequireFromString(owned.Assessment.Ceilings.LTV).
+		GreaterThan(decimal.RequireFromString(leased.Assessment.Ceilings.LTV)))
+	assert.True(t, decimal.RequireFromString(owned.Assessment.Quota).
+		GreaterThanOrEqual(decimal.RequireFromString(leased.Assessment.Quota)))
+	assertOneTenureAssumption(t, leased.Assumptions)
+	assertOneTenureAssumption(t, owned.Assumptions)
 }
 
 func TestPartnerRegistryQuotaAnswers404WhenTheRUVHasNoRecord(t *testing.T) {
