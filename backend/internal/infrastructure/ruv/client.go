@@ -17,7 +17,7 @@ import (
 
 // Identification types the registry accepts.
 const (
-	IDTypeCedula      = "CÉDULA DE CIUDADANÍA"
+	IDTypeCedula      = port.RUVIDTypeCedula
 	IDTypeExtranjeria = "CÉDULA DE EXTRANJERÍA"
 	IDTypeNIT         = "NIT"
 	IDTypePasaporte   = "PASAPORTE"
@@ -251,7 +251,10 @@ func (c *Client) FindByNationalID(ctx context.Context, idType, id string) (*port
 		return nil, nil
 	}
 
-	rancher := &port.RUVRancher{NationalID: strings.TrimSpace(id)}
+	// getRuvScoring returns the current vaccination cycle only, whatever is
+	// asked (verified against the live service: year and cycle parameters are
+	// ignored), so the history is never complete.
+	rancher := &port.RUVRancher{NationalID: strings.TrimSpace(id), HistoryComplete: false}
 	for _, rec := range body.Data {
 		if rancher.Name == "" {
 			rancher.Name = strings.TrimSpace(rec.Ganadero)

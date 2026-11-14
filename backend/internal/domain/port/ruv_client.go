@@ -2,9 +2,14 @@ package port
 
 import (
 	"context"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 )
+
+// RUVIDTypeCedula is the registry's name for a cédula de ciudadanía, the
+// document it is queried by when no other type is given.
+const RUVIDTypeCedula = "CÉDULA DE CIUDADANÍA"
 
 // RUVHolding is one predio as the RUV reports it, already mapped onto the
 // domain's herd categories.
@@ -40,6 +45,12 @@ type RUVRancher struct {
 	Email      string
 
 	Holdings []RUVHolding
+
+	// HistoryComplete is whether Holdings carries every past vaccination
+	// cycle, not only the current one. The registry's getRuvScoring returns
+	// the current cycle alone, so its client leaves this false and the
+	// history-based criteria stay unverified instead of failing.
+	HistoryComplete bool
 }
 
 // LatestHoldings keeps each predio once, at its most recent vaccination cycle.
@@ -92,6 +103,67 @@ func (r RUVRancher) ReportedCycles() int {
 		seen[[2]int{h.Year, h.Cycle}] = true
 	}
 	return len(seen)
+}
+
+// cycleIndex orders vaccination cycles: the RUV runs two a year.
+func cycleIndex(year, cycle int) int { return year*2 + cycle - 1 }
+
+// currentCycle is the most recent cycle that should already be on record at
+// now. The first cycle runs around May and June and the second around
+// November and December, so before May the latest one is last year's second.
+func currentCycle(now time.Time) int {
+	switch {
+	case now.Month() >= time.November:
+		return cycleIndex(now.Year(), 2)
+	case now.Month() >= time.May:
+		return cycleIndex(now.Year(), 1)
+	default:
+		return cycleIndex(now.Year()-1, 2)
+	}
+}
+
+// VaccinationRecord reduces the registry's records to the figures the credit
+// tiers are written against.
+//
+// Several definitions here are readings of the tier table, not facts the
+// registry states:
+//   - the latest cycle is the most recent (year, cycle) on any holding, and
+//     its heads are summed over every holding reported in it;
+//   - a cycle is complete when no animal in it was left unvaccinated;
+//   - the holding counts as active when the rancher vaccinated in the current
+//     cycle or the one before, since the registry has no status field.
+func (r RUVRancher) VaccinationRecord(now time.Time) model.VaccinationRecord {
+	var rec model.VaccinationRecord
+	if len(r.Holdings) == 0 {
+		return rec
+	}
+
+	unvaccinated := map[int]int{}
+	latest := -1
+	for _, h := range r.Holdings {
+		idx := cycleIndex(h.Year, h.Cycle)
+		unvaccinated[idx] += h.Herd.NotVaccinated
+		if idx > latest {
+			latest, rec.LatestYear, rec.LatestCycle = idx, h.Year, h.Cycle
+		}
+	}
+
+	for _, h := range r.Holdings {
+		if cycleIndex(h.Year, h.Cycle) == latest {
+			rec.VaccinatedHeads += h.Herd.Classify().Total
+			rec.NotVaccinated += h.Herd.NotVaccinated
+		}
+	}
+
+	rec.ReportedCycles = len(unvaccinated)
+	for _, n := range unvaccinated {
+		if n == 0 {
+			rec.CompleteCycles++
+		}
+	}
+	rec.HoldingActive = latest >= currentCycle(now)-1
+	rec.HistoryKnown = r.HistoryComplete
+	return rec
 }
 
 // RUVClient reads Fedegán's vaccination registry.
