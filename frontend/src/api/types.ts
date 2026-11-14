@@ -878,8 +878,65 @@ export interface LivestockQuotaAssessment {
  * three of the score's inputs are absent from the registry, so whoever reads
  * the quota needs to know which figures were observed and which were assumed.
  */
+export type TierCheckStatus = "met" | "unmet" | "unverified";
+
+/** One criterion of the pre-approval table. */
+export interface TierCriterion {
+  code: string;
+  status: TierCheckStatus;
+  actual?: string;
+  required?: string;
+}
+
+/** One layer (500k, 1M, 2M) checked against the registry. */
+export interface TierEvaluation {
+  code: string;
+  amount: string;
+  qualifies: boolean;
+  criteria: TierCriterion[];
+}
+
+/** The registry history the layers are read from. Ratios are fractions. */
+export interface VaccinationRecord {
+  latestYear: number;
+  latestCycle: number;
+  vaccinatedHeads: number;
+  notVaccinated: number;
+  reportedCycles: number;
+  completeCycles: number;
+  vaccinationRate: string;
+  completeRatio: string;
+  holdingActive: boolean;
+  /** False when the registry returned only the current cycle. */
+  historyKnown: boolean;
+}
+
+/**
+ * The pre-approval by layers: the credit available, the layer it comes from
+ * and what is still to be verified. Amounts are decimal strings.
+ */
+export interface CreditTier {
+  /** The layer reached; empty when none is. */
+  code: string;
+  amount: string;
+  currency: string;
+  eligible: boolean;
+  /** Entry filters nobody has verified yet. */
+  pending: string[];
+  /**
+   * The highest layer no known fact rules out: reached once everything
+   * unverified is confirmed. Equals `code` when nothing is pending.
+   */
+  provisionalCode: string;
+  provisionalAmount: string;
+  entry: TierCriterion[];
+  tiers: TierEvaluation[];
+  vaccination: VaccinationRecord;
+}
+
 export interface RegistryQuotaResponse {
   rancher: RegistryRancher;
   assessment: LivestockQuotaAssessment;
   assumptions: string[];
+  creditTier: CreditTier;
 }

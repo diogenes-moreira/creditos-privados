@@ -996,6 +996,38 @@
       "viewClient": "Ver cliente",
       "registerFromRegistryTitle": "Dados pré-preenchidos do registro de vacinação",
       "registerFromRegistryBody": "O RUV não foi feito para cadastro: o nome é separado em nomes e sobrenomes por aproximação, o NIT é a cédula mais o dígito verificador (vale só se o pecuarista tiver RUT com essa cédula) e o endereço é o da propriedade principal. Confira os campos marcados e preencha a data de nascimento, que o registro não tem."
+    },
+    "tier": {
+      "title": "Disponível por camadas",
+      "confirmed": "Confirmado",
+      "provisional": "Provisório, sujeito a verificação",
+      "layer": "Camada {{code}}",
+      "noLayer": "Sem camada",
+      "notEligibleTitle": "Não elegível",
+      "pendingTitle": "A verificar antes do desembolso",
+      "historyMissing": "Histórico de vacinação: o RUV retorna só o ciclo atual, então não dá para contar os ciclos reportados nem os completos",
+      "criterionHeader": "Critério",
+      "entryRow": "Filtro de entrada (todas as camadas)",
+      "noMinimum": "sem mínimo",
+      "has": "tem {{value}}",
+      "seen": "só se vê {{value}}",
+      "latestCycle": "Último ciclo no RUV: {{cycle}} de {{year}}",
+      "status": {
+        "met": "Cumpre",
+        "unmet": "Não cumpre",
+        "unverified": "Não verificável com o RUV"
+      },
+      "criterion": {
+        "cedula": "Cédula de cidadania",
+        "campaignBuyer": "Comprador TVGAN 2026",
+        "cleanBureau": "Sem restrição nos birôs de crédito",
+        "activeHolding": "Propriedade ativa no RUV",
+        "vaccinatedHeads": "Cabeças vacinadas (último ciclo)",
+        "reportedCycles": "Ciclos RUV reportados",
+        "vaccinationRate": "% vacinação",
+        "completeCycles": "Ciclos completos / reportados",
+        "ownedHolding": "Propriedade própria"
+      }
     }
   }
 }

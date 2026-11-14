@@ -996,6 +996,38 @@
       "viewClient": "View client",
       "registerFromRegistryTitle": "Pre-filled from the vaccination registry",
       "registerFromRegistryBody": "The RUV was not built for onboarding: the name is split into given names and surnames by guesswork, the NIT is the cédula plus its check digit (valid only if the rancher has a RUT under it) and the address is the main holding's. Check the highlighted fields and add the date of birth, which the registry does not hold."
+    },
+    "tier": {
+      "title": "Credit available by layers",
+      "confirmed": "Confirmed",
+      "provisional": "Provisional, pending verification",
+      "layer": "Layer {{code}}",
+      "noLayer": "No layer",
+      "notEligibleTitle": "Not eligible",
+      "pendingTitle": "To verify before disbursing",
+      "historyMissing": "Vaccination history: the RUV returns only the current cycle, so reported and complete cycles cannot be counted",
+      "criterionHeader": "Criterion",
+      "entryRow": "Entry filter (all layers)",
+      "noMinimum": "no minimum",
+      "has": "has {{value}}",
+      "seen": "only {{value}} visible",
+      "latestCycle": "Latest RUV cycle: {{cycle}} of {{year}}",
+      "status": {
+        "met": "Met",
+        "unmet": "Not met",
+        "unverified": "Not verifiable with the RUV"
+      },
+      "criterion": {
+        "cedula": "Cédula de ciudadanía",
+        "campaignBuyer": "TVGAN 2026 buyer",
+        "cleanBureau": "No negative report in the credit bureaus",
+        "activeHolding": "Active holding in the RUV",
+        "vaccinatedHeads": "Vaccinated head (latest cycle)",
+        "reportedCycles": "RUV cycles reported",
+        "vaccinationRate": "% vaccinated",
+        "completeCycles": "Complete / reported cycles",
+        "ownedHolding": "Owned holding"
+      }
     }
   }
 }

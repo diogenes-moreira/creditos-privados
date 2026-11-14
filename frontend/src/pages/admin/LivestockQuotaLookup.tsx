@@ -30,6 +30,7 @@ import { Search as SearchIcon, PersonAdd as PersonAddIcon, Person as PersonIcon 
 import { adminAssessLivestockQuotaFromRegistry, adminSearchClients } from "../../api/endpoints";
 import { useAuth } from "../../auth/AuthContext";
 import RegisterClientDialog from "../../components/RegisterClientDialog";
+import CreditTierCard from "../../components/CreditTierCard";
 import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 import { prefillFromRegistry, type RegistryPrefill } from "../../utils/registryClient";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -341,6 +342,10 @@ const LivestockQuotaLookup: React.FC = () => {
 
       {submitted && !isFetching && !error && data && assessment && (
         <Stack spacing={3}>
+          {/* The pilot's pre-approval comes first: it is the amount on offer.
+              The capacity model below explains the figure the engine would
+              lend against. */}
+          {data.creditTier && <CreditTierCard tier={data.creditTier} />}
           {/* The number, and immediately the reason it is that number. */}
           <Card>
             <CardContent>
