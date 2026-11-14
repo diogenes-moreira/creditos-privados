@@ -22,7 +22,7 @@ func NewLivestockQuotaHandler(s *service.LivestockQuotaService) *LivestockQuotaH
 
 // Assess godoc
 // @Summary Assess a rancher's livestock credit quota
-// @Description Runs the RUV-based livestock quota engine for a rancher and stores the result. The holdings are summed: the quota is one per national ID.
+// @Description Decides a rancher's quota and stores the result. The holdings are summed: the quota is one per national ID. Under the tiers strategy (LIVESTOCK_QUOTA_STRATEGY, default) the quota is the pilot tier amount, or 0 when not eligible, with the supplied herd taken as the current cycle; under the engine strategy it is the engine's quota. engineQuota always carries the engine's figure.
 // @Tags Livestock quota
 // @Accept json
 // @Produce json
@@ -38,7 +38,7 @@ func (h *LivestockQuotaHandler) Assess(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	record, assessment, err := h.service.Assess(c.Request.Context(), dto.ToLivestockQuotaRequest(req), c.GetString("serviceName"))
+	outcome, err := h.service.Assess(c.Request.Context(), dto.ToLivestockQuotaRequest(req), c.GetString("serviceName"))
 	if errors.Is(err, service.ErrInvalidLivestockQuotaRequest) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -47,12 +47,12 @@ func (h *LivestockQuotaHandler) Assess(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dto.ToLivestockQuotaResponse(record, assessment))
+	c.JSON(http.StatusOK, dto.ToLivestockQuotaResponse(outcome.Record, outcome.Assessment, outcome.Tier))
 }
 
 // AssessFromRegistryForPartner godoc
 // @Summary Assess a rancher's livestock quota from the RUV (partner)
-// @Description Reads the national ID's herds from Fedegán's vaccination registry, runs the quota engine and stores the result. The partner sends only the identity; contact data is not returned.
+// @Description Reads the national ID's herds from Fedegán's vaccination registry, decides the quota and stores the result. The partner sends only the identity; contact data is not returned. Under the tiers strategy (default) the quota is the pilot tier amount; a rancher in the RUV who reaches no tier gets 200 with quota 0, and 404 is kept for IDs the RUV does not know.
 // @Tags Livestock quota
 // @Accept json
 // @Produce json

@@ -6,6 +6,10 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 )
 
+// RUVIDTypeCedula is the registry's name for a cédula de ciudadanía, the
+// document it is queried by when no other type is given.
+const RUVIDTypeCedula = "CÉDULA DE CIUDADANÍA"
+
 // RUVHolding is one predio as the RUV reports it, already mapped onto the
 // domain's herd categories.
 type RUVHolding struct {
@@ -92,6 +96,23 @@ func (r RUVRancher) ReportedCycles() int {
 		seen[[2]int{h.Year, h.Cycle}] = true
 	}
 	return len(seen)
+}
+
+// CycleHerd sums the herds of the predios recorded in one vaccination cycle,
+// each predio once, and reports whether any predio was recorded in it.
+// Predios whose latest record is from another cycle are left out: the tiers
+// measure the herd as vaccinated in that cycle, not the last known one.
+func (r RUVRancher) CycleHerd(c model.VaccinationCycle) (model.Herd, bool) {
+	var herd model.Herd
+	seen := map[string]bool{}
+	for _, h := range r.Holdings {
+		if h.Year != c.Year || h.Cycle != c.Cycle || seen[h.Code] {
+			continue
+		}
+		seen[h.Code] = true
+		herd.Add(h.Herd)
+	}
+	return herd, len(seen) > 0
 }
 
 // RUVClient reads Fedegán's vaccination registry.

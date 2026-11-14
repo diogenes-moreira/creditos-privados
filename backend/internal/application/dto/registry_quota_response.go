@@ -60,7 +60,7 @@ func ToRegistryQuotaResponse(r *service.RegistryAssessment) RegistryQuotaRespons
 			Email:      r.Rancher.Email,
 			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
 		},
-		Assessment:  ToLivestockQuotaResponse(r.Record, r.Assessment),
+		Assessment:  ToLivestockQuotaResponse(r.Record, r.Assessment, r.Tier),
 		Assumptions: r.Assumptions,
 	}
 }

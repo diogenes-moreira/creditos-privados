@@ -3540,7 +3540,7 @@
                         "ServiceKey": []
                     }
                 ],
-                "description": "Runs the RUV-based livestock quota engine for a rancher and stores the result. The holdings are summed: the quota is one per national ID.",
+                "description": "Decides a rancher's quota and stores the result. The holdings are summed: the quota is one per national ID. Under the tiers strategy (LIVESTOCK_QUOTA_STRATEGY, default) the quota is the pilot tier amount, or 0 when not eligible, with the supplied herd taken as the current cycle; under the engine strategy it is the engine's quota. engineQuota always carries the engine's figure.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3591,7 +3591,7 @@
                         "ServiceKey": []
                     }
                 ],
-                "description": "Reads the national ID's herds from Fedegán's vaccination registry, runs the quota engine and stores the result. The partner sends only the identity; contact data is not returned.",
+                "description": "Reads the national ID's herds from Fedegán's vaccination registry, decides the quota and stores the result. The partner sends only the identity; contact data is not returned. Under the tiers strategy (default) the quota is the pilot tier amount; a rancher in the RUV who reaches no tier gets 200 with quota 0, and 404 is kept for IDs the RUV does not know.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5709,10 +5709,11 @@
             "type": "object",
             "properties": {
                 "activeCeiling": {
+                    "description": "ActiveCeiling is what bound the quota: the engine's ceiling name, or\nthe tier label (\"Escalón 1\", \"No elegible\") under the tiers strategy.",
                     "type": "string"
                 },
                 "activeCeilingCode": {
-                    "description": "ActiveCeilingCode is the stable key of ActiveCeiling: ltv, capacity,\ninputs or policyCap. Branch on this, not on the display text.",
+                    "description": "ActiveCeilingCode is the stable key of ActiveCeiling: ltv, capacity,\ninputs or policyCap, or the tier code under the tiers strategy. Branch\non this, not on the display text.",
                     "type": "string"
                 },
                 "ceilings": {
@@ -5726,6 +5727,10 @@
                 },
                 "eligibleBasket": {
                     "description": "EligibleBasket is what the rancher would buy in the inputs catalogue over the term.",
+                    "type": "string"
+                },
+                "engineQuota": {
+                    "description": "EngineQuota is what the individual engine computes, under either\nstrategy, so the two can be compared.",
                     "type": "string"
                 },
                 "head": {
@@ -5745,6 +5750,7 @@
                     "type": "string"
                 },
                 "quota": {
+                    "description": "Quota is the amount granted: the tier amount under the tiers strategy\n(zero when not eligible), the engine's quota under the engine strategy.",
                     "type": "string"
                 },
                 "reference": {
@@ -5753,8 +5759,20 @@
                 "score": {
                     "$ref": "#/definitions/dto.LivestockScoreResponse"
                 },
+                "strategy": {
+                    "description": "Strategy is how Quota was decided: tiers or engine.",
+                    "type": "string"
+                },
                 "termMonths": {
                     "type": "integer"
+                },
+                "tier": {
+                    "description": "Tier is the tier decision; absent under the engine strategy.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.QuotaTierResponse"
+                        }
+                    ]
                 },
                 "typology": {
                     "type": "string"
@@ -6148,6 +6166,70 @@
                     "type": "string"
                 },
                 "vendorName": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.QuotaTierReasonResponse": {
+            "type": "object",
+            "properties": {
+                "actual": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "string"
+                },
+                "requirement": {
+                    "description": "Requirement is cedula, currentCycleRegistered, activeHolding,\nvaccinatedHeads, vaccinationRate, ownedHolding or vaccinatedCycles.",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "Scope is \"entry\" for the entry filter, or the code of the tier whose\nrequirement was not met (the next tier up from the one granted).",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.QuotaTierResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "code": {
+                    "description": "Code is tier1, tier2, tier3 or notEligible.",
+                    "type": "string"
+                },
+                "currentCycle": {
+                    "description": "CurrentCycle is the RUV cycle measured (\"2026-1\"); CurrentCycleFound\nwhether any predio was recorded in it.",
+                    "type": "string"
+                },
+                "currentCycleFound": {
+                    "type": "boolean"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "notVaccinated": {
+                    "type": "integer"
+                },
+                "ownedHolding": {
+                    "type": "boolean"
+                },
+                "policyVersion": {
+                    "type": "string"
+                },
+                "reasons": {
+                    "description": "Reasons are the failed entry filters, or what kept the rancher from the\nnext tier up; empty at the top tier.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.QuotaTierReasonResponse"
+                    }
+                },
+                "vaccinatedHeads": {
+                    "type": "integer"
+                },
+                "vaccinationRate": {
+                    "description": "VaccinationRate is a fraction with four decimals, e.g. \"0.8500\".",
                     "type": "string"
                 }
             }

@@ -165,6 +165,8 @@ npm run dev    # http://localhost:4321
 | `RUV_BASE_URL` | Servicio del RUV de Fedegán (bureau alternativo del cupo ganadero) | - |
 | `RUV_CLIENT_ID` / `RUV_CLIENT_SECRET` | Credenciales OAuth2 del RUV | - |
 | `RUV_USERNAME` / `RUV_PASSWORD` | Usuario del RUV | - |
+| `LIVESTOCK_QUOTA_STRATEGY` | Cómo se decide el cupo ganadero: `tiers` (escalones del piloto) o `engine` (motor individual). Un valor inválido impide arrancar | `tiers` |
+| `LIVESTOCK_QUOTA_CURRENT_CYCLE` | Ciclo del RUV sobre el que se miden los escalones (`AAAA-C`) | `2026-1` |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |

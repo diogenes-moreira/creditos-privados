@@ -31,9 +31,13 @@ func (m *memoryLivestockQuotaRepo) Create(_ context.Context, a *model.LivestockQ
 }
 
 func newLivestockQuotaRouter(repo *memoryLivestockQuotaRepo) *gin.Engine {
+	return newLivestockQuotaRouterWith(repo, model.QuotaStrategyTiers)
+}
+
+func newLivestockQuotaRouterWith(repo *memoryLivestockQuotaRepo, strategy model.QuotaStrategy) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := handler.NewLivestockQuotaHandler(service.NewLivestockQuotaService(repo, "COP"))
+	h := handler.NewLivestockQuotaHandler(service.NewLivestockQuotaService(repo, "COP").WithStrategy(strategy))
 	r.POST("/livestock-quotas", middleware.RequireServiceKey("cuppogan", testServiceKey), h.Assess)
 	return r
 }
@@ -67,18 +71,9 @@ func post(t *testing.T, r *gin.Engine, key string, body any) *httptest.ResponseR
 	return w
 }
 
-func TestLivestockQuotaAssessesAndStoresTheQuota(t *testing.T) {
-	repo := &memoryLivestockQuotaRepo{}
-	w := post(t, newLivestockQuotaRouter(repo), testServiceKey, holding001())
-
-	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
-	var resp dto.LivestockQuotaResponse
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-
-	// The endpoint is the engine: the same herd gives the same quota. (The reference
-	// table's figure for holding 001 also counts CalvesUnder1Year, which the RUV
-	// does not report, so it is not comparable.)
-	want := model.AssessQuota(model.LivestockApplicant{
+// holding001Engine is what the engine computes for holding001.
+func holding001Engine() model.LivestockAssessment {
+	return model.AssessQuota(model.LivestockApplicant{
 		NationalID: "123456781", Department: "Córdoba", Tenure: model.TenureOwned, HoldingStatus: model.HoldingActive,
 		SeniorityCycles: 12, CompletedCycles: 12, ReportedCycles: 12,
 		Herd: model.Herd{
@@ -87,7 +82,24 @@ func TestLivestockQuotaAssessesAndStoresTheQuota(t *testing.T) {
 			NotVaccinated: 1,
 		},
 	}, model.DefaultQuotaParams(), model.DefaultLivestockYields())
+}
+
+func TestLivestockQuotaAssessesAndStoresTheQuota(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	w := post(t, newLivestockQuotaRouterWith(repo, model.QuotaStrategyEngine), testServiceKey, holding001())
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var resp dto.LivestockQuotaResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+
+	// The endpoint is the engine: the same herd gives the same quota. (The reference
+	// table's figure for holding 001 also counts CalvesUnder1Year, which the RUV
+	// does not report, so it is not comparable.)
+	want := holding001Engine()
 	assert.Equal(t, want.Quota.Quota.StringFixed(2), resp.Quota)
+	assert.Equal(t, resp.Quota, resp.EngineQuota)
+	assert.Equal(t, "engine", resp.Strategy)
+	assert.Nil(t, resp.Tier)
 	assert.True(t, decimal.RequireFromString(resp.Quota).IsPositive())
 	assert.Equal(t, want.Quota.ActiveCeiling, resp.ActiveCeiling)
 	assert.Equal(t, want.Classification.Total, resp.Head)
@@ -103,6 +115,46 @@ func TestLivestockQuotaAssessesAndStoresTheQuota(t *testing.T) {
 	assert.Equal(t, "123456781", saved.NationalID)
 	assert.Contains(t, saved.Applicant, `"Department":"Córdoba"`)
 	assert.Contains(t, saved.Result, `"ActiveCeiling"`)
+	assert.Equal(t, "engine", saved.Strategy)
+	assert.Empty(t, saved.Tier)
+	assert.True(t, saved.EngineQuota.Equal(saved.Quota))
+}
+
+func TestLivestockQuotaGrantsTheTierAndKeepsTheEngineQuotaByDefault(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	w := post(t, newLivestockQuotaRouter(repo), testServiceKey, holding001())
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var resp dto.LivestockQuotaResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+
+	// 16 vaccinated heads, 1 not vaccinated: 94.12%, enough for tier 1 but
+	// short of tier 2's 30 heads.
+	want := holding001Engine()
+	assert.Equal(t, "tiers", resp.Strategy)
+	assert.Equal(t, "500000.00", resp.Quota)
+	assert.Equal(t, want.Quota.Quota.StringFixed(2), resp.EngineQuota)
+	assert.Equal(t, "Escalón 1", resp.ActiveCeiling)
+	assert.Equal(t, "tier1", resp.ActiveCeilingCode)
+	assert.Equal(t, want.Quota.LTVCeiling.StringFixed(2), resp.Ceilings.LTV, "the engine's ceilings stay")
+	require.NotNil(t, resp.Tier)
+	assert.Equal(t, "tier1", resp.Tier.Code)
+	assert.Equal(t, "v1", resp.Tier.PolicyVersion)
+	assert.Equal(t, 16, resp.Tier.VaccinatedHeads)
+	assert.Equal(t, "0.9412", resp.Tier.VaccinationRate)
+	assert.Equal(t, []dto.QuotaTierReasonResponse{
+		{Scope: "tier2", Requirement: "vaccinatedHeads", Required: ">=30", Actual: "16"},
+	}, resp.Tier.Reasons)
+
+	require.Len(t, repo.saved, 1)
+	saved := repo.saved[0]
+	assert.Equal(t, "tiers", saved.Strategy)
+	assert.Equal(t, "tier1", saved.Tier)
+	assert.Equal(t, "v1", saved.TierPolicyVersion)
+	assert.Equal(t, "500000.00", saved.Quota.StringFixed(2))
+	assert.Equal(t, want.Quota.Quota.StringFixed(2), saved.EngineQuota.StringFixed(2))
+	assert.Contains(t, saved.Result, `"Tier":{"Code":"tier1"`)
+	assert.Contains(t, saved.Result, `"ActiveCeiling"`, "the engine result is still stored")
 }
 
 func TestLivestockQuotaSumsTheHoldingsOfOneNationalID(t *testing.T) {

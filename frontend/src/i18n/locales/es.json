@@ -996,6 +996,46 @@
       "viewClient": "Ver cliente",
       "registerFromRegistryTitle": "Datos precargados del registro de vacunación",
       "registerFromRegistryBody": "El RUV no está pensado para el alta: el nombre se separa en nombres y apellidos por aproximación, el NIT es la cédula más su dígito de verificación (vale solo si el ganadero tiene RUT con esa cédula) y la dirección es la del predio principal. Revisá los campos marcados y completá la fecha de nacimiento, que el registro no tiene."
+    },
+    "tier": {
+      "title": "Escalones del piloto",
+      "assigned": "Escalón asignado",
+      "notEligible": "No elegible",
+      "strategy": "Estrategia: {{strategy}}",
+      "strategyName": {
+        "tiers": "escalones",
+        "engine": "motor individual"
+      },
+      "policyVersion": "Política {{version}}",
+      "engineQuota": "Cupo del motor individual (comparación)",
+      "measuredTitle": "Valores medidos",
+      "vaccinatedHeads": "Cabezas vacunadas (ciclo {{cycle}})",
+      "vaccinationRate": "% de vacunación",
+      "currentCycleFound": "Vacunó en el ciclo {{cycle}}",
+      "ownedHolding": "Predio propio",
+      "yes": "Sí",
+      "no": "No",
+      "ownedHoldingHint": "El RUV no informa la tenencia: se toma como no propio",
+      "reasonsTitleEntry": "No pasa el filtro de entrada",
+      "reasonsTitleNext": "Qué falta para el siguiente escalón",
+      "topTier": "Escalón más alto: no hay uno superior",
+      "reasonLine": "{{requirement}}: requiere {{required}}, tiene {{actual}}",
+      "scope": {
+        "entry": "Filtro de entrada",
+        "tier1": "Escalón 1",
+        "tier2": "Escalón 2",
+        "tier3": "Escalón 3"
+      },
+      "requirement": {
+        "cedula": "Cédula de ciudadanía",
+        "currentCycleRegistered": "Vacunación en el ciclo actual",
+        "activeHolding": "Predio activo",
+        "vaccinatedHeads": "Cabezas vacunadas",
+        "vaccinationRate": "% de vacunación",
+        "ownedHolding": "Predio propio",
+        "vaccinatedCycles": "Ciclos vacunados (últimos 10)"
+      },
+      "outsideNote": "Centrales de riesgo y compra a TVGAN en 2026 se verifican fuera de Prestia."
     }
   }
 }

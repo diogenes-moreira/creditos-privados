@@ -42,14 +42,50 @@ type LivestockQuotaService struct {
 	registry port.RUVClient
 	yields   model.LivestockYields
 	currency string
+
+	// strategy decides which figure is granted. The engine runs under both,
+	// so its quota is always on record for comparison.
+	strategy model.QuotaStrategy
+	tiers    model.QuotaTierPolicy
+	// currentCycle is the RUV cycle the tiers measure the herd on.
+	currentCycle model.VaccinationCycle
 }
 
+// NewLivestockQuotaService builds the service on the tiers strategy, the
+// pilot's default, measured on model.DefaultCurrentCycle.
 func NewLivestockQuotaService(repo port.LivestockQuotaRepository, currency string) *LivestockQuotaService {
 	return &LivestockQuotaService{
-		repo:     repo,
-		yields:   model.DefaultLivestockYields(),
-		currency: currency,
+		repo:         repo,
+		yields:       model.DefaultLivestockYields(),
+		currency:     currency,
+		strategy:     model.QuotaStrategyTiers,
+		tiers:        model.DefaultQuotaTierPolicy(),
+		currentCycle: model.DefaultCurrentCycle,
 	}
+}
+
+// WithStrategy selects how the quota is decided.
+func (s *LivestockQuotaService) WithStrategy(strategy model.QuotaStrategy) *LivestockQuotaService {
+	s.strategy = strategy
+	return s
+}
+
+// WithCurrentCycle sets the RUV cycle the tiers are measured on.
+func (s *LivestockQuotaService) WithCurrentCycle(c model.VaccinationCycle) *LivestockQuotaService {
+	s.currentCycle = c
+	return s
+}
+
+// Strategy reports how the quota is decided.
+func (s *LivestockQuotaService) Strategy() model.QuotaStrategy { return s.strategy }
+
+// LivestockQuotaOutcome is one stored quota: the record, the engine's full
+// result and, under the tiers strategy, the tier decision that set the quota.
+type LivestockQuotaOutcome struct {
+	Record     *model.LivestockQuotaAssessment
+	Assessment model.LivestockAssessment
+	// Tier is nil under the engine strategy.
+	Tier *model.TierAssessment
 }
 
 // WithPolicies makes the engine run on the active stored parameters.
@@ -67,21 +103,51 @@ func (s *LivestockQuotaService) params(ctx context.Context) model.QuotaParams {
 	return s.policies.ActiveParams(ctx)
 }
 
-// Assess computes and stores the quota. requestedBy names the partner service.
-func (s *LivestockQuotaService) Assess(ctx context.Context, req LivestockQuotaRequest, requestedBy string) (*model.LivestockQuotaAssessment, model.LivestockAssessment, error) {
+// Assess computes and stores the quota for a herd the caller supplies.
+// requestedBy names the partner service.
+//
+// Under the tiers strategy the supplied herd is taken as the current cycle,
+// since it carries no cycle, and the caller's own tenure and holding status
+// are used. No document type travels with it, so the cédula filter is skipped.
+func (s *LivestockQuotaService) Assess(ctx context.Context, req LivestockQuotaRequest, requestedBy string) (*LivestockQuotaOutcome, error) {
+	return s.assess(ctx, req, requestedBy, func(applicant model.LivestockApplicant) model.TierEvidence {
+		c := applicant.Herd.Classify()
+		return model.TierEvidence{
+			CurrentCycle:           s.currentCycle,
+			CurrentCycleRegistered: true,
+			VaccinatedHeads:        c.Total,
+			NotVaccinated:          c.NotVaccinated,
+			HoldingActive:          applicant.HoldingStatus == model.HoldingActive,
+			OwnedHolding:           applicant.Tenure == model.TenureOwned,
+		}
+	})
+}
+
+// assess runs the engine, applies the tiers when they are the strategy, and
+// stores the result. evidence measures the tiers' inputs for the applicant.
+func (s *LivestockQuotaService) assess(ctx context.Context, req LivestockQuotaRequest, requestedBy string,
+	evidence func(model.LivestockApplicant) model.TierEvidence) (*LivestockQuotaOutcome, error) {
 	applicant, err := toApplicant(req)
 	if err != nil {
-		return nil, model.LivestockAssessment{}, err
+		return nil, err
 	}
 	assessment := model.AssessQuota(applicant, s.params(ctx), s.yields)
 	record, err := model.NewLivestockQuotaAssessment(applicant, assessment, s.currency, requestedBy, req.Reference)
 	if err != nil {
-		return nil, model.LivestockAssessment{}, err
+		return nil, err
+	}
+	outcome := &LivestockQuotaOutcome{Record: record, Assessment: assessment}
+	if s.strategy == model.QuotaStrategyTiers {
+		tier := s.tiers.Assess(evidence(applicant))
+		if err := record.ApplyTier(assessment, tier); err != nil {
+			return nil, err
+		}
+		outcome.Tier = &tier
 	}
 	if err := s.repo.Create(ctx, record); err != nil {
-		return nil, model.LivestockAssessment{}, fmt.Errorf("storing livestock quota assessment: %w", err)
+		return nil, fmt.Errorf("storing livestock quota assessment: %w", err)
 	}
-	return record, assessment, nil
+	return outcome, nil
 }
 
 func toApplicant(req LivestockQuotaRequest) (model.LivestockApplicant, error) {
@@ -133,7 +199,9 @@ var ErrRegistryUnavailable = errors.New("the RUV is not configured")
 type RegistryAssessment struct {
 	Record     *model.LivestockQuotaAssessment
 	Assessment model.LivestockAssessment
-	Rancher    *port.RUVRancher
+	// Tier is the tier decision; nil under the engine strategy.
+	Tier    *model.TierAssessment
+	Rancher *port.RUVRancher
 	// Assumptions names every score input that was not observed. The score
 	// moves on these, so whoever reads the quota should see them.
 	Assumptions []string
@@ -148,6 +216,13 @@ type RegistryAssessment struct {
 // from it. Tenure is assumed leased rather than owned, because over-granting
 // credit is the more expensive mistake; every assumption is returned alongside
 // the quota rather than buried.
+//
+// Under the tiers strategy the herd is measured on the current cycle only, and
+// the same assumptions hold: the holding is taken as active and, with tenure
+// unknown, as not owned (model.RUVHoldingOwned), so the top tier is out of
+// reach from the registry alone. A rancher found in the RUV who reaches no
+// tier is still a 200 with a zero quota; only an ID the RUV does not know is
+// ErrNotInRegistry.
 //
 // reference is the caller's identifier for the request (e.g. CuppoGan's
 // onboarding ID); empty means "ruv".
@@ -183,19 +258,38 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 		req.Holdings = append(req.Holdings, h.Herd)
 	}
 
-	record, assessment, err := s.Assess(ctx, req, requestedBy)
+	outcome, err := s.assess(ctx, req, requestedBy, func(model.LivestockApplicant) model.TierEvidence {
+		herd, registered := rancher.CycleHerd(s.currentCycle)
+		c := herd.Classify()
+		return model.TierEvidence{
+			IDTypeKnown: true,
+			// The registry is queried by cédula when no type is given.
+			IsCedula:               strings.TrimSpace(idType) == "" || strings.EqualFold(strings.TrimSpace(idType), port.RUVIDTypeCedula),
+			CurrentCycle:           s.currentCycle,
+			CurrentCycleRegistered: registered,
+			VaccinatedHeads:        c.Total,
+			NotVaccinated:          c.NotVaccinated,
+			HoldingActive:          true,
+			OwnedHolding:           model.RUVHoldingOwned,
+		}
+	})
 	if err != nil {
 		return nil, err
 	}
 
+	assumptions := []string{
+		"tenure_assumed_leased",
+		"holding_status_assumed_active",
+		"compliance_from_reported_cycles_only",
+	}
+	if outcome.Tier != nil && !model.RUVHoldingOwned {
+		assumptions = append(assumptions, "tenure_unknown_not_owned")
+	}
 	return &RegistryAssessment{
-		Record:     record,
-		Assessment: assessment,
-		Rancher:    rancher,
-		Assumptions: []string{
-			"tenure_assumed_leased",
-			"holding_status_assumed_active",
-			"compliance_from_reported_cycles_only",
-		},
+		Record:      outcome.Record,
+		Assessment:  outcome.Assessment,
+		Tier:        outcome.Tier,
+		Rancher:     rancher,
+		Assumptions: assumptions,
 	}, nil
 }

@@ -37,6 +37,7 @@ type Router struct {
 	countryInfo     config.CountryInfo
 	aiConfig        config.AIConfig
 	ruvConfig       config.RUVConfig
+	livestockQuota  config.LivestockQuotaConfig
 	googleConfig    config.GoogleOAuthConfig
 	otpProviders    messaging.OTPProviders
 	partners        config.PartnersConfig
@@ -52,6 +53,7 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		countryInfo:     cfg.CountryInfo(),
 		aiConfig:        cfg.AI,
 		ruvConfig:       cfg.RUV,
+		livestockQuota:  cfg.LivestockQuota,
 		googleConfig:    cfg.Google,
 		partners:        cfg.Partners,
 		otpProviders: messaging.OTPProviders{
@@ -176,8 +178,21 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	if _, err := livestockPolicyService.EnsureDefaultPolicy(context.Background(), nil); err != nil {
 		log.Printf("Livestock quota policy not seeded, quotas use the built-in defaults: %v", err)
 	}
+	// An unknown strategy or cycle stops the server: quotas granted under the
+	// wrong rule are worse than a deployment that does not start.
+	quotaStrategy, err := model.ParseQuotaStrategy(r.livestockQuota.Strategy)
+	if err != nil {
+		log.Fatalf("LIVESTOCK_QUOTA_STRATEGY: %v", err)
+	}
+	quotaCycle, err := model.ParseVaccinationCycle(r.livestockQuota.CurrentCycle)
+	if err != nil {
+		log.Fatalf("LIVESTOCK_QUOTA_CURRENT_CYCLE: %v", err)
+	}
+	log.Printf("Livestock quotas decided by the %q strategy (tiers measured on RUV cycle %s)", quotaStrategy, quotaCycle)
 	livestockQuotaService := service.NewLivestockQuotaService(livestockQuotaRepo, r.countryInfo.Currency).
-		WithPolicies(livestockPolicyService)
+		WithPolicies(livestockPolicyService).
+		WithStrategy(quotaStrategy).
+		WithCurrentCycle(quotaCycle)
 	// The registry is nil when no credentials are configured, in which case the
 	// engine still scores herds a caller supplies; it just cannot read them.
 	if registry := ruv.New(ruv.Config{
