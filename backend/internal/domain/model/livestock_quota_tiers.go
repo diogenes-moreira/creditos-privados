@@ -87,11 +87,11 @@ const (
 	TierPolicyV2 = "v2"
 )
 
-// RUVHoldingOwned is what the tiers take as the land tenure of a holding read
-// from the RUV. The registry does not report tenure, so it is unknown; unknown
-// counts as not owned, the conservative reading (the engine likewise assumes
-// leased), which leaves tier 3 out of reach from registry data alone. Flip it
-// only once tenure is actually observed.
+// RUVHoldingOwned is what the tiers take as the land tenure of a rancher read
+// from the RUV when no record's "propietario" names him as owner, including
+// when it is empty, as FEDEGÁN sends it today. Not owned is the conservative
+// reading (the engine likewise assumes leased), and it leaves tier 3 out of
+// reach until the registry fills the field.
 const RUVHoldingOwned = false
 
 // QuotaTier is one row of the tier table.

@@ -43,3 +43,35 @@ func TestCycleHerdSumsThePrediosOfThatCycleOnce(t *testing.T) {
 	_, found = r.CycleHerd(model.VaccinationCycle{Year: 2026, Cycle: 2})
 	assert.False(t, found)
 }
+
+func TestOwnsAHoldingReadsPropietario(t *testing.T) {
+	rancher := func(owners ...string) port.RUVRancher {
+		r := port.RUVRancher{NationalID: "17788090", Name: "JOSÉ  PÉREZ GÓMEZ"}
+		for i, o := range owners {
+			r.Holdings = append(r.Holdings, port.RUVHolding{
+				Code: string(rune('A' + i)), Owner: o,
+				Registrant: "JOSÉ PÉREZ GÓMEZ", RegistrantID: "17788090",
+			})
+		}
+		return r
+	}
+	for owner, want := range map[string]bool{
+		"si": true, "Sí": true, " SI ": true, "TRUE": true, "true": true,
+		"jose perez  gomez": true, "José Pérez Gómez": true, " JOSE PEREZ GOMEZ ": true,
+		"17.788.090": true, "17788090": true, "17 788 090": true,
+		"MARÍA PÉREZ": false, "no": false, "false": false, "": false,
+		"12345678": false, "Finca 17788090": false, "arrendatario": false,
+	} {
+		assert.Equal(t, want, rancher(owner).OwnsAHolding(), "propietario %q", owner)
+	}
+
+	assert.False(t, rancher().OwnsAHolding(), "no records")
+	assert.False(t, rancher("", "no", "OTRO SEÑOR").OwnsAHolding())
+	assert.True(t, rancher("", "no", "sí").OwnsAHolding(), "one owned predio is enough")
+
+	// Without per-record identity, the rancher's own name and ID are used.
+	bare := port.RUVRancher{NationalID: "17788090", Name: "José Pérez", Holdings: []port.RUVHolding{{Owner: "JOSE PEREZ"}}}
+	assert.True(t, bare.OwnsAHolding())
+	bare.Holdings[0].Owner = "17.788.090"
+	assert.True(t, bare.OwnsAHolding())
+}

@@ -146,7 +146,7 @@ func TestTierCyclesRequirementIsIgnoredInV1(t *testing.T) {
 }
 
 func TestRUVTenureCountsAsNotOwned(t *testing.T) {
-	assert.False(t, model.RUVHoldingOwned, "flip only once the RUV reports tenure")
+	assert.False(t, model.RUVHoldingOwned, "an empty propietario must not count as owned")
 }
 
 func TestParseQuotaStrategy(t *testing.T) {

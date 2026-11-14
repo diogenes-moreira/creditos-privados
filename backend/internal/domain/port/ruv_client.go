@@ -2,6 +2,8 @@ package port
 
 import (
 	"context"
+	"strings"
+	"unicode"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 )
@@ -28,6 +30,17 @@ type RUVHolding struct {
 
 	// VaccinatedAt is the reported vaccination date, as given.
 	VaccinatedAt string
+
+	// Owner is the record's "propietario" as text: a string as given, a JSON
+	// boolean or number as its literal, empty when null or absent. FEDEGÁN
+	// does not fill it yet (always null in a sample of 1,124 records); see
+	// RUVRancher.OwnsAHolding for how it is read.
+	Owner string
+	// Registrant and RegistrantID are the rancher's name ("ganadero") and
+	// national ID ("identificacion_ganadero") on this record, which the owner
+	// is compared against.
+	Registrant   string
+	RegistrantID string
 
 	Herd model.Herd
 }
@@ -113,6 +126,79 @@ func (r RUVRancher) CycleHerd(c model.VaccinationCycle) (model.Herd, bool) {
 		herd.Add(h.Herd)
 	}
 	return herd, len(seen) > 0
+}
+
+// OwnsAHolding reports whether any record, of any predio and cycle, names the
+// rancher as owner. Its "propietario" counts when it is an affirmative ("si",
+// "sí", "true", in any case) or the rancher himself: the same name as the
+// record's "ganadero", or the same digits as his national ID. Anything else,
+// including empty, is not owned: over-granting is the more expensive mistake.
+func (r RUVRancher) OwnsAHolding() bool {
+	for _, h := range r.Holdings {
+		if ownerIsRancher(h.Owner, firstNonEmpty(h.Registrant, r.Name), firstNonEmpty(h.RegistrantID, r.NationalID)) {
+			return true
+		}
+	}
+	return false
+}
+
+func firstNonEmpty(a, b string) string {
+	if strings.TrimSpace(a) != "" {
+		return a
+	}
+	return b
+}
+
+func ownerIsRancher(owner, name, nationalID string) bool {
+	o := normalizeName(owner)
+	switch {
+	case o == "":
+		return false
+	case o == "SI" || o == "TRUE":
+		return true
+	case o == normalizeName(name):
+		return true
+	}
+	id := digitsOf(nationalID)
+	return id != "" && isIDLike(owner) && digitsOf(owner) == id
+}
+
+// accentFolder strips the accents Spanish names carry, after upper-casing.
+var accentFolder = strings.NewReplacer(
+	"Á", "A", "É", "E", "Í", "I", "Ó", "O", "Ú", "U", "Ü", "U", "Ñ", "N",
+	"À", "A", "È", "E", "Ì", "I", "Ò", "O", "Ù", "U", "Â", "A", "Ê", "E", "Ô", "O", "Ã", "A", "Õ", "O", "Ç", "C",
+)
+
+// normalizeName upper-cases, folds accents and collapses whitespace, so the
+// same name typed two ways compares equal.
+func normalizeName(s string) string {
+	return accentFolder.Replace(strings.Join(strings.Fields(strings.ToUpper(s)), " "))
+}
+
+func digitsOf(s string) string {
+	var b strings.Builder
+	for _, c := range s {
+		if unicode.IsDigit(c) {
+			b.WriteRune(c)
+		}
+	}
+	return b.String()
+}
+
+// isIDLike is true for a document number written with separators
+// ("17.788.090"), so digits buried in a name or an address never match.
+func isIDLike(s string) bool {
+	hasDigit := false
+	for _, c := range s {
+		switch {
+		case unicode.IsDigit(c):
+			hasDigit = true
+		case c == '.' || c == ',' || c == '-' || unicode.IsSpace(c):
+		default:
+			return false
+		}
+	}
+	return hasDigit
 }
 
 // RUVClient reads Fedegán's vaccination registry.
