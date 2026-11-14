@@ -990,7 +990,8 @@
       "assumption": {
         "tenure_assumed_leased": "Posse: supôs-se terra arrendada, não própria. É o suposto conservador; se o pecuarista for o dono, a pontuação sobe.",
         "holding_status_assumed_active": "Situação da propriedade: supôs-se ativa, porque o registro não informa se foi fundida ou baixada.",
-        "compliance_from_reported_cycles_only": "Cumprimento: contado somente sobre os ciclos que o registro reporta, portanto dá 100% por construção. Nada diz sobre ciclos não reportados."
+        "compliance_from_reported_cycles_only": "Cumprimento: contado somente sobre os ciclos que o registro reporta, portanto dá 100% por construção. Nada diz sobre ciclos não reportados.",
+        "tenure_from_ruv_propietario": "Posse (faixas): a propriedade conta como própria só se o campo \"propietario\" do RUV indicar (sim/true, ou o nome ou documento do pecuarista). Vazio, como chega hoje, conta como não própria."
       },
       "registerClient": "Cadastrar como cliente",
       "viewClient": "Ver cliente",
@@ -1015,7 +1016,7 @@
       "ownedHolding": "Propriedade própria",
       "yes": "Sim",
       "no": "Não",
-      "ownedHoldingHint": "O RUV não informa a posse: considera-se não própria",
+      "ownedHoldingHint": "Pelo campo \"propietario\" do RUV; vazio conta como não própria",
       "reasonsTitleEntry": "Não passa no filtro de entrada",
       "reasonsTitleNext": "O que falta para a próxima faixa",
       "topTier": "Faixa mais alta: não há outra acima",

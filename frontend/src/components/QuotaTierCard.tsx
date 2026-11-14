@@ -59,7 +59,7 @@ const QuotaTierCard: React.FC<{ assessment: LivestockQuotaAssessment; tier: Quot
     {
       label: t("livestock.tier.ownedHolding"),
       value: tier.ownedHolding ? t("livestock.tier.yes") : t("livestock.tier.no"),
-      hint: tier.ownedHolding ? undefined : t("livestock.tier.ownedHoldingHint"),
+      hint: t("livestock.tier.ownedHoldingHint"),
     },
   ];
 
