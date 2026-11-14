@@ -5208,6 +5208,55 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreditTierResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "Amount is the credit available, as a decimal string; \"0\" with no layer.",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "Code is the layer reached (500k, 1M, 2M); empty when none is.",
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "eligible": {
+                    "description": "Eligible is false when an entry filter is known to fail.",
+                    "type": "boolean"
+                },
+                "entry": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TierCriterionResponse"
+                    }
+                },
+                "pending": {
+                    "description": "Pending lists entry filters nobody has verified yet: the pre-approval\nholds only once they are confirmed.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "provisionalAmount": {
+                    "type": "string"
+                },
+                "provisionalCode": {
+                    "description": "ProvisionalCode and ProvisionalAmount are the highest layer no known\nfact rules out: what the rancher reaches once everything unverified,\nhere or in the layers, is confirmed.",
+                    "type": "string"
+                },
+                "tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TierEvaluationResponse"
+                    }
+                },
+                "vaccination": {
+                    "$ref": "#/definitions/dto.VaccinationRecordResponse"
+                }
+            }
+        },
         "dto.DelinquencyResponse": {
             "type": "object",
             "properties": {
@@ -5969,6 +6018,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "creditTier": {
+                    "description": "CreditTier is the credit available by the pilot's layers.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.CreditTierResponse"
+                        }
+                    ]
+                },
                 "holdingCodes": {
                     "type": "array",
                     "items": {
@@ -6458,6 +6515,14 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "creditTier": {
+                    "description": "CreditTier is the pre-approval by layers, read from the same registry\nhistory: the credit available to the rancher.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.CreditTierResponse"
+                        }
+                    ]
                 },
                 "rancher": {
                     "$ref": "#/definitions/dto.RegistryRancherResponse"
@@ -7269,6 +7334,44 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.TierCriterionResponse": {
+            "type": "object",
+            "properties": {
+                "actual": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is met, unmet or unverified.",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TierEvaluationResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "criteria": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TierCriterionResponse"
+                    }
+                },
+                "qualifies": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.TrendPointResponse": {
             "type": "object",
             "properties": {
@@ -7431,6 +7534,42 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VaccinationRecordResponse": {
+            "type": "object",
+            "properties": {
+                "completeCycles": {
+                    "type": "integer"
+                },
+                "completeRatio": {
+                    "type": "string"
+                },
+                "historyKnown": {
+                    "description": "HistoryKnown is false when the registry returned only the current\ncycle, so the cycle counts above are not a history.",
+                    "type": "boolean"
+                },
+                "holdingActive": {
+                    "type": "boolean"
+                },
+                "latestCycle": {
+                    "type": "integer"
+                },
+                "latestYear": {
+                    "type": "integer"
+                },
+                "notVaccinated": {
+                    "type": "integer"
+                },
+                "reportedCycles": {
+                    "type": "integer"
+                },
+                "vaccinatedHeads": {
+                    "type": "integer"
+                },
+                "vaccinationRate": {
                     "type": "string"
                 }
             }

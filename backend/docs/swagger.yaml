@@ -325,6 +325,46 @@ definitions:
       usedAmount:
         type: string
     type: object
+  dto.CreditTierResponse:
+    properties:
+      amount:
+        description: Amount is the credit available, as a decimal string; "0" with
+          no layer.
+        type: string
+      code:
+        description: Code is the layer reached (500k, 1M, 2M); empty when none is.
+        type: string
+      currency:
+        type: string
+      eligible:
+        description: Eligible is false when an entry filter is known to fail.
+        type: boolean
+      entry:
+        items:
+          $ref: '#/definitions/dto.TierCriterionResponse'
+        type: array
+      pending:
+        description: |-
+          Pending lists entry filters nobody has verified yet: the pre-approval
+          holds only once they are confirmed.
+        items:
+          type: string
+        type: array
+      provisionalAmount:
+        type: string
+      provisionalCode:
+        description: |-
+          ProvisionalCode and ProvisionalAmount are the highest layer no known
+          fact rules out: what the rancher reaches once everything unverified,
+          here or in the layers, is confirmed.
+        type: string
+      tiers:
+        items:
+          $ref: '#/definitions/dto.TierEvaluationResponse'
+        type: array
+      vaccination:
+        $ref: '#/definitions/dto.VaccinationRecordResponse'
+    type: object
   dto.DelinquencyResponse:
     properties:
       delinquencyRate:
@@ -854,6 +894,10 @@ definitions:
         items:
           type: string
         type: array
+      creditTier:
+        allOf:
+        - $ref: '#/definitions/dto.CreditTierResponse'
+        description: CreditTier is the credit available by the pilot's layers.
       holdingCodes:
         items:
           type: string
@@ -1190,6 +1234,12 @@ definitions:
         items:
           type: string
         type: array
+      creditTier:
+        allOf:
+        - $ref: '#/definitions/dto.CreditTierResponse'
+        description: |-
+          CreditTier is the pre-approval by layers, read from the same registry
+          history: the credit available to the rancher.
       rancher:
         $ref: '#/definitions/dto.RegistryRancherResponse'
     type: object
@@ -1748,6 +1798,31 @@ definitions:
     - housingStatus
     - monthlyIncome
     type: object
+  dto.TierCriterionResponse:
+    properties:
+      actual:
+        type: string
+      code:
+        type: string
+      required:
+        type: string
+      status:
+        description: Status is met, unmet or unverified.
+        type: string
+    type: object
+  dto.TierEvaluationResponse:
+    properties:
+      amount:
+        type: string
+      code:
+        type: string
+      criteria:
+        items:
+          $ref: '#/definitions/dto.TierCriterionResponse'
+        type: array
+      qualifies:
+        type: boolean
+    type: object
   dto.TrendPointResponse:
     properties:
       amount:
@@ -1854,6 +1929,32 @@ definitions:
       phone:
         type: string
       role:
+        type: string
+    type: object
+  dto.VaccinationRecordResponse:
+    properties:
+      completeCycles:
+        type: integer
+      completeRatio:
+        type: string
+      historyKnown:
+        description: |-
+          HistoryKnown is false when the registry returned only the current
+          cycle, so the cycle counts above are not a history.
+        type: boolean
+      holdingActive:
+        type: boolean
+      latestCycle:
+        type: integer
+      latestYear:
+        type: integer
+      notVaccinated:
+        type: integer
+      reportedCycles:
+        type: integer
+      vaccinatedHeads:
+        type: integer
+      vaccinationRate:
         type: string
     type: object
   dto.VendorAccountResponse:
