@@ -17,7 +17,7 @@ import (
 
 // Identification types the registry accepts.
 const (
-	IDTypeCedula      = "CÉDULA DE CIUDADANÍA"
+	IDTypeCedula      = port.RUVIDTypeCedula
 	IDTypeExtranjeria = "CÉDULA DE EXTRANJERÍA"
 	IDTypeNIT         = "NIT"
 	IDTypePasaporte   = "PASAPORTE"
