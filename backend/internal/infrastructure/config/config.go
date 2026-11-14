@@ -23,6 +23,8 @@ type Config struct {
 	Country         string
 	DefaultIVARate  float64
 	LatePenaltyRate float64
+	// LivestockQuota selects how livestock quotas are decided.
+	LivestockQuota LivestockQuotaConfig
 }
 
 // CountryInfo holds the deployment-country localization metadata that the
@@ -123,6 +125,18 @@ type RUVConfig struct {
 	ClientSecret string
 	Username     string
 	Password     string
+}
+
+// LivestockQuotaConfig selects the livestock quota strategy. The values are
+// kept raw here and parsed where the service is built, which refuses to start
+// on an invalid one rather than grant quotas under the wrong rule.
+type LivestockQuotaConfig struct {
+	// Strategy is "tiers" (the pilot's fixed amounts, the default when empty)
+	// or "engine" (the individual engine).
+	Strategy string
+	// CurrentCycle is the RUV cycle the tiers measure, as "YYYY-C"; empty
+	// means the built-in default.
+	CurrentCycle string
 }
 
 // SendGridConfig configures one-time codes delivered by email. FromEmail must
@@ -237,6 +251,10 @@ func Load() *Config {
 			ClientSecret: getEnv("RUV_CLIENT_SECRET", ""),
 			Username:     getEnv("RUV_USERNAME", ""),
 			Password:     getEnv("RUV_PASSWORD", ""),
+		},
+		LivestockQuota: LivestockQuotaConfig{
+			Strategy:     getEnv("LIVESTOCK_QUOTA_STRATEGY", ""),
+			CurrentCycle: getEnv("LIVESTOCK_QUOTA_CURRENT_CYCLE", ""),
 		},
 		Google: GoogleOAuthConfig{
 			ClientID:     getEnv("GOOGLE_OAUTH_CLIENT_ID", ""),

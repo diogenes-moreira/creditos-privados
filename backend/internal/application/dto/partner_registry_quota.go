@@ -43,7 +43,7 @@ func ToPartnerRegistryQuotaResponse(r *service.RegistryAssessment) PartnerRegist
 			Name:       r.Rancher.Name,
 			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
 		},
-		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment),
+		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment, r.Tier),
 		HoldingCodes: codes,
 		Assumptions:  r.Assumptions,
 	}
