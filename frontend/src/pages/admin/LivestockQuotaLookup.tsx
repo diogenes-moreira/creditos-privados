@@ -30,6 +30,7 @@ import { Search as SearchIcon, PersonAdd as PersonAddIcon, Person as PersonIcon 
 import { adminAssessLivestockQuotaFromRegistry, adminSearchClients } from "../../api/endpoints";
 import { useAuth } from "../../auth/AuthContext";
 import RegisterClientDialog from "../../components/RegisterClientDialog";
+import QuotaTierCard from "../../components/QuotaTierCard";
 import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 import { prefillFromRegistry, type RegistryPrefill } from "../../utils/registryClient";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -99,6 +100,9 @@ type CeilingKey = (typeof CEILING_KEYS)[number];
  * costs nothing.
  */
 const bindingCeilingOf = (assessment: LivestockQuotaAssessment): CeilingKey | null => {
+  // Under the tiers strategy the quota is a tier amount, not a ceiling: a
+  // ceiling that happens to equal it did not bind anything.
+  if (assessment.tier) return null;
   const code = assessment.activeCeilingCode?.trim() as CeilingKey | undefined;
   if (code && CEILING_KEYS.includes(code)) return code;
 
@@ -341,6 +345,10 @@ const LivestockQuotaLookup: React.FC = () => {
 
       {submitted && !isFetching && !error && data && assessment && (
         <Stack spacing={3}>
+          {/* Under the tiers strategy the tier is the amount on offer, so it
+              comes first; the engine's trace below explains the figure it is
+              compared against. Under the engine strategy there is no tier. */}
+          {assessment.tier && <QuotaTierCard assessment={assessment} tier={assessment.tier} />}
           {/* The number, and immediately the reason it is that number. */}
           <Card>
             <CardContent>

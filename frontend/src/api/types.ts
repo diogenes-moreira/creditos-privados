@@ -846,6 +846,38 @@ export interface LivestockScore {
   seniorityCycles: number;
 }
 
+/** How the quota was decided: the pilot tiers or the individual engine. */
+export type LivestockQuotaStrategy = "tiers" | "engine";
+
+/** One unmet requirement behind the tier result. */
+export interface QuotaTierReason {
+  /** "entry" for the entry filter, or the tier code it belongs to (the next tier up). */
+  scope: string;
+  /** cedula, currentCycleRegistered, activeHolding, vaccinatedHeads, vaccinationRate, ownedHolding or vaccinatedCycles. */
+  requirement: string;
+  required: string;
+  actual: string;
+}
+
+/** The pilot tier decision ("Escalones Piloto"). Amounts are decimal strings. */
+export interface QuotaTier {
+  /** tier1, tier2, tier3 or notEligible. */
+  code: string;
+  label: string;
+  amount: string;
+  policyVersion: string;
+  /** Failed entry filters, or what kept the rancher from the next tier up. */
+  reasons: QuotaTierReason[];
+  /** The RUV cycle measured, e.g. "2026-1". */
+  currentCycle: string;
+  currentCycleFound: boolean;
+  vaccinatedHeads: number;
+  notVaccinated: number;
+  /** A fraction with four decimals, e.g. "0.8500". */
+  vaccinationRate: string;
+  ownedHolding: boolean;
+}
+
 /** An assigned quota with the full trace of how it was reached. */
 export interface LivestockQuotaAssessment {
   id: string;
@@ -861,6 +893,12 @@ export interface LivestockQuotaAssessment {
   activeCeiling: string;
   /** Stable key of activeCeiling: ltv, capacity, inputs or policyCap. */
   activeCeilingCode?: string;
+  /** How the quota was decided; absent in responses older than the tiers. */
+  strategy?: LivestockQuotaStrategy;
+  /** The individual engine's quota, kept under either strategy for comparison. */
+  engineQuota?: string;
+  /** The tier decision; absent under the engine strategy. */
+  tier?: QuotaTier;
   ceilings: LivestockQuotaCeilings;
   termMonths: number;
   periodRatePct: string;

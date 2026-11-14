@@ -996,6 +996,46 @@
       "viewClient": "View client",
       "registerFromRegistryTitle": "Pre-filled from the vaccination registry",
       "registerFromRegistryBody": "The RUV was not built for onboarding: the name is split into given names and surnames by guesswork, the NIT is the cédula plus its check digit (valid only if the rancher has a RUT under it) and the address is the main holding's. Check the highlighted fields and add the date of birth, which the registry does not hold."
+    },
+    "tier": {
+      "title": "Pilot tiers",
+      "assigned": "Assigned tier",
+      "notEligible": "Not eligible",
+      "strategy": "Strategy: {{strategy}}",
+      "strategyName": {
+        "tiers": "tiers",
+        "engine": "individual engine"
+      },
+      "policyVersion": "Policy {{version}}",
+      "engineQuota": "Individual engine quota (for comparison)",
+      "measuredTitle": "Measured values",
+      "vaccinatedHeads": "Vaccinated heads (cycle {{cycle}})",
+      "vaccinationRate": "Vaccination rate",
+      "currentCycleFound": "Vaccinated in cycle {{cycle}}",
+      "ownedHolding": "Owned holding",
+      "yes": "Yes",
+      "no": "No",
+      "ownedHoldingHint": "The RUV does not report tenure: it is taken as not owned",
+      "reasonsTitleEntry": "Does not pass the entry filter",
+      "reasonsTitleNext": "What is missing for the next tier",
+      "topTier": "Top tier: there is none above",
+      "reasonLine": "{{requirement}}: requires {{required}}, has {{actual}}",
+      "scope": {
+        "entry": "Entry filter",
+        "tier1": "Tier 1",
+        "tier2": "Tier 2",
+        "tier3": "Tier 3"
+      },
+      "requirement": {
+        "cedula": "Citizenship ID (cédula)",
+        "currentCycleRegistered": "Vaccination in the current cycle",
+        "activeHolding": "Active holding",
+        "vaccinatedHeads": "Vaccinated heads",
+        "vaccinationRate": "Vaccination rate",
+        "ownedHolding": "Owned holding",
+        "vaccinatedCycles": "Vaccinated cycles (last 10)"
+      },
+      "outsideNote": "Credit bureaus and TVGAN purchases in 2026 are checked outside Prestia."
     }
   }
 }

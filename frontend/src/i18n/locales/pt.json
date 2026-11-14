@@ -996,6 +996,46 @@
       "viewClient": "Ver cliente",
       "registerFromRegistryTitle": "Dados pré-preenchidos do registro de vacinação",
       "registerFromRegistryBody": "O RUV não foi feito para cadastro: o nome é separado em nomes e sobrenomes por aproximação, o NIT é a cédula mais o dígito verificador (vale só se o pecuarista tiver RUT com essa cédula) e o endereço é o da propriedade principal. Confira os campos marcados e preencha a data de nascimento, que o registro não tem."
+    },
+    "tier": {
+      "title": "Faixas do piloto",
+      "assigned": "Faixa atribuída",
+      "notEligible": "Não elegível",
+      "strategy": "Estratégia: {{strategy}}",
+      "strategyName": {
+        "tiers": "faixas",
+        "engine": "motor individual"
+      },
+      "policyVersion": "Política {{version}}",
+      "engineQuota": "Limite do motor individual (comparação)",
+      "measuredTitle": "Valores medidos",
+      "vaccinatedHeads": "Cabeças vacinadas (ciclo {{cycle}})",
+      "vaccinationRate": "% de vacinação",
+      "currentCycleFound": "Vacinou no ciclo {{cycle}}",
+      "ownedHolding": "Propriedade própria",
+      "yes": "Sim",
+      "no": "Não",
+      "ownedHoldingHint": "O RUV não informa a posse: considera-se não própria",
+      "reasonsTitleEntry": "Não passa no filtro de entrada",
+      "reasonsTitleNext": "O que falta para a próxima faixa",
+      "topTier": "Faixa mais alta: não há outra acima",
+      "reasonLine": "{{requirement}}: exige {{required}}, tem {{actual}}",
+      "scope": {
+        "entry": "Filtro de entrada",
+        "tier1": "Faixa 1",
+        "tier2": "Faixa 2",
+        "tier3": "Faixa 3"
+      },
+      "requirement": {
+        "cedula": "Cédula de cidadania",
+        "currentCycleRegistered": "Vacinação no ciclo atual",
+        "activeHolding": "Propriedade ativa",
+        "vaccinatedHeads": "Cabeças vacinadas",
+        "vaccinationRate": "% de vacinação",
+        "ownedHolding": "Propriedade própria",
+        "vaccinatedCycles": "Ciclos vacinados (últimos 10)"
+      },
+      "outsideNote": "Birôs de crédito e compras na TVGAN em 2026 são verificados fora da Prestia."
     }
   }
 }
