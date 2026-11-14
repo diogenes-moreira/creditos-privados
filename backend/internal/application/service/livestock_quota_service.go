@@ -217,10 +217,11 @@ type RegistryAssessment struct {
 // credit is the more expensive mistake; every assumption is returned alongside
 // the quota rather than buried.
 //
-// Under the tiers strategy the herd is measured on the current cycle only, and
-// the same assumptions hold: the holding is taken as active and, with tenure
-// unknown, as not owned (model.RUVHoldingOwned), so the top tier is out of
-// reach from the registry alone. A rancher found in the RUV who reaches no
+// Under the tiers strategy the herd is measured on the current cycle only and
+// the holding is taken as active. Tenure comes from the records' "propietario"
+// (port.RUVRancher.OwnsAHolding): owned only when it names the rancher. Empty,
+// as the RUV sends it today, counts as not owned (model.RUVHoldingOwned), so
+// the top tier stays out of reach until FEDEGÁN fills it. A rancher found in the RUV who reaches no
 // tier is still a 200 with a zero quota; only an ID the RUV does not know is
 // ErrNotInRegistry.
 //
@@ -270,7 +271,7 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 			VaccinatedHeads:        c.Total,
 			NotVaccinated:          c.NotVaccinated,
 			HoldingActive:          true,
-			OwnedHolding:           model.RUVHoldingOwned,
+			OwnedHolding:           rancher.OwnsAHolding() || model.RUVHoldingOwned,
 		}
 	})
 	if err != nil {
@@ -282,8 +283,9 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 		"holding_status_assumed_active",
 		"compliance_from_reported_cycles_only",
 	}
-	if outcome.Tier != nil && !model.RUVHoldingOwned {
-		assumptions = append(assumptions, "tenure_unknown_not_owned")
+	if outcome.Tier != nil {
+		// Owned only when "propietario" says so; empty counts as not owned.
+		assumptions = append(assumptions, "tenure_from_ruv_propietario")
 	}
 	return &RegistryAssessment{
 		Record:      outcome.Record,

@@ -128,7 +128,7 @@ func TestPartnerRegistryQuotaGrantsTheTierMeasuredOnTheCurrentCycle(t *testing.T
 	assert.Equal(t, []dto.QuotaTierReasonResponse{
 		{Scope: "tier3", Requirement: "ownedHolding", Required: "true", Actual: "false"},
 	}, a.Tier.Reasons)
-	assert.Contains(t, resp.Assumptions, "tenure_unknown_not_owned")
+	assert.Contains(t, resp.Assumptions, "tenure_from_ruv_propietario")
 	assert.Equal(t, "GANADERO DE PRUEBA", resp.Rancher.Name, "the rancher stays in the response")
 
 	require.Len(t, repo.saved, 1)
@@ -136,6 +136,23 @@ func TestPartnerRegistryQuotaGrantsTheTierMeasuredOnTheCurrentCycle(t *testing.T
 	assert.Equal(t, "tier2", saved.Tier)
 	assert.Equal(t, "1000000.00", saved.Quota.StringFixed(2))
 	assert.Equal(t, a.EngineQuota, saved.EngineQuota.StringFixed(2))
+}
+
+func TestPartnerRegistryQuotaReachesTierThreeWhenPropietarioNamesTheRancher(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	owned := caucaRancher()
+	// Only an old record of one predio says so: any record counts.
+	owned.Holdings[0].Owner = "Sí"
+	ruv := &fakeRUV{ranchers: map[string]*port.RUVRancher{"17788090": owned}}
+	resp := decodePartner(t, postRegistry(t, newRegistryRouter(repo, ruv), testServiceKey, map[string]any{"nationalId": "17788090"}))
+
+	a := resp.Assessment
+	assert.Equal(t, "2000000.00", a.Quota)
+	require.NotNil(t, a.Tier)
+	assert.Equal(t, "tier3", a.Tier.Code)
+	assert.True(t, a.Tier.OwnedHolding)
+	assert.Empty(t, a.Tier.Reasons)
+	assert.Contains(t, resp.Assumptions, "tenure_from_ruv_propietario")
 }
 
 func TestPartnerRegistryQuotaAnswers200WithZeroWhenTheRancherReachesNoTier(t *testing.T) {
@@ -171,7 +188,7 @@ func TestPartnerRegistryQuotaUnderTheEngineStrategyGrantsTheEngineQuota(t *testi
 	assert.Equal(t, "engine", a.Strategy)
 	assert.Equal(t, a.EngineQuota, a.Quota)
 	assert.Nil(t, a.Tier)
-	assert.NotContains(t, resp.Assumptions, "tenure_unknown_not_owned")
+	assert.NotContains(t, resp.Assumptions, "tenure_from_ruv_propietario")
 	assert.Contains(t, []string{"ltv", "capacity", "inputs", "policyCap"}, a.ActiveCeilingCode)
 	require.Len(t, repo.saved, 1)
 	assert.Equal(t, "engine", repo.saved[0].Strategy)

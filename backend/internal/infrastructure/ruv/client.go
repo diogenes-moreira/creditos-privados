@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -139,6 +140,9 @@ type scoringRecord struct {
 	Celular         string `json:"celular_ganadero"`
 	Correo          string `json:"correo_ganadero"`
 	FechaVacunacion string `json:"fecha_vacunacion"`
+	// Propietario is kept raw: the registry has only ever sent null, so its
+	// type is unknown and must not be able to fail the decode.
+	Propietario json.RawMessage `json:"propietario"`
 
 	FemalesUnder3 json.Number `json:"aftosa_bov_h_0_3_m"`
 	Females3To8   json.Number `json:"aftosa_bov_h_3_8_m"`
@@ -171,6 +175,25 @@ func count(n json.Number) int {
 		return int(f)
 	}
 	return int(v)
+}
+
+// ownerText turns "propietario" into text whatever its JSON type: a string as
+// given, a boolean or number as its literal, and empty for null or anything
+// else (an object or array says nothing usable about ownership).
+func ownerText(raw json.RawMessage) string {
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		return strings.TrimSpace(s)
+	}
+	var b bool
+	if err := json.Unmarshal(raw, &b); err == nil {
+		return strconv.FormatBool(b)
+	}
+	var n json.Number
+	if err := json.Unmarshal(raw, &n); err == nil {
+		return n.String()
+	}
+	return ""
 }
 
 func atoi(s string) int {
@@ -268,6 +291,9 @@ func (c *Client) FindByNationalID(ctx context.Context, idType, id string) (*port
 			Year:         atoi(rec.Ano),
 			VaccinatedAt: rec.FechaVacunacion,
 			Herd:         rec.herd(),
+			Owner:        ownerText(rec.Propietario),
+			Registrant:   strings.TrimSpace(rec.Ganadero),
+			RegistrantID: strings.TrimSpace(rec.Identificacion),
 		})
 	}
 	return rancher, nil
