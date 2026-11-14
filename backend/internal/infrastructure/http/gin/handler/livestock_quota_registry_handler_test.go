@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
@@ -106,10 +107,15 @@ func TestPartnerRegistryQuotaRequiresTheServiceKeyAndANationalID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, postRegistry(t, r, testServiceKey, map[string]any{}).Code)
 }
 
+// lookupDate fixes "today" for the registry history, so whether a holding
+// counts as active does not drift as real time passes.
+var lookupDate = time.Date(2026, time.October, 27, 0, 0, 0, 0, time.UTC)
+
 func newAdvisorLookupRouter(repo *memoryLivestockQuotaRepo, ruv port.RUVClient) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	s := service.NewLivestockQuotaService(repo, "COP").WithRegistry(ruv)
+	s := service.NewLivestockQuotaService(repo, "COP").WithRegistry(ruv).
+		WithClock(func() time.Time { return lookupDate })
 	r.POST("/admin/livestock-quotas/registry", func(c *gin.Context) {
 		c.Set("email", "asesor@example.com")
 		c.Next()
@@ -163,4 +169,79 @@ func TestAdvisorLookupRejectsAMissingNationalID(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code, body)
 	}
 	assert.Empty(t, ruv.asked)
+}
+
+// fourCycleRancher vaccinated 12 head in each of the last four cycles, one of
+// them leaving an animal out: enough for 500k, short of 1M's six cycles.
+func fourCycleRancher() *port.RUVRancher {
+	var hs []port.RUVHolding
+	for i, yc := range [][2]int{{2024, 2}, {2025, 1}, {2025, 2}, {2026, 1}} {
+		nv := 0
+		if i == 0 {
+			nv = 1
+		}
+		hs = append(hs, port.RUVHolding{Code: "300", Department: "META", Year: yc[0], Cycle: yc[1],
+			Herd: model.Herd{Females3To5Years: 12, NotVaccinated: nv}})
+	}
+	// As if the registry returned the whole history, which getRuvScoring
+	// does not: this exercises the layers once a history source exists.
+	return &port.RUVRancher{NationalID: "12345678", Name: "GANADERO CUATRO CICLOS", Holdings: hs, HistoryComplete: true}
+}
+
+func postAdvisorLookup(t *testing.T, r *gin.Engine, id string) dto.RegistryQuotaResponse {
+	t.Helper()
+	raw, err := json.Marshal(map[string]any{"nationalId": id})
+	require.NoError(t, err)
+	req := httptest.NewRequest(http.MethodPost, "/admin/livestock-quotas/registry", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var resp dto.RegistryQuotaResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	return resp
+}
+
+func TestAdvisorLookupWithOnlyTheCurrentCycleOffersAProvisionalLayer(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	// What getRuvScoring actually returns: the current cycle, no history.
+	current := &port.RUVRancher{NationalID: "87654321", Name: "GANADERO CICLO ACTUAL", Holdings: []port.RUVHolding{
+		{Code: "400", Department: "CESAR", Year: 2026, Cycle: 1, Herd: model.Herd{Females3To5Years: 30, MalesOver3Years: 5}},
+	}}
+	r := newAdvisorLookupRouter(repo, &fakeRUV{ranchers: map[string]*port.RUVRancher{"87654321": current}})
+
+	tier := postAdvisorLookup(t, r, "87654321").CreditTier
+
+	assert.Empty(t, tier.Code, "no layer is granted on cycles nobody has seen")
+	assert.Equal(t, "0.00", tier.Amount)
+	assert.Equal(t, "1M", tier.ProvisionalCode, "35 head, all vaccinated")
+	assert.Equal(t, "1000000.00", tier.ProvisionalAmount)
+	assert.False(t, tier.Vaccination.HistoryKnown)
+
+	require.Len(t, repo.saved, 1)
+	assert.Equal(t, "1M", repo.saved[0].ProvisionalTier)
+	assert.Equal(t, "1000000", repo.saved[0].ProvisionalTierAmount.String())
+}
+
+func TestAdvisorLookupReturnsAndStoresTheCreditTier(t *testing.T) {
+	repo := &memoryLivestockQuotaRepo{}
+	ruv := &fakeRUV{ranchers: map[string]*port.RUVRancher{"12345678": fourCycleRancher()}}
+	r := newAdvisorLookupRouter(repo, ruv)
+
+	resp := postAdvisorLookup(t, r, "12345678")
+
+	tier := resp.CreditTier
+	assert.Equal(t, "500k", tier.Code)
+	assert.Equal(t, "500000.00", tier.Amount)
+	assert.True(t, tier.Eligible)
+	assert.ElementsMatch(t, []string{model.CriterionCampaignBuyer, model.CriterionCleanBureau}, tier.Pending,
+		"neither is in the registry, so both stay to be verified")
+	assert.Equal(t, 12, tier.Vaccination.VaccinatedHeads)
+	assert.Equal(t, 4, tier.Vaccination.ReportedCycles)
+	assert.Equal(t, 3, tier.Vaccination.CompleteCycles)
+	require.Len(t, tier.Tiers, 3)
+
+	require.Len(t, repo.saved, 1)
+	assert.Equal(t, "500k", repo.saved[0].CreditTier, "every lookup record keeps the amount it showed")
+	assert.Equal(t, "500000", repo.saved[0].CreditTierAmount.String())
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
@@ -42,6 +43,9 @@ type LivestockQuotaService struct {
 	registry port.RUVClient
 	yields   model.LivestockYields
 	currency string
+	// clock dates the registry history: whether a holding is still active
+	// depends on which vaccination cycle is current.
+	clock func() time.Time
 }
 
 func NewLivestockQuotaService(repo port.LivestockQuotaRepository, currency string) *LivestockQuotaService {
@@ -49,7 +53,16 @@ func NewLivestockQuotaService(repo port.LivestockQuotaRepository, currency strin
 		repo:     repo,
 		yields:   model.DefaultLivestockYields(),
 		currency: currency,
+		clock:    time.Now,
 	}
+}
+
+func (s *LivestockQuotaService) now() time.Time { return s.clock() }
+
+// WithClock fixes the date the registry history is judged at; for tests.
+func (s *LivestockQuotaService) WithClock(clock func() time.Time) *LivestockQuotaService {
+	s.clock = clock
+	return s
 }
 
 // WithPolicies makes the engine run on the active stored parameters.
@@ -69,6 +82,18 @@ func (s *LivestockQuotaService) params(ctx context.Context) model.QuotaParams {
 
 // Assess computes and stores the quota. requestedBy names the partner service.
 func (s *LivestockQuotaService) Assess(ctx context.Context, req LivestockQuotaRequest, requestedBy string) (*model.LivestockQuotaAssessment, model.LivestockAssessment, error) {
+	record, assessment, err := s.assess(ctx, req, requestedBy)
+	if err != nil {
+		return nil, model.LivestockAssessment{}, err
+	}
+	if err := s.store(ctx, record); err != nil {
+		return nil, model.LivestockAssessment{}, err
+	}
+	return record, assessment, nil
+}
+
+// assess computes the quota without storing it.
+func (s *LivestockQuotaService) assess(ctx context.Context, req LivestockQuotaRequest, requestedBy string) (*model.LivestockQuotaAssessment, model.LivestockAssessment, error) {
 	applicant, err := toApplicant(req)
 	if err != nil {
 		return nil, model.LivestockAssessment{}, err
@@ -78,10 +103,14 @@ func (s *LivestockQuotaService) Assess(ctx context.Context, req LivestockQuotaRe
 	if err != nil {
 		return nil, model.LivestockAssessment{}, err
 	}
-	if err := s.repo.Create(ctx, record); err != nil {
-		return nil, model.LivestockAssessment{}, fmt.Errorf("storing livestock quota assessment: %w", err)
-	}
 	return record, assessment, nil
+}
+
+func (s *LivestockQuotaService) store(ctx context.Context, record *model.LivestockQuotaAssessment) error {
+	if err := s.repo.Create(ctx, record); err != nil {
+		return fmt.Errorf("storing livestock quota assessment: %w", err)
+	}
+	return nil
 }
 
 func toApplicant(req LivestockQuotaRequest) (model.LivestockApplicant, error) {
@@ -134,6 +163,10 @@ type RegistryAssessment struct {
 	Record     *model.LivestockQuotaAssessment
 	Assessment model.LivestockAssessment
 	Rancher    *port.RUVRancher
+	// Vaccination and Tier are the pre-approval by layers: the registry's
+	// history reduced to the table's figures, and the layer it reaches.
+	Vaccination model.VaccinationRecord
+	Tier        model.TierAssessment
 	// Assumptions names every score input that was not observed. The score
 	// moves on these, so whoever reads the quota should see them.
 	Assumptions []string
@@ -183,15 +216,31 @@ func (s *LivestockQuotaService) AssessFromRegistry(ctx context.Context, idType, 
 		req.Holdings = append(req.Holdings, h.Herd)
 	}
 
-	record, assessment, err := s.Assess(ctx, req, requestedBy)
+	record, assessment, err := s.assess(ctx, req, requestedBy)
 	if err != nil {
 		return nil, err
 	}
 
+	// Being a campaign buyer, the bureaus and land ownership are not in the
+	// registry: they stay unverified rather than assumed either way.
+	vaccination := rancher.VaccinationRecord(s.now())
+	tier := model.AssessCreditTier(model.TierEvidence{
+		// The registry is queried by cédula when no type is given.
+		IsCedula: idType == "" || idType == port.RUVIDTypeCedula,
+		Record:   vaccination,
+	}, model.DefaultCreditTiers())
+	record.RecordCreditTier(tier)
+
+	if err := s.store(ctx, record); err != nil {
+		return nil, err
+	}
+
 	return &RegistryAssessment{
-		Record:     record,
-		Assessment: assessment,
-		Rancher:    rancher,
+		Record:      record,
+		Assessment:  assessment,
+		Rancher:     rancher,
+		Vaccination: vaccination,
+		Tier:        tier,
 		Assumptions: []string{
 			"tenure_assumed_leased",
 			"holding_status_assumed_active",

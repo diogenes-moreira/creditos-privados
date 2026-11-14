@@ -31,6 +31,18 @@ type LivestockQuotaAssessment struct {
 	Typology      string          `gorm:"type:varchar(40);not null"`
 	TermMonths    int             `gorm:"not null"`
 
+	// CreditTier and CreditTierAmount are the pre-approval layer reached and
+	// the amount available under it: empty and zero when no layer is reached,
+	// and for assessments made from caller-supplied herds, which carry no
+	// vaccination history to judge.
+	CreditTier       string          `gorm:"type:varchar(10)"`
+	CreditTierAmount decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+	// ProvisionalTier and ProvisionalTierAmount are the layer reachable once
+	// everything unverified is confirmed. With the registry returning only
+	// the current cycle, this is the figure the lookup can actually offer.
+	ProvisionalTier       string          `gorm:"type:varchar(10)"`
+	ProvisionalTierAmount decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+
 	Applicant string `gorm:"type:text;not null"`
 	Result    string `gorm:"type:text;not null"`
 
@@ -62,5 +74,17 @@ func NewLivestockQuotaAssessment(applicant LivestockApplicant, a LivestockAssess
 		TermMonths:    a.Quota.TermMonths,
 		Applicant:     string(in),
 		Result:        string(out),
+		// Explicit, so the row never relies on the zero value of a
+		// decimal.Decimal, which is not a valid amount to store.
+		CreditTierAmount:      decimal.Zero,
+		ProvisionalTierAmount: decimal.Zero,
 	}, nil
+}
+
+// RecordCreditTier keeps the layer the assessment was pre-approved for.
+func (a *LivestockQuotaAssessment) RecordCreditTier(t TierAssessment) {
+	a.CreditTier = t.Code
+	a.CreditTierAmount = t.Amount.Round(2)
+	a.ProvisionalTier = t.ProvisionalCode
+	a.ProvisionalTierAmount = t.ProvisionalAmount.Round(2)
 }

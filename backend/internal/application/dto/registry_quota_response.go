@@ -48,6 +48,9 @@ type RegistryQuotaResponse struct {
 	Rancher     RegistryRancherResponse `json:"rancher"`
 	Assessment  LivestockQuotaResponse  `json:"assessment"`
 	Assumptions []string                `json:"assumptions"`
+	// CreditTier is the pre-approval by layers, read from the same registry
+	// history: the credit available to the rancher.
+	CreditTier CreditTierResponse `json:"creditTier"`
 }
 
 // ToRegistryQuotaResponse maps a registry-backed assessment.
@@ -62,6 +65,7 @@ func ToRegistryQuotaResponse(r *service.RegistryAssessment) RegistryQuotaRespons
 		},
 		Assessment:  ToLivestockQuotaResponse(r.Record, r.Assessment),
 		Assumptions: r.Assumptions,
+		CreditTier:  ToCreditTierResponse(r.Tier, r.Vaccination, r.Record.Currency),
 	}
 }
 

@@ -29,6 +29,8 @@ type PartnerRegistryQuotaResponse struct {
 	Assessment   LivestockQuotaResponse `json:"assessment"`
 	HoldingCodes []string               `json:"holdingCodes"`
 	Assumptions  []string               `json:"assumptions"`
+	// CreditTier is the credit available by the pilot's layers.
+	CreditTier CreditTierResponse `json:"creditTier"`
 }
 
 // ToPartnerRegistryQuotaResponse maps a registry-backed assessment for a partner.
@@ -46,5 +48,6 @@ func ToPartnerRegistryQuotaResponse(r *service.RegistryAssessment) PartnerRegist
 		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment),
 		HoldingCodes: codes,
 		Assumptions:  r.Assumptions,
+		CreditTier:   ToCreditTierResponse(r.Tier, r.Vaccination, r.Record.Currency),
 	}
 }
