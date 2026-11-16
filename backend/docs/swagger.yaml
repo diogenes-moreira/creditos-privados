@@ -411,6 +411,121 @@ definitions:
       portfolio:
         $ref: '#/definitions/dto.PortfolioResponse'
     type: object
+  dto.LivestockCreditLineAssessmentSummary:
+    properties:
+      activeCeiling:
+        description: |-
+          ActiveCeiling is the ceiling that bound the engine's quota, or the tier
+          label under the tiers strategy.
+        type: string
+      createdAt:
+        type: string
+      currency:
+        example: COP
+        type: string
+      engineQuota:
+        description: EngineQuota is what the individual engine would have granted.
+        example: "2350000.00"
+        type: string
+      grade:
+        type: string
+      id:
+        type: string
+      quota:
+        example: "1000000.00"
+        type: string
+      score:
+        type: integer
+      strategy:
+        description: 'Strategy is how the quota was decided: tiers or engine.'
+        example: tiers
+        type: string
+      tier:
+        description: |-
+          Tier is the tier code (tier1, tier2, tier3, notEligible) and TierLabel
+          its name; both empty under the engine strategy.
+        example: tier2
+        type: string
+      tierLabel:
+        example: Escalón 2
+        type: string
+      tierPolicyVersion:
+        example: v1
+        type: string
+    type: object
+  dto.LivestockCreditLineDetail:
+    properties:
+      activatedAt:
+        type: string
+      amount:
+        example: "1000000.00"
+        type: string
+      assessment:
+        allOf:
+        - $ref: '#/definitions/dto.LivestockCreditLineAssessmentSummary'
+        description: Assessment is absent only if the stored assessment cannot be
+          read.
+      assessmentId:
+        type: string
+      createdAt:
+        type: string
+      currency:
+        example: COP
+        type: string
+      documentSha256:
+        type: string
+      documentSize:
+        type: integer
+      fullName:
+        type: string
+      id:
+        type: string
+      idType:
+        example: CÉDULA DE CIUDADANÍA
+        type: string
+      mobilePhone:
+        type: string
+      nationalId:
+        type: string
+      partner:
+        example: cuppogan
+        type: string
+      partnerArchiveUri:
+        description: PartnerArchiveURI is where the partner keeps its own copy (informative).
+        type: string
+      partnerReference:
+        type: string
+      promissoryNoteNumber:
+        example: CPG-2026-000002
+        type: string
+      signatureDocumentId:
+        type: string
+      signatureProvider:
+        example: truora-zapsign
+        type: string
+      signatureValidationId:
+        type: string
+      signedAt:
+        type: string
+      status:
+        example: active
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.LivestockCreditLinePage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.LivestockCreditLineSummary'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
   dto.LivestockCreditLineResponse:
     properties:
       activatedAt:
@@ -433,6 +548,66 @@ definitions:
       promissoryNoteNumber:
         type: string
       registeredAt:
+        type: string
+      status:
+        example: active
+        type: string
+    type: object
+  dto.LivestockCreditLineSearchRequest:
+    properties:
+      limit:
+        description: Limit defaults to 20, at most 100.
+        example: 20
+        type: integer
+      nationalId:
+        description: NationalID matches exactly; empty lists every line.
+        example: "17788090"
+        type: string
+      offset:
+        type: integer
+      status:
+        description: Status filters by status (active); empty lists every status.
+        example: active
+        type: string
+    type: object
+  dto.LivestockCreditLineSummary:
+    properties:
+      activatedAt:
+        type: string
+      amount:
+        example: "1000000.00"
+        type: string
+      assessmentId:
+        type: string
+      createdAt:
+        type: string
+      currency:
+        example: COP
+        type: string
+      documentSha256:
+        type: string
+      documentSize:
+        type: integer
+      fullName:
+        type: string
+      id:
+        type: string
+      idType:
+        example: CÉDULA DE CIUDADANÍA
+        type: string
+      mobilePhone:
+        type: string
+      nationalId:
+        type: string
+      partner:
+        example: cuppogan
+        type: string
+      partnerReference:
+        type: string
+      promissoryNoteNumber:
+        example: CPG-2026-000002
+        type: string
+      signedAt:
         type: string
       status:
         example: active
@@ -2850,6 +3025,170 @@ paths:
       summary: Get disbursement trends
       tags:
       - Dashboard
+  /admin/livestock-credit-lines:
+    get:
+      description: 'Credit lines partners (CuppoGan) activated on a livestock quota,
+        most recently activated first. Metadata only: the signed promissory note is
+        downloaded separately. To filter by national ID use POST /admin/livestock-credit-lines/search,
+        which keeps the ID out of the URL. Advisors and administrators.'
+      parameters:
+      - description: Status filter (active)
+        in: query
+        name: status
+        type: string
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Page size (default 20, at most 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditLinePage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List livestock credit lines
+      tags:
+      - Livestock quota
+  /admin/livestock-credit-lines/{id}:
+    get:
+      description: One credit line with its signature trace and a summary of the quota
+        assessment it was granted on. Advisors and administrators.
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditLineDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a livestock credit line
+      tags:
+      - Livestock quota
+  /admin/livestock-credit-lines/{id}/promissory-note:
+    get:
+      description: 'Streams the signed PDF stored with the line, inline, named after
+        the promissory note number. The bytes are hashed on every read: if they no
+        longer match the SHA-256 registered with the line the PDF is not served (500,
+        promissory_note_corrupted). Every access is recorded in the audit log. Advisors
+        and administrators.'
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: The signed promissory note
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Download a credit line's signed promissory note
+      tags:
+      - Livestock quota
+  /admin/livestock-credit-lines/search:
+    post:
+      consumes:
+      - application/json
+      description: The credit line list filtered by national ID (exact match) and
+        status, with the filter in the body so the national ID stays out of URLs and
+        request logs. Advisors and administrators.
+      parameters:
+      - description: Filter and page
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LivestockCreditLineSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditLinePage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search livestock credit lines
+      tags:
+      - Livestock quota
   /admin/livestock-quota-policies:
     get:
       parameters:

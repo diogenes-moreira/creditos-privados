@@ -1302,6 +1302,248 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/livestock-credit-lines": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Credit lines partners (CuppoGan) activated on a livestock quota, most recently activated first. Metadata only: the signed promissory note is downloaded separately. To filter by national ID use POST /admin/livestock-credit-lines/search, which keeps the ID out of the URL. Advisors and administrators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "List livestock credit lines",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Status filter (active)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, at most 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLinePage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/search": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The credit line list filtered by national ID (exact match) and status, with the filter in the body so the national ID stays out of URLs and request logs. Advisors and administrators.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Search livestock credit lines",
+                "parameters": [
+                    {
+                        "description": "Filter and page",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLineSearchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLinePage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "One credit line with its signature trace and a summary of the quota assessment it was granted on. Advisors and administrators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Get a livestock credit line",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLineDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}/promissory-note": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Streams the signed PDF stored with the line, inline, named after the promissory note number. The bytes are hashed on every read: if they no longer match the SHA-256 registered with the line the PDF is not served (500, promissory_note_corrupted). Every access is recorded in the audit log. Advisors and administrators.",
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Download a credit line's signed promissory note",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The signed promissory note",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/livestock-quota-policies": {
             "get": {
                 "security": [
@@ -5420,6 +5662,165 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.LivestockCreditLineAssessmentSummary": {
+            "type": "object",
+            "properties": {
+                "activeCeiling": {
+                    "description": "ActiveCeiling is the ceiling that bound the engine's quota, or the tier\nlabel under the tiers strategy.",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "COP"
+                },
+                "engineQuota": {
+                    "description": "EngineQuota is what the individual engine would have granted.",
+                    "type": "string",
+                    "example": "2350000.00"
+                },
+                "grade": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quota": {
+                    "type": "string",
+                    "example": "1000000.00"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "strategy": {
+                    "description": "Strategy is how the quota was decided: tiers or engine.",
+                    "type": "string",
+                    "example": "tiers"
+                },
+                "tier": {
+                    "description": "Tier is the tier code (tier1, tier2, tier3, notEligible) and TierLabel\nits name; both empty under the engine strategy.",
+                    "type": "string",
+                    "example": "tier2"
+                },
+                "tierLabel": {
+                    "type": "string",
+                    "example": "Escalón 2"
+                },
+                "tierPolicyVersion": {
+                    "type": "string",
+                    "example": "v1"
+                }
+            }
+        },
+        "dto.LivestockCreditLineDetail": {
+            "type": "object",
+            "properties": {
+                "activatedAt": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "string",
+                    "example": "1000000.00"
+                },
+                "assessment": {
+                    "description": "Assessment is absent only if the stored assessment cannot be read.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockCreditLineAssessmentSummary"
+                        }
+                    ]
+                },
+                "assessmentId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "COP"
+                },
+                "documentSha256": {
+                    "type": "string"
+                },
+                "documentSize": {
+                    "type": "integer"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idType": {
+                    "type": "string",
+                    "example": "CÉDULA DE CIUDADANÍA"
+                },
+                "mobilePhone": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                },
+                "partner": {
+                    "type": "string",
+                    "example": "cuppogan"
+                },
+                "partnerArchiveUri": {
+                    "description": "PartnerArchiveURI is where the partner keeps its own copy (informative).",
+                    "type": "string"
+                },
+                "partnerReference": {
+                    "type": "string"
+                },
+                "promissoryNoteNumber": {
+                    "type": "string",
+                    "example": "CPG-2026-000002"
+                },
+                "signatureDocumentId": {
+                    "type": "string"
+                },
+                "signatureProvider": {
+                    "type": "string",
+                    "example": "truora-zapsign"
+                },
+                "signatureValidationId": {
+                    "type": "string"
+                },
+                "signedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockCreditLinePage": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockCreditLineSummary"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.LivestockCreditLineResponse": {
             "type": "object",
             "properties": {
@@ -5452,6 +5853,91 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "registeredAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                }
+            }
+        },
+        "dto.LivestockCreditLineSearchRequest": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "description": "Limit defaults to 20, at most 100.",
+                    "type": "integer",
+                    "example": 20
+                },
+                "nationalId": {
+                    "description": "NationalID matches exactly; empty lists every line.",
+                    "type": "string",
+                    "example": "17788090"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Status filters by status (active); empty lists every status.",
+                    "type": "string",
+                    "example": "active"
+                }
+            }
+        },
+        "dto.LivestockCreditLineSummary": {
+            "type": "object",
+            "properties": {
+                "activatedAt": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "string",
+                    "example": "1000000.00"
+                },
+                "assessmentId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "COP"
+                },
+                "documentSha256": {
+                    "type": "string"
+                },
+                "documentSize": {
+                    "type": "integer"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idType": {
+                    "type": "string",
+                    "example": "CÉDULA DE CIUDADANÍA"
+                },
+                "mobilePhone": {
+                    "type": "string"
+                },
+                "nationalId": {
+                    "type": "string"
+                },
+                "partner": {
+                    "type": "string",
+                    "example": "cuppogan"
+                },
+                "partnerReference": {
+                    "type": "string"
+                },
+                "promissoryNoteNumber": {
+                    "type": "string",
+                    "example": "CPG-2026-000002"
+                },
+                "signedAt": {
                     "type": "string"
                 },
                 "status": {
