@@ -201,6 +201,14 @@ definitions:
       province:
         type: string
     type: object
+  dto.CodedErrorResponse:
+    properties:
+      code:
+        example: amount_mismatch
+        type: string
+      error:
+        type: string
+    type: object
   dto.CreateCreditLineRequest:
     properties:
       clientId:
@@ -402,6 +410,33 @@ definitions:
         $ref: '#/definitions/dto.DelinquencyResponse'
       portfolio:
         $ref: '#/definitions/dto.PortfolioResponse'
+    type: object
+  dto.LivestockCreditLineResponse:
+    properties:
+      activatedAt:
+        type: string
+      amount:
+        example: "1000000.00"
+        type: string
+      assessmentId:
+        type: string
+      currency:
+        type: string
+      documentSha256:
+        type: string
+      documentSize:
+        type: integer
+      id:
+        type: string
+      partnerReference:
+        type: string
+      promissoryNoteNumber:
+        type: string
+      registeredAt:
+        type: string
+      status:
+        example: active
+        type: string
     type: object
   dto.LivestockHerdRequest:
     properties:
@@ -4281,6 +4316,68 @@ paths:
       security:
       - ServiceKey: []
       summary: Assess a rancher's livestock credit quota
+      tags:
+      - Livestock quota
+  /livestock-quotas/activations:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'The partner informs that the rancher signed the promissory note
+        and the quota is active. Prestia records the credit line with the signed PDF
+        (registration only for now). The line must open the full quota of an assessment
+        the same partner requested for the same national ID. Idempotent: replaying
+        the same activation (same promissoryNoteNumber, partnerReference, assessment,
+        national ID, amount and document) returns 200 with the line already registered;
+        different data under the same promissory note, partner reference or assessment
+        is 409. Error codes: invalid_request (400), document_too_large (413), not_a_pdf,
+        sha256_mismatch, unknown_assessment, assessment_of_another_partner, national_id_mismatch,
+        assessment_without_quota, currency_mismatch, amount_mismatch (422), promissory_note_already_registered,
+        partner_reference_already_registered, assessment_already_activated (409).'
+      parameters:
+      - description: JSON, see dto.LivestockCreditActivationMetadata
+        in: formData
+        name: metadata
+        required: true
+        type: string
+      - description: Signed promissory note (application/pdf, at most 10 MB)
+        in: formData
+        name: promissoryNote
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Already registered (replay)
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditLineResponse'
+        "201":
+          description: Registered
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditLineResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+      security:
+      - ServiceKey: []
+      summary: Register a livestock credit line activated by a partner
       tags:
       - Livestock quota
   /livestock-quotas/registry:

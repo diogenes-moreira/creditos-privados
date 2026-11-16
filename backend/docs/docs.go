@@ -3590,6 +3590,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/livestock-quotas/activations": {
+            "post": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "The partner informs that the rancher signed the promissory note and the quota is active. Prestia records the credit line with the signed PDF (registration only for now). The line must open the full quota of an assessment the same partner requested for the same national ID. Idempotent: replaying the same activation (same promissoryNoteNumber, partnerReference, assessment, national ID, amount and document) returns 200 with the line already registered; different data under the same promissory note, partner reference or assessment is 409. Error codes: invalid_request (400), document_too_large (413), not_a_pdf, sha256_mismatch, unknown_assessment, assessment_of_another_partner, national_id_mismatch, assessment_without_quota, currency_mismatch, amount_mismatch (422), promissory_note_already_registered, partner_reference_already_registered, assessment_already_activated (409).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Register a livestock credit line activated by a partner",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JSON, see dto.LivestockCreditActivationMetadata",
+                        "name": "metadata",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Signed promissory note (application/pdf, at most 10 MB)",
+                        "name": "promissoryNote",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Already registered (replay)",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLineResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Registered",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditLineResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/livestock-quotas/registry": {
             "post": {
                 "security": [
@@ -5025,6 +5105,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CodedErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "amount_mismatch"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateCreditLineRequest": {
             "type": "object",
             "required": [
@@ -5325,6 +5417,46 @@ const docTemplate = `{
                 },
                 "portfolio": {
                     "$ref": "#/definitions/dto.PortfolioResponse"
+                }
+            }
+        },
+        "dto.LivestockCreditLineResponse": {
+            "type": "object",
+            "properties": {
+                "activatedAt": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "string",
+                    "example": "1000000.00"
+                },
+                "assessmentId": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "documentSha256": {
+                    "type": "string"
+                },
+                "documentSize": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "partnerReference": {
+                    "type": "string"
+                },
+                "promissoryNoteNumber": {
+                    "type": "string"
+                },
+                "registeredAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
                 }
             }
         },
