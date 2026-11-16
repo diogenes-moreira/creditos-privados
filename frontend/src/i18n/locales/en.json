@@ -119,7 +119,8 @@
     "riskProfile": "Financial data",
     "riskModel": "Risk model",
     "livestockQuota": "Livestock quota",
-    "livestockQuotaLookup": "Quota lookup"
+    "livestockQuotaLookup": "Quota lookup",
+    "livestockCreditLines": "CuppoGan credit lines"
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -1036,6 +1037,83 @@
         "vaccinatedCycles": "Vaccinated cycles (last 10)"
       },
       "outsideNote": "Credit bureaus and TVGAN purchases in 2026 are checked outside Prestia."
+    }
+  },
+  "livestockCreditLines": {
+    "title": "CuppoGan credit lines",
+    "subtitle": "Livestock credit lines CuppoGan activated once the promissory note was signed. Read-only.",
+    "filterLabel": "National ID",
+    "filterPlaceholder": "Exact national ID number",
+    "search": "Search",
+    "clear": "Clear",
+    "columns": {
+      "rancher": "Rancher",
+      "nationalId": "National ID",
+      "amount": "Amount",
+      "promissoryNote": "Promissory note",
+      "signedAt": "Signed",
+      "activatedAt": "Activated",
+      "status": "Status"
+    },
+    "empty": "No CuppoGan credit lines registered yet.",
+    "emptyFiltered": "No CuppoGan credit lines for national ID {{nationalId}}.",
+    "loadError": "The CuppoGan credit lines could not be loaded.",
+    "detail": {
+      "back": "Back to CuppoGan credit lines",
+      "title": "CuppoGan credit line",
+      "notFound": "That CuppoGan credit line does not exist.",
+      "loadError": "The CuppoGan credit line could not be loaded.",
+      "rancher": "Rancher",
+      "credit": "Credit line",
+      "signature": "Promissory note and signature",
+      "assessment": "Assessment it was granted on",
+      "noAssessment": "The quota assessment could not be read.",
+      "fields": {
+        "fullName": "Name",
+        "idType": "Document type",
+        "nationalId": "Document number",
+        "mobilePhone": "Mobile phone",
+        "amount": "Amount",
+        "status": "Status",
+        "promissoryNote": "Promissory note number",
+        "signedAt": "Signed on",
+        "activatedAt": "Activated on",
+        "registeredAt": "Registered in Prestia",
+        "partner": "Partner",
+        "partnerReference": "Partner reference",
+        "signatureProvider": "Signature provider",
+        "signatureDocumentId": "Signature document",
+        "signatureValidationId": "Signature validation",
+        "archiveUri": "Partner's copy",
+        "hash": "Promissory note SHA-256",
+        "size": "Size",
+        "assessmentId": "Assessment",
+        "quota": "Quota granted",
+        "strategy": "Strategy",
+        "tier": "Tier",
+        "engineQuota": "Engine quota",
+        "activeCeiling": "Ceiling that bound the quota",
+        "score": "Score",
+        "assessedAt": "Assessed on"
+      },
+      "strategies": {
+        "tiers": "Tiers",
+        "engine": "Individual engine"
+      },
+      "hashHelp": "The promissory note is checked against this hash every time it is opened.",
+      "viewNote": "View promissory note",
+      "downloadNote": "Download",
+      "copy": "Copy hash",
+      "copied": "Hash copied",
+      "noteCorrupted": "The stored promissory note does not match its registered SHA-256, so it is not shown. Tell the technical team.",
+      "noteError": "The promissory note could not be retrieved.",
+      "popupBlocked": "The browser blocked the new tab. Use \"Download\" or allow pop-ups.",
+      "empty": "—"
+    },
+    "lookupCard": {
+      "title": "Active CuppoGan credit line",
+      "body": "{{amount}} · promissory note {{note}} · activated on {{date}}",
+      "link": "View details"
     }
   }
 }

@@ -921,3 +921,61 @@ export interface RegistryQuotaResponse {
   assessment: LivestockQuotaAssessment;
   assumptions: string[];
 }
+
+// ==================== Livestock credit lines (CuppoGan) ====================
+
+export type LivestockCreditLineStatus = "active";
+
+/** A credit line a partner (CuppoGan) activated on a livestock quota. */
+export interface LivestockCreditLine {
+  id: string;
+  status: LivestockCreditLineStatus | string;
+  assessmentId: string;
+  nationalId: string;
+  idType: string;
+  fullName: string;
+  mobilePhone: string;
+  /** Decimal string, the value of record. */
+  amount: string;
+  currency: string;
+  partner: string;
+  partnerReference: string;
+  promissoryNoteNumber: string;
+  signedAt: string;
+  activatedAt: string;
+  createdAt: string;
+  documentSha256: string;
+  documentSize: number;
+}
+
+/** The quota assessment a credit line was granted on. */
+export interface LivestockCreditLineAssessment {
+  id: string;
+  quota: string;
+  currency: string;
+  strategy: "tiers" | "engine" | string;
+  tier?: string;
+  tierLabel?: string;
+  tierPolicyVersion?: string;
+  engineQuota: string;
+  activeCeiling: string;
+  score: number;
+  grade: string;
+  createdAt: string;
+}
+
+export interface LivestockCreditLineDetail extends LivestockCreditLine {
+  signatureProvider: string;
+  signatureDocumentId: string;
+  signatureValidationId: string;
+  partnerArchiveUri: string;
+  updatedAt: string;
+  assessment?: LivestockCreditLineAssessment;
+}
+
+export interface LivestockCreditLineFilter {
+  nationalId?: string;
+  status?: LivestockCreditLineStatus;
+  offset?: number;
+  limit?: number;
+}

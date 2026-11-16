@@ -119,7 +119,8 @@
     "riskProfile": "Dados financeiros",
     "riskModel": "Modelo de risco",
     "livestockQuota": "Cota pecuária",
-    "livestockQuotaLookup": "Consulta de cota"
+    "livestockQuotaLookup": "Consulta de cota",
+    "livestockCreditLines": "Limites CuppoGan"
   },
   "dashboard": {
     "welcome": "Bem-vindo",
@@ -1036,6 +1037,83 @@
         "vaccinatedCycles": "Ciclos vacinados (últimos 10)"
       },
       "outsideNote": "Birôs de crédito e compras na TVGAN em 2026 são verificados fora da Prestia."
+    }
+  },
+  "livestockCreditLines": {
+    "title": "Limites CuppoGan",
+    "subtitle": "Limites pecuários ativados pela CuppoGan quando a nota promissória foi assinada. Somente leitura.",
+    "filterLabel": "Documento",
+    "filterPlaceholder": "Número exato do documento",
+    "search": "Buscar",
+    "clear": "Limpar",
+    "columns": {
+      "rancher": "Pecuarista",
+      "nationalId": "Documento",
+      "amount": "Valor",
+      "promissoryNote": "Nota promissória",
+      "signedAt": "Assinada",
+      "activatedAt": "Ativado",
+      "status": "Status"
+    },
+    "empty": "Ainda não há limites CuppoGan registrados.",
+    "emptyFiltered": "Não há limites CuppoGan para o documento {{nationalId}}.",
+    "loadError": "Não foi possível carregar os limites CuppoGan.",
+    "detail": {
+      "back": "Voltar para Limites CuppoGan",
+      "title": "Limite CuppoGan",
+      "notFound": "Esse limite CuppoGan não existe.",
+      "loadError": "Não foi possível carregar o limite CuppoGan.",
+      "rancher": "Pecuarista",
+      "credit": "Limite",
+      "signature": "Nota promissória e assinatura",
+      "assessment": "Avaliação em que foi concedido",
+      "noAssessment": "Não foi possível ler a avaliação do limite.",
+      "fields": {
+        "fullName": "Nome",
+        "idType": "Tipo de documento",
+        "nationalId": "Número do documento",
+        "mobilePhone": "Celular",
+        "amount": "Valor",
+        "status": "Status",
+        "promissoryNote": "Número da nota promissória",
+        "signedAt": "Assinada em",
+        "activatedAt": "Ativado em",
+        "registeredAt": "Registrado no Prestia",
+        "partner": "Parceiro",
+        "partnerReference": "Referência do parceiro",
+        "signatureProvider": "Provedor de assinatura",
+        "signatureDocumentId": "Documento de assinatura",
+        "signatureValidationId": "Validação da assinatura",
+        "archiveUri": "Cópia do parceiro",
+        "hash": "SHA-256 da nota promissória",
+        "size": "Tamanho",
+        "assessmentId": "Avaliação",
+        "quota": "Limite concedido",
+        "strategy": "Estratégia",
+        "tier": "Faixa",
+        "engineQuota": "Limite pelo motor",
+        "activeCeiling": "Teto que limitou o valor",
+        "score": "Pontuação",
+        "assessedAt": "Avaliado em"
+      },
+      "strategies": {
+        "tiers": "Faixas",
+        "engine": "Motor individual"
+      },
+      "hashHelp": "A nota promissória é verificada contra este hash cada vez que é aberta.",
+      "viewNote": "Ver nota promissória",
+      "downloadNote": "Baixar",
+      "copy": "Copiar hash",
+      "copied": "Hash copiado",
+      "noteCorrupted": "A nota promissória armazenada não corresponde ao SHA-256 registrado, por isso não é exibida. Avise a equipe técnica.",
+      "noteError": "Não foi possível obter a nota promissória.",
+      "popupBlocked": "O navegador bloqueou a nova aba. Use \"Baixar\" ou permita pop-ups.",
+      "empty": "—"
+    },
+    "lookupCard": {
+      "title": "Limite CuppoGan ativo",
+      "body": "{{amount}} · nota promissória {{note}} · ativado em {{date}}",
+      "link": "Ver detalhes"
     }
   }
 }

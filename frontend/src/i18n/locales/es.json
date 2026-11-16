@@ -119,7 +119,8 @@
     "riskProfile": "Datos financieros",
     "riskModel": "Modelo de riesgo",
     "livestockQuota": "Cupo ganadero",
-    "livestockQuotaLookup": "Consulta de cupo"
+    "livestockQuotaLookup": "Consulta de cupo",
+    "livestockCreditLines": "Cupos CuppoGan"
   },
   "dashboard": {
     "welcome": "Bienvenido",
@@ -1036,6 +1037,83 @@
         "vaccinatedCycles": "Ciclos vacunados (últimos 10)"
       },
       "outsideNote": "Centrales de riesgo y compra a TVGAN en 2026 se verifican fuera de Prestia."
+    }
+  },
+  "livestockCreditLines": {
+    "title": "Cupos CuppoGan",
+    "subtitle": "Cupos ganaderos activados por CuppoGan al firmarse el pagaré. Solo lectura.",
+    "filterLabel": "Cédula",
+    "filterPlaceholder": "Número exacto de cédula",
+    "search": "Buscar",
+    "clear": "Limpiar",
+    "columns": {
+      "rancher": "Ganadero",
+      "nationalId": "Cédula",
+      "amount": "Monto",
+      "promissoryNote": "Pagaré",
+      "signedAt": "Firmado",
+      "activatedAt": "Activado",
+      "status": "Estado"
+    },
+    "empty": "Todavía no hay cupos CuppoGan registrados.",
+    "emptyFiltered": "No hay cupos CuppoGan para la cédula {{nationalId}}.",
+    "loadError": "No se pudieron cargar los cupos CuppoGan.",
+    "detail": {
+      "back": "Volver a Cupos CuppoGan",
+      "title": "Cupo CuppoGan",
+      "notFound": "No existe ese cupo CuppoGan.",
+      "loadError": "No se pudo cargar el cupo CuppoGan.",
+      "rancher": "Ganadero",
+      "credit": "Cupo",
+      "signature": "Pagaré y firma",
+      "assessment": "Evaluación con que se otorgó",
+      "noAssessment": "No se pudo leer la evaluación del cupo.",
+      "fields": {
+        "fullName": "Nombre",
+        "idType": "Tipo de documento",
+        "nationalId": "Número de documento",
+        "mobilePhone": "Celular",
+        "amount": "Monto",
+        "status": "Estado",
+        "promissoryNote": "Número de pagaré",
+        "signedAt": "Firmado el",
+        "activatedAt": "Activado el",
+        "registeredAt": "Registrado en Prestia",
+        "partner": "Aliado",
+        "partnerReference": "Referencia del aliado",
+        "signatureProvider": "Proveedor de firma",
+        "signatureDocumentId": "Documento de firma",
+        "signatureValidationId": "Validación de firma",
+        "archiveUri": "Copia del aliado",
+        "hash": "Huella SHA-256 del pagaré",
+        "size": "Tamaño",
+        "assessmentId": "Evaluación",
+        "quota": "Cupo otorgado",
+        "strategy": "Estrategia",
+        "tier": "Escalón",
+        "engineQuota": "Cupo según el motor",
+        "activeCeiling": "Techo que limitó el cupo",
+        "score": "Puntaje",
+        "assessedAt": "Evaluado el"
+      },
+      "strategies": {
+        "tiers": "Escalones",
+        "engine": "Motor individual"
+      },
+      "hashHelp": "El pagaré se verifica contra esta huella cada vez que se abre.",
+      "viewNote": "Ver pagaré",
+      "downloadNote": "Descargar",
+      "copy": "Copiar huella",
+      "copied": "Huella copiada",
+      "noteCorrupted": "El pagaré guardado no coincide con su huella SHA-256 registrada, así que no se muestra. Avisa al equipo técnico.",
+      "noteError": "No se pudo obtener el pagaré.",
+      "popupBlocked": "El navegador bloqueó la pestaña nueva. Usa \"Descargar\" o permite las ventanas emergentes.",
+      "empty": "—"
+    },
+    "lookupCard": {
+      "title": "Cupo CuppoGan activo",
+      "body": "{{amount}} · pagaré {{note}} · activado el {{date}}",
+      "link": "Ver detalle"
     }
   }
 }

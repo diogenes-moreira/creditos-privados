@@ -39,6 +39,7 @@ Gavel as GavelIcon,
   Tune as RiskModelIcon,
   Agriculture as LivestockIcon,
   ContentPasteSearch as QuotaLookupIcon,
+  ReceiptLong as CreditLinesIcon,
   FactCheck as RiskDataIcon,
   ManageAccounts as UsersIcon,
 } from "@mui/icons-material";
@@ -92,15 +93,19 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.riskModel"), path: "/admin/risk-model", icon: <RiskModelIcon /> },
     { label: t("nav.livestockQuota"), path: "/admin/livestock-quota", icon: <LivestockIcon /> },
     { label: t("nav.livestockQuotaLookup"), path: "/admin/livestock-quota-lookup", icon: <QuotaLookupIcon /> },
+    { label: t("nav.livestockCreditLines"), path: "/admin/livestock-credit-lines", icon: <CreditLinesIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
     { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },
     { label: t("nav.users"), path: "/admin/users", icon: <UsersIcon /> },
   ];
 
-  // An advisor only gets the counter tools: looking a rancher up and quoting
-  // their quota. Everything else on the admin menu changes policy or money.
+  // An advisor only gets the counter tools: looking a rancher up, quoting
+  // their quota and reading the CuppoGan credit lines. Everything else on the
+  // admin menu changes policy or money.
   const advisorNavItemsI18n = adminNavItemsI18n.filter((item) =>
-    item.path === "/admin/livestock-quota-lookup" || item.path === "/admin/clients"
+    item.path === "/admin/livestock-quota-lookup" ||
+    item.path === "/admin/livestock-credit-lines" ||
+    item.path === "/admin/clients"
   );
 
   const navItems =
@@ -145,7 +150,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {navItems.map((item) => (
           <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              selected={location.pathname === item.path}
+              selected={
+                location.pathname === item.path ||
+                (item.path === "/admin/livestock-credit-lines" &&
+                  location.pathname.startsWith(`${item.path}/`))
+              }
               onClick={() => handleNavClick(item.path)}
               sx={{
                 borderRadius: 2,

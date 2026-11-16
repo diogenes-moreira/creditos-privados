@@ -27,13 +27,18 @@ import {
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon, PersonAdd as PersonAddIcon, Person as PersonIcon } from "@mui/icons-material";
-import { adminAssessLivestockQuotaFromRegistry, adminSearchClients } from "../../api/endpoints";
+import {
+  adminAssessLivestockQuotaFromRegistry,
+  adminGetLivestockCreditLines,
+  adminSearchClients,
+} from "../../api/endpoints";
 import { useAuth } from "../../auth/AuthContext";
 import RegisterClientDialog from "../../components/RegisterClientDialog";
 import QuotaTierCard from "../../components/QuotaTierCard";
 import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 import { prefillFromRegistry, type RegistryPrefill } from "../../utils/registryClient";
 import { getErrorMessage } from "../../api/errorUtils";
+import { formatCreditAmount, formatDate } from "../../utils/creditLineFormat";
 import type {
   Client,
   LivestockQuotaAssessment,
@@ -180,6 +185,18 @@ const LivestockQuotaLookup: React.FC = () => {
     },
     enabled: !!foundId,
   });
+
+  // Whether the national ID already has an active CuppoGan credit line. Asked
+  // once the lookup settles, whatever its result: a rancher with a line keeps
+  // it even when the registry cannot be read right now.
+  const settledId = submitted && !isFetching ? submitted.nationalId : undefined;
+  const { data: creditLines } = useQuery({
+    queryKey: ["admin-livestock-credit-lines", "lookup", settledId],
+    queryFn: () =>
+      adminGetLivestockCreditLines({ nationalId: settledId, status: "active", limit: 1 }),
+    enabled: !!settledId,
+  });
+  const activeCreditLine = settledId ? creditLines?.data[0] : undefined;
 
   const openRegistration = async () => {
     if (!data) return;
@@ -339,6 +356,29 @@ const LivestockQuotaLookup: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>
+      )}
+
+      {activeCreditLine && (
+        <Alert
+          severity="success"
+          sx={{ mb: 3 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => navigate(`/admin/livestock-credit-lines/${activeCreditLine.id}`)}
+            >
+              {t("livestockCreditLines.lookupCard.link")}
+            </Button>
+          }
+        >
+          <AlertTitle>{t("livestockCreditLines.lookupCard.title")}</AlertTitle>
+          {t("livestockCreditLines.lookupCard.body", {
+            amount: formatCreditAmount(activeCreditLine.amount, activeCreditLine.currency),
+            note: activeCreditLine.promissoryNoteNumber,
+            date: formatDate(activeCreditLine.activatedAt),
+          })}
+        </Alert>
       )}
 
       {submitted && !isFetching && error && renderError()}
