@@ -10,6 +10,7 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,7 @@ type fakeCreditLines struct {
 	// hidden lines are stored but not found until the first Create fails,
 	// to play a concurrent request that registered the line first.
 	hidden []*model.LivestockCreditLine
+	listed []port.LivestockCreditLineFilter
 }
 
 func (f *fakeCreditLines) Create(_ context.Context, l *model.LivestockCreditLine, d *model.LivestockCreditLineDocument) error {
@@ -73,6 +75,29 @@ func (f *fakeCreditLines) FindByPartnerReference(_ context.Context, p, r string)
 
 func (f *fakeCreditLines) FindByAssessment(_ context.Context, id uuid.UUID) (*model.LivestockCreditLine, error) {
 	return f.find(func(l *model.LivestockCreditLine) bool { return l.AssessmentID == id })
+}
+
+func (f *fakeCreditLines) FindByID(_ context.Context, id uuid.UUID) (*model.LivestockCreditLine, error) {
+	return f.find(func(l *model.LivestockCreditLine) bool { return l.ID == id })
+}
+
+// List records the filter it was asked for and returns every line.
+func (f *fakeCreditLines) List(_ context.Context, filter port.LivestockCreditLineFilter) ([]model.LivestockCreditLine, int64, error) {
+	f.listed = append(f.listed, filter)
+	out := make([]model.LivestockCreditLine, 0, len(f.lines))
+	for _, l := range f.lines {
+		out = append(out, *l)
+	}
+	return out, int64(len(out)), nil
+}
+
+func (f *fakeCreditLines) FindDocument(_ context.Context, id uuid.UUID) (*model.LivestockCreditLineDocument, error) {
+	for _, d := range f.docs {
+		if d.CreditLineID == id {
+			return d, nil
+		}
+	}
+	return nil, nil
 }
 
 var note = []byte("%PDF-1.7\nsigned\n%%EOF")
@@ -187,4 +212,65 @@ func TestRegisterActivationLosingARaceAnswersWithTheWinner(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, created)
 	assert.Equal(t, winner.ID, line.ID)
+}
+
+func TestListNormalizesThePageAndRejectsUnknownStatuses(t *testing.T) {
+	s, lines, _ := creditFixture()
+
+	_, _, f, err := s.List(context.Background(), port.LivestockCreditLineFilter{Offset: -3})
+	require.NoError(t, err)
+	assert.Equal(t, 0, f.Offset)
+	assert.Equal(t, service.DefaultCreditLinePageSize, f.Limit)
+
+	_, _, f, err = s.List(context.Background(), port.LivestockCreditLineFilter{Limit: 5000, NationalID: "17788090", Status: model.LivestockCreditLineActive})
+	require.NoError(t, err)
+	assert.Equal(t, service.MaxCreditLinePageSize, f.Limit)
+	assert.Equal(t, "17788090", lines.listed[1].NationalID)
+
+	_, _, _, err = s.List(context.Background(), port.LivestockCreditLineFilter{Status: "closed"})
+	assert.ErrorIs(t, err, service.ErrInvalidCreditLineStatus)
+	assert.Len(t, lines.listed, 2)
+}
+
+func TestGetReturnsTheLineWithItsAssessment(t *testing.T) {
+	s, _, a := creditFixture()
+	line, _, err := s.RegisterActivation(context.Background(), a, "cuppogan")
+	require.NoError(t, err)
+
+	got, assessment, err := s.Get(context.Background(), line.ID)
+	require.NoError(t, err)
+	assert.Equal(t, line.ID, got.ID)
+	require.NotNil(t, assessment)
+	assert.Equal(t, a.AssessmentID, assessment.ID)
+
+	_, _, err = s.Get(context.Background(), uuid.New())
+	assert.ErrorIs(t, err, service.ErrCreditLineNotFound)
+}
+
+func TestPromissoryNoteChecksTheHashAndAuditsEveryAccess(t *testing.T) {
+	s, lines, a := creditFixture()
+	audit := &fakeAudit{}
+	s.WithAudit(service.NewAuditService(audit))
+	line, _, err := s.RegisterActivation(context.Background(), a, "cuppogan")
+	require.NoError(t, err)
+	viewer := uuid.New()
+
+	_, doc, err := s.PromissoryNote(context.Background(), line.ID, &viewer)
+	require.NoError(t, err)
+	assert.Equal(t, note, doc.Content)
+	last := audit.logs[len(audit.logs)-1]
+	assert.Equal(t, "view_livestock_promissory_note", last.Action)
+	assert.Equal(t, &viewer, last.UserID)
+	assert.Equal(t, line.ID.String(), last.EntityID)
+
+	// A byte changed in storage: the note is not served, and the failure is recorded.
+	tampered := append([]byte(nil), note...)
+	tampered[len(tampered)-1] = 'X'
+	lines.docs[0].Content = tampered
+	_, _, err = s.PromissoryNote(context.Background(), line.ID, &viewer)
+	assert.ErrorIs(t, err, service.ErrPromissoryNoteCorrupted)
+	assert.Equal(t, "promissory_note_integrity_failed", audit.logs[len(audit.logs)-1].Action)
+
+	_, _, err = s.PromissoryNote(context.Background(), uuid.New(), &viewer)
+	assert.ErrorIs(t, err, service.ErrCreditLineNotFound)
 }

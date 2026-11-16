@@ -30,6 +30,8 @@ import Reports from "./pages/admin/Reports";
 import AdminRiskModel from "./pages/admin/RiskModel";
 import AdminLivestockQuota from "./pages/admin/LivestockQuota";
 import AdminLivestockQuotaLookup from "./pages/admin/LivestockQuotaLookup";
+import AdminLivestockCreditLines from "./pages/admin/LivestockCreditLines";
+import AdminLivestockCreditLineDetail from "./pages/admin/LivestockCreditLineDetail";
 import VendorListAdmin from "./pages/admin/VendorList";
 import UsersAdmin from "./pages/admin/Users";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
@@ -180,6 +182,16 @@ const App: React.FC = () => {
       <Route path="/admin/livestock-quota-lookup" element={
         <ProtectedRoute requiredRole={["admin", "advisor"]}>
           <AppLayout><AdminLivestockQuotaLookup /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/livestock-credit-lines" element={
+        <ProtectedRoute requiredRole={["admin", "advisor"]}>
+          <AppLayout><AdminLivestockCreditLines /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/livestock-credit-lines/:id" element={
+        <ProtectedRoute requiredRole={["admin", "advisor"]}>
+          <AppLayout><AdminLivestockCreditLineDetail /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/audit" element={

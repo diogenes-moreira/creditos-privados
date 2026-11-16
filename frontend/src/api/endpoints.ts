@@ -65,6 +65,9 @@ import type {
   UserListResponse,
   CreateUserRequest,
   UserRole,
+  LivestockCreditLine,
+  LivestockCreditLineDetail,
+  LivestockCreditLineFilter,
   LivestockQuotaPolicy,
   LivestockRegistryIdType,
   RegistryQuotaResponse,
@@ -758,4 +761,60 @@ export const adminAssessLivestockQuotaFromRegistry = async (
     ...(idType ? { idType } : {}),
   });
   return res.data;
+};
+
+// ==================== Admin/advisor: Livestock credit lines ====================
+
+/**
+ * Lists the credit lines CuppoGan activated, most recently activated first.
+ * With a national ID it searches by POST so the ID stays out of the URL (and
+ * the request logs), like the quota lookup.
+ */
+export const adminGetLivestockCreditLines = async (
+  filter: LivestockCreditLineFilter = {}
+): Promise<PaginatedResponse<LivestockCreditLine>> => {
+  const { nationalId, status, offset = 0, limit = 20 } = filter;
+  const trimmed = nationalId?.trim();
+  if (trimmed) {
+    const res = await apiClient.post("/admin/livestock-credit-lines/search", {
+      nationalId: trimmed,
+      ...(status ? { status } : {}),
+      offset,
+      limit,
+    });
+    return res.data;
+  }
+  const res = await apiClient.get("/admin/livestock-credit-lines", {
+    params: { offset, limit, ...(status ? { status } : {}) },
+  });
+  return res.data;
+};
+
+export const adminGetLivestockCreditLine = async (id: string): Promise<LivestockCreditLineDetail> => {
+  const res = await apiClient.get(`/admin/livestock-credit-lines/${id}`);
+  return res.data;
+};
+
+/**
+ * Fetches the signed promissory note with the session's token (a plain link
+ * would not carry it). Errors come back as a Blob; their JSON body is parsed
+ * back so callers can read the error code.
+ */
+export const adminDownloadPromissoryNote = async (id: string): Promise<Blob> => {
+  try {
+    const res = await apiClient.get(`/admin/livestock-credit-lines/${id}/promissory-note`, {
+      responseType: "blob",
+    });
+    return new Blob([res.data], { type: "application/pdf" });
+  } catch (error) {
+    const response = (error as { response?: { data?: unknown } })?.response;
+    if (response?.data instanceof Blob) {
+      try {
+        response.data = JSON.parse(await response.data.text());
+      } catch {
+        // Not JSON: leave the error as it came.
+      }
+    }
+    throw error;
+  }
 };

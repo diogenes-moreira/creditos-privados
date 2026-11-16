@@ -10,11 +10,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"sort"
 	"testing"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
 	"github.com/gin-gonic/gin"
@@ -54,6 +56,40 @@ func (m *memoryCreditLines) FindByPartnerReference(_ context.Context, p, r strin
 
 func (m *memoryCreditLines) FindByAssessment(_ context.Context, id uuid.UUID) (*model.LivestockCreditLine, error) {
 	return m.find(func(l *model.LivestockCreditLine) bool { return l.AssessmentID == id })
+}
+
+func (m *memoryCreditLines) FindByID(_ context.Context, id uuid.UUID) (*model.LivestockCreditLine, error) {
+	return m.find(func(l *model.LivestockCreditLine) bool { return l.ID == id })
+}
+
+// List filters like the Postgres repository: exact national ID and status,
+// most recently activated first, then the page.
+func (m *memoryCreditLines) List(_ context.Context, f port.LivestockCreditLineFilter) ([]model.LivestockCreditLine, int64, error) {
+	var matched []model.LivestockCreditLine
+	for _, l := range m.lines {
+		if (f.NationalID == "" || l.NationalID == f.NationalID) && (f.Status == "" || l.Status == f.Status) {
+			matched = append(matched, *l)
+		}
+	}
+	sort.SliceStable(matched, func(i, j int) bool { return matched[i].ActivatedAt.After(matched[j].ActivatedAt) })
+	total := int64(len(matched))
+	if f.Offset >= len(matched) {
+		return []model.LivestockCreditLine{}, total, nil
+	}
+	matched = matched[f.Offset:]
+	if f.Limit < len(matched) {
+		matched = matched[:f.Limit]
+	}
+	return matched, total, nil
+}
+
+func (m *memoryCreditLines) FindDocument(_ context.Context, id uuid.UUID) (*model.LivestockCreditLineDocument, error) {
+	for _, d := range m.docs {
+		if d.CreditLineID == id {
+			return d, nil
+		}
+	}
+	return nil, nil
 }
 
 var signedPDF = []byte("%PDF-1.7\n1 0 obj << >> endobj\n%%EOF")

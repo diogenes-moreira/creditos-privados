@@ -314,6 +314,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		advisorRoutes.GET("/clients/:id/account", clientHandler.GetClientAccount)
 		advisorRoutes.GET("/clients/:id/account/movements", clientHandler.GetClientMovements)
 		advisorRoutes.POST("/livestock-quotas/registry", livestockQuotaHandler.AssessFromRegistry)
+		// Credit lines partners activated on a livestock quota, read-only,
+		// with the signed promissory note.
+		livestockCreditLineHandler.RegisterBackOfficeRoutes(advisorRoutes)
 	}
 
 	adminRoutes := authenticated.Group("/admin")

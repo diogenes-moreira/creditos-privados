@@ -16,4 +16,20 @@ type LivestockCreditLineRepository interface {
 	FindByPromissoryNote(ctx context.Context, number string) (*model.LivestockCreditLine, error)
 	FindByPartnerReference(ctx context.Context, partner, reference string) (*model.LivestockCreditLine, error)
 	FindByAssessment(ctx context.Context, assessmentID uuid.UUID) (*model.LivestockCreditLine, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.LivestockCreditLine, error)
+	// List returns a page of the lines matching the filter, most recently
+	// activated first, and how many match in all. It never loads documents.
+	List(ctx context.Context, filter LivestockCreditLineFilter) ([]model.LivestockCreditLine, int64, error)
+	// FindDocument returns the signed promissory note of a line.
+	FindDocument(ctx context.Context, creditLineID uuid.UUID) (*model.LivestockCreditLineDocument, error)
+}
+
+// LivestockCreditLineFilter selects credit lines for the back office. Empty
+// fields do not filter.
+type LivestockCreditLineFilter struct {
+	// NationalID matches exactly.
+	NationalID string
+	Status     model.LivestockCreditLineStatus
+	Offset     int
+	Limit      int
 }
