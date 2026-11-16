@@ -10,6 +10,8 @@ import (
 // LivestockQuotaRepository stores livestock quota assessments for audit.
 type LivestockQuotaRepository interface {
 	Create(ctx context.Context, a *model.LivestockQuotaAssessment) error
+	// FindByID returns nil, nil when there is no such assessment.
+	FindByID(ctx context.Context, id uuid.UUID) (*model.LivestockQuotaAssessment, error)
 }
 
 // LivestockQuotaPolicyRepository stores the versioned parameter sets the

@@ -113,6 +113,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	creditHistoryRepo := postgres.NewCreditHistoryRepository(r.db)
 	livestockQuotaRepo := postgres.NewLivestockQuotaRepository(r.db)
 	livestockPolicyRepo := postgres.NewLivestockQuotaPolicyRepository(r.db)
+	livestockCreditLineRepo := postgres.NewLivestockCreditLineRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
@@ -206,6 +207,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	}
 	livestockQuotaHandler := handler.NewLivestockQuotaHandler(livestockQuotaService)
 	livestockPolicyHandler := handler.NewLivestockQuotaPolicyHandler(livestockPolicyService)
+	livestockCreditLineHandler := handler.NewLivestockCreditLineHandler(
+		service.NewLivestockCreditLineService(livestockCreditLineRepo, livestockQuotaRepo).WithAudit(auditService))
 
 	// Optional path prefix for when the service is mounted under a sub-path.
 	// Empty by default: the app is served from the root.
@@ -237,8 +240,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		cuppogan := middleware.RequireServiceKey("cuppogan", r.partners.CuppoganAPIKey)
 		api.POST("/livestock-quotas", cuppogan, livestockQuotaHandler.Assess)
 		api.POST("/livestock-quotas/registry", cuppogan, livestockQuotaHandler.AssessFromRegistryForPartner)
+		api.POST("/livestock-quotas/activations", cuppogan, livestockCreditLineHandler.RegisterActivation)
 	} else {
-		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas and /livestock-quotas/registry disabled")
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry and /livestock-quotas/activations disabled")
 	}
 
 	// Authenticated routes

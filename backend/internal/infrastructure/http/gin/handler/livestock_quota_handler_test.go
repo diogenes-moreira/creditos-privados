@@ -14,6 +14,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,6 +29,15 @@ type memoryLivestockQuotaRepo struct {
 func (m *memoryLivestockQuotaRepo) Create(_ context.Context, a *model.LivestockQuotaAssessment) error {
 	m.saved = append(m.saved, a)
 	return nil
+}
+
+func (m *memoryLivestockQuotaRepo) FindByID(_ context.Context, id uuid.UUID) (*model.LivestockQuotaAssessment, error) {
+	for _, a := range m.saved {
+		if a.ID == id {
+			return a, nil
+		}
+	}
+	return nil, nil
 }
 
 func newLivestockQuotaRouter(repo *memoryLivestockQuotaRepo) *gin.Engine {

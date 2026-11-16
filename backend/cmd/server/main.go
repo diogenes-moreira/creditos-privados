@@ -72,6 +72,8 @@ func main() {
 		&model.LivestockQuotaAssessment{},
 		&model.LivestockQuotaPolicy{},
 		&model.LivestockUGGFactor{},
+		&model.LivestockCreditLine{},
+		&model.LivestockCreditLineDocument{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
