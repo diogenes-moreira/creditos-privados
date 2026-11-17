@@ -172,6 +172,7 @@ npm run dev    # http://localhost:4321
 | `ODOO_API_TIMEOUT_SECONDS` | Tope por petición a Odoo | `15` |
 | `ODOO_API_REQUESTS_PER_MINUTE` / `ODOO_API_REQUESTS_PER_HOUR` | Límite propio de Prestia hacia Odoo, por instancia (Odoo admite 60/min y 600/h por IP, compartidos con cuppogan-service) | `15` / `150` |
 | `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `15` |
+| `SCHEDULER_API_KEY` | Clave (`X-API-Key`) con la que Cloud Scheduler dispara la sincronización con Odoo. Sin ella, la ruta no existe | - |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |
@@ -422,13 +423,13 @@ Build del frontend: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
 
 ### Cartera en Odoo (cupos CuppoGan)
 
-La integración con el Odoo de TVGAN queda apagada hasta crear el secreto del token. Para encenderla:
+Encendida desde el 2026-11-17 contra producción (`https://www.tvgan.com.co/api/v1/cuppogan`):
 
-1. Crear el secreto `ODOO_API_TOKEN` en Secret Manager (token de producción que entrega TVGAN) y darle acceso a la cuenta de servicio de Cloud Run.
-2. En `.github/workflows/deploy.yml`, agregar `||ODOO_API_BASE_URL=<URL de producción>` al final de `--set-env-vars` y `,ODOO_API_TOKEN=ODOO_API_TOKEN:latest` al final de `--set-secrets`. Agregarlo **antes** de crear el secreto rompe el deploy.
-3. Informar a TVGAN la IP pública de salida de Prestia para su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás).
+- Token: secreto `ODOO_API_TOKEN` en Secret Manager (el mismo que usa cuppogan-service), con acceso para la cuenta de servicio de Cloud Run. `deploy.yml` lo monta en `--set-secrets` y la URL va en `--set-env-vars`; sin el secreto el deploy falla.
+- IP de salida: Prestia y cuppogan-service salen a internet por el conector Serverless VPC Access `cuppogan-egress-conn` + Cloud NAT, con la IP fija `34.30.16.187`, que TVGAN tiene en su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás). Los deploys conservan el conector.
+- Para apagarla: quitar las dos entradas de `deploy.yml` (la cartera queda deshabilitada y lo guardado se sigue viendo).
 
-La sincronización periódica corre dentro del proceso: con `--min-instances=0` y CPU asignada solo durante las peticiones, Cloud Run puede no ejecutarla a tiempo. El botón «Actualizar desde Odoo» de cada cupo no depende de ella.
+Sincronización automática: Cloud Scheduler (`prestia-odoo-sync`, us-central1) llama cada 15 minutos a `POST /api/v1/livestock-credit-portfolio/odoo/sync` con el header `X-API-Key` = secreto `SCHEDULER_API_KEY` (sin el secreto la ruta no se registra). Es la misma ronda que el temporizador interno (`ODOO_SYNC_INTERVAL_MINUTES`), que en Cloud Run con `--min-instances=0` solo corre mientras hay una instancia viva. El botón «Actualizar desde Odoo» de cada cupo sigue disponible.
 
 ## Deploy con Docker (self-hosted)
 

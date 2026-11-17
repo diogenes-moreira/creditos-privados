@@ -177,6 +177,9 @@ type TwilioConfig struct {
 type PartnersConfig struct {
 	// CuppoganAPIKey authenticates CuppoGan on POST /livestock-quotas.
 	CuppoganAPIKey string
+	// SchedulerAPIKey authenticates Cloud Scheduler on the unattended Odoo
+	// sync (POST /livestock-credit-portfolio/odoo/sync).
+	SchedulerAPIKey string
 }
 
 // OdooConfig points at TVGAN's Odoo API for CuppoGan (/api/v1/cuppogan),
@@ -287,7 +290,8 @@ func Load() *Config {
 			TemplateSID: getEnv("TWILIO_WHATSAPP_TEMPLATE_SID", ""),
 		},
 		Partners: PartnersConfig{
-			CuppoganAPIKey: getEnv("CUPPOGAN_API_KEY", ""),
+			CuppoganAPIKey:  getEnv("CUPPOGAN_API_KEY", ""),
+			SchedulerAPIKey: getEnv("SCHEDULER_API_KEY", ""),
 		},
 		Odoo: OdooConfig{
 			BaseURL:             getEnv("ODOO_API_BASE_URL", ""),

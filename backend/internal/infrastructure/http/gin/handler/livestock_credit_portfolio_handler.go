@@ -33,6 +33,31 @@ func (h *LivestockCreditPortfolioHandler) RegisterRoutes(g gin.IRoutes) {
 	g.GET("/livestock-credit-portfolio/banks", h.ListBanks)
 }
 
+// RegisterSchedulerRoutes mounts the unattended sync on a group that already
+// authenticates the scheduler (a service key, not a user).
+func (h *LivestockCreditPortfolioHandler) RegisterSchedulerRoutes(g gin.IRoutes) {
+	g.POST("/livestock-credit-portfolio/odoo/sync", h.SyncAllFromOdoo)
+}
+
+// SyncAllFromOdoo godoc
+// @Summary Update every credit line from Odoo (scheduler)
+// @Description One unattended sync round, the same the in-process timer runs: active lines, least recently synced first, until the hourly request budget reaches the share kept for staff. Lines repeated in Odoo (ambiguous) wait for staff. Meant for Cloud Scheduler: on Cloud Run the in-process timer only runs while an instance is up. Authenticated with the scheduler's service key (X-API-Key).
+// @Tags Livestock credit portfolio
+// @Produce json
+// @Success 200 {object} dto.PortfolioSyncRoundResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 503 {object} dto.PortfolioErrorResponse
+// @Security ServiceKey
+// @Router /livestock-credit-portfolio/odoo/sync [post]
+func (h *LivestockCreditPortfolioHandler) SyncAllFromOdoo(c *gin.Context) {
+	n, err := h.service.SyncAll(c.Request.Context())
+	if err != nil {
+		portfolioError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.PortfolioSyncRoundResponse{Synced: n})
+}
+
 // GetPortfolio godoc
 // @Summary Get a credit line's portfolio (Odoo)
 // @Description What Prestia last read from TVGAN's Odoo for the line: the link to the Odoo contact, the credit snapshot Odoo computes (approved, used, available, overdue days, can buy and why not), the quota invoices with their installments (open ones first, by the due date of their oldest unpaid installment), the payments registered from Prestia and the block history. It does not call Odoo. Advisors and administrators.

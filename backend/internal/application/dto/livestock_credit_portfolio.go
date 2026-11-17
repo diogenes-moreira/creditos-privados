@@ -271,3 +271,9 @@ func ToLivestockCreditPortfolioResponse(enabled bool, line *model.LivestockCredi
 	}
 	return r
 }
+
+// PortfolioSyncRoundResponse is the outcome of one unattended sync round.
+type PortfolioSyncRoundResponse struct {
+	// Synced is how many credit lines were refreshed from Odoo.
+	Synced int `json:"synced"`
+}
