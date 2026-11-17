@@ -422,11 +422,11 @@ Build del frontend: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
 
 ### Cartera en Odoo (cupos CuppoGan)
 
-La integración con el Odoo de TVGAN queda apagada hasta crear el secreto del token. Para encenderla:
+Encendida desde el 2026-11-17 contra producción (`https://www.tvgan.com.co/api/v1/cuppogan`):
 
-1. Crear el secreto `ODOO_API_TOKEN` en Secret Manager (token de producción que entrega TVGAN) y darle acceso a la cuenta de servicio de Cloud Run.
-2. En `.github/workflows/deploy.yml`, agregar `||ODOO_API_BASE_URL=<URL de producción>` al final de `--set-env-vars` y `,ODOO_API_TOKEN=ODOO_API_TOKEN:latest` al final de `--set-secrets`. Agregarlo **antes** de crear el secreto rompe el deploy.
-3. Informar a TVGAN la IP pública de salida de Prestia para su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás).
+- Token: secreto `ODOO_API_TOKEN` en Secret Manager (el mismo que usa cuppogan-service), con acceso para la cuenta de servicio de Cloud Run. `deploy.yml` lo monta en `--set-secrets` y la URL va en `--set-env-vars`; sin el secreto el deploy falla.
+- IP de salida: Prestia y cuppogan-service salen a internet por el conector Serverless VPC Access `cuppogan-egress-conn` + Cloud NAT, con la IP fija `34.30.16.187`, que TVGAN tiene en su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás). Los deploys conservan el conector.
+- Para apagarla: quitar las dos entradas de `deploy.yml` (la cartera queda deshabilitada y lo guardado se sigue viendo).
 
 La sincronización periódica corre dentro del proceso: con `--min-instances=0` y CPU asignada solo durante las peticiones, Cloud Run puede no ejecutarla a tiempo. El botón «Actualizar desde Odoo» de cada cupo no depende de ella.
 
