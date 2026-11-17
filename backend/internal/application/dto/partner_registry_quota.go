@@ -15,10 +15,13 @@ type PartnerRegistryQuotaRequest struct {
 // PartnerRancherResponse is who the RUV says the national ID belongs to, with
 // every predio and cycle reported. The partner needs the predios to fill the
 // promissory note (notification address) and to cite the RUV code to the
-// rancher; the contact data stays out, since the partner already holds it.
+// rancher, and the e-mail for the promissory note and the electronic invoice of
+// ranchers it has none for (most write in by WhatsApp). The phone stays out:
+// the partner already holds the one the rancher writes from.
 type PartnerRancherResponse struct {
 	NationalID string                    `json:"nationalId"`
 	Name       string                    `json:"name"`
+	Email      string                    `json:"email,omitempty"`
 	Holdings   []RegistryHoldingResponse `json:"holdings"`
 }
 
@@ -41,6 +44,7 @@ func ToPartnerRegistryQuotaResponse(r *service.RegistryAssessment) PartnerRegist
 		Rancher: PartnerRancherResponse{
 			NationalID: r.Rancher.NationalID,
 			Name:       r.Rancher.Name,
+			Email:      r.Rancher.Email,
 			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
 		},
 		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment, r.Tier),

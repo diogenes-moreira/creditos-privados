@@ -278,7 +278,13 @@ func (c *Client) FindByNationalID(ctx context.Context, idType, id string) (*port
 	for _, rec := range body.Data {
 		if rancher.Name == "" {
 			rancher.Name = strings.TrimSpace(rec.Ganadero)
+		}
+		// The contact data comes in every record, but some predios leave it blank:
+		// keep the first one given.
+		if rancher.Phone == "" {
 			rancher.Phone = strings.TrimSpace(rec.Celular)
+		}
+		if rancher.Email == "" {
 			rancher.Email = strings.TrimSpace(rec.Correo)
 		}
 		rancher.Holdings = append(rancher.Holdings, port.RUVHolding{

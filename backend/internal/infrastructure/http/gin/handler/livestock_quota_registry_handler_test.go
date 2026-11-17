@@ -85,8 +85,8 @@ func TestPartnerRegistryQuotaReadsTheRUVAndSumsEachPredioOnce(t *testing.T) {
 	assert.Equal(t, 66+5, resp.Assessment.Head, "each predio at its latest cycle")
 	assert.Equal(t, "onboarding-42", resp.Assessment.Reference)
 	assert.NotEmpty(t, resp.Assumptions)
-	assert.NotContains(t, w.Body.String(), "ganadero@example.com", "contact data is not returned")
-	assert.NotContains(t, w.Body.String(), "3000000000", "contact data is not returned")
+	assert.Equal(t, "ganadero@example.com", resp.Rancher.Email, "the e-mail goes to the promissory note and the invoice")
+	assert.NotContains(t, w.Body.String(), "3000000000", "the phone is not returned")
 	assert.Equal(t, "GANADERO DE PRUEBA", resp.Rancher.Name)
 	require.Len(t, resp.Rancher.Holdings, 3, "every predio and cycle, so the partner can pick its own")
 	assert.Equal(t, dto.RegistryHoldingResponse{Code: "100", Department: "CAUCA", Year: 2026, Cycle: 1, Head: 66},
