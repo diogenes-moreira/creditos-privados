@@ -946,6 +946,20 @@ export interface LivestockCreditLine {
   createdAt: string;
   documentSha256: string;
   documentSize: number;
+  /** Link to TVGAN's Odoo and the overdue days and block of its snapshot. */
+  odoo?: LivestockCreditLineOdooSummary;
+}
+
+export type OdooLinkStatus = "pending" | "linked" | "not_in_odoo" | "ambiguous";
+
+export interface LivestockCreditLineOdooSummary {
+  linkStatus: OdooLinkStatus | string;
+  /** Whether Odoo's credit snapshot was ever read. */
+  synced: boolean;
+  overdueDays: number;
+  blocked: boolean;
+  canBuy: boolean;
+  snapshotAt?: string;
 }
 
 /** The quota assessment a credit line was granted on. */
@@ -978,4 +992,121 @@ export interface LivestockCreditLineFilter {
   status?: LivestockCreditLineStatus;
   offset?: number;
   limit?: number;
+}
+
+// ==================== Livestock credit portfolio (Odoo) ====================
+
+export interface OdooPartnerCandidate {
+  id: number;
+  name: string;
+  document: string;
+  city: string;
+  state: string;
+}
+
+/** The credit block as Odoo computed it. Decimal strings, never recomputed. */
+export interface LivestockCreditOdooCredit {
+  validationStatus: string;
+  approved: boolean;
+  approvedAmount: string;
+  usedAmount: string;
+  availableAmount: string;
+  overdueDays: number;
+  blocked: boolean;
+  canBuy: boolean;
+  blockReason: string;
+  promissoryNoteDate: string;
+  lastUpdate: string;
+  snapshotAt: string;
+}
+
+export interface LivestockCreditOdooState {
+  enabled: boolean;
+  linkStatus: OdooLinkStatus | string;
+  partnerId?: number;
+  candidates: OdooPartnerCandidate[];
+  credit?: LivestockCreditOdooCredit;
+  lastSyncAt?: string;
+  lastSyncError?: string;
+  lastSyncErrorCode?: string;
+}
+
+export interface LivestockCreditInstallment {
+  number: number;
+  dueDate: string;
+  amount: string;
+  residual: string;
+}
+
+export interface LivestockCreditInvoice {
+  odooInvoiceId: number;
+  number: string;
+  order: string;
+  date: string;
+  dueDate: string;
+  amountTotal: string;
+  amountResidual: string;
+  paymentState: string;
+  open: boolean;
+  nextDueDate: string;
+  installments: LivestockCreditInstallment[];
+  syncedAt: string;
+}
+
+export type LivestockCreditPaymentStatus = "registered" | "already_registered" | "failed";
+
+export interface LivestockCreditPayment {
+  id: string;
+  odooInvoiceId: number;
+  invoiceNumber: string;
+  amount: string;
+  date: string;
+  bank: string;
+  reference: string;
+  status: LivestockCreditPaymentStatus | string;
+  odooPaymentId?: number;
+  odooPaymentNumber: string;
+  errorCode?: string;
+  errorMessage?: string;
+  registeredBy: string;
+  createdAt: string;
+}
+
+export interface LivestockCreditBlockEvent {
+  id: string;
+  blocked: boolean;
+  reason: string;
+  by: string;
+  createdAt: string;
+}
+
+export interface LivestockCreditPortfolio {
+  creditLineId: string;
+  odoo: LivestockCreditOdooState;
+  /** Open first, by the due date of their oldest unpaid installment. */
+  invoices: LivestockCreditInvoice[];
+  suggestedInvoiceId?: number;
+  payments: LivestockCreditPayment[];
+  blockEvents: LivestockCreditBlockEvent[];
+}
+
+export interface RegisterLivestockCreditPaymentRequest {
+  invoiceId: number;
+  /** Decimal string. */
+  amount: string;
+  date: string;
+  bank: string;
+  reference: string;
+}
+
+export interface LivestockCreditPaymentResult {
+  payment: LivestockCreditPayment;
+  replayed: boolean;
+  portfolio: LivestockCreditPortfolio;
+}
+
+export interface OdooBank {
+  bank: string;
+  journal: string;
+  account: string;
 }

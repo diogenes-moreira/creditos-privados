@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material";
 import { adminDownloadPromissoryNote, adminGetLivestockCreditLine } from "../../api/endpoints";
 import StatusBadge from "../../components/StatusBadge";
+import LivestockCreditPortfolio from "./LivestockCreditPortfolio";
 import { getErrorMessage } from "../../api/errorUtils";
 import { useNotification } from "../../contexts/NotificationContext";
 import type { LivestockCreditLineDetail as Detail } from "../../api/types";
@@ -224,6 +225,8 @@ const LivestockCreditLineDetail: React.FC = () => {
       </Card>
 
       <Stack spacing={3}>
+        <LivestockCreditPortfolio lineId={line.id} currency={line.currency} />
+
         {section(
           t("livestockCreditLines.detail.rancher"),
           <>

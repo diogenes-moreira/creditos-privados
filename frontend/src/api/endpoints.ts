@@ -68,6 +68,10 @@ import type {
   LivestockCreditLine,
   LivestockCreditLineDetail,
   LivestockCreditLineFilter,
+  LivestockCreditPortfolio,
+  LivestockCreditPaymentResult,
+  OdooBank,
+  RegisterLivestockCreditPaymentRequest,
   LivestockQuotaPolicy,
   LivestockRegistryIdType,
   RegistryQuotaResponse,
@@ -817,4 +821,46 @@ export const adminDownloadPromissoryNote = async (id: string): Promise<Blob> => 
     }
     throw error;
   }
+};
+
+// ==================== Admin/advisor: Livestock credit portfolio (Odoo) ====================
+
+/** What Prestia last read from Odoo for the line; does not call Odoo. */
+export const adminGetLivestockCreditPortfolio = async (id: string): Promise<LivestockCreditPortfolio> => {
+  const res = await apiClient.get(`/admin/livestock-credit-lines/${id}/portfolio`);
+  return res.data;
+};
+
+/** "Actualizar desde Odoo": links the line if needed and refreshes it now. */
+export const adminSyncLivestockCreditLine = async (id: string): Promise<LivestockCreditPortfolio> => {
+  const res = await apiClient.post(`/admin/livestock-credit-lines/${id}/odoo/sync`);
+  return res.data;
+};
+
+/** Links the line to the Odoo contact staff picked (ambiguous national ID). */
+export const adminLinkOdooPartner = async (id: string, partnerId: number): Promise<LivestockCreditPortfolio> => {
+  const res = await apiClient.put(`/admin/livestock-credit-lines/${id}/odoo/partner`, { partnerId });
+  return res.data;
+};
+
+export const adminRegisterLivestockCreditPayment = async (
+  id: string,
+  payment: RegisterLivestockCreditPaymentRequest
+): Promise<LivestockCreditPaymentResult> => {
+  const res = await apiClient.post(`/admin/livestock-credit-lines/${id}/payments`, payment);
+  return res.data;
+};
+
+export const adminSetLivestockCreditBlock = async (
+  id: string,
+  blocked: boolean,
+  reason: string
+): Promise<LivestockCreditPortfolio> => {
+  const res = await apiClient.post(`/admin/livestock-credit-lines/${id}/block`, { blocked, reason });
+  return res.data;
+};
+
+export const adminGetOdooBanks = async (): Promise<OdooBank[]> => {
+  const res = await apiClient.get("/admin/livestock-credit-portfolio/banks");
+  return res.data.banks;
 };
