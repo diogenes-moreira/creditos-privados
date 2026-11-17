@@ -1323,6 +1323,8 @@ definitions:
     type: object
   dto.PartnerRancherResponse:
     properties:
+      email:
+        type: string
       holdings:
         items:
           $ref: '#/definitions/dto.RegistryHoldingResponse'

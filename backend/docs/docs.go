@@ -7377,6 +7377,9 @@ const docTemplate = `{
         "dto.PartnerRancherResponse": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "holdings": {
                     "type": "array",
                     "items": {
