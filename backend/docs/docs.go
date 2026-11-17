@@ -1480,6 +1480,398 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/livestock-credit-lines/{id}/block": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sends only credit.blocked to Odoo (the other credit fields belong to CuppoGan's service) and keeps the decision, its mandatory reason and who took it in Prestia's history. Odoo's own block for overdue installments is independent. Advisors and administrators.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "Block or unblock a rancher's purchases on the quota",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Block or unblock, with the reason",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetLivestockCreditBlockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPortfolioResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}/odoo/partner": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "For a national ID repeated in Odoo (ambiguous): links the line to the contact staff picks. Odoo is read to check the contact's document is the line's national ID (or that Odoo's search by it returned the contact); then the snapshot and invoices are loaded. Advisors and administrators.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "Link a credit line to an Odoo contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Odoo contact id",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LinkOdooPartnerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPortfolioResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}/odoo/sync": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reads the line's Odoo contact now: links it by national ID if it is not linked yet (one match links it, none leaves it not_in_odoo, several leave it ambiguous for staff to pick), then stores the credit snapshot and every quota invoice. Odoo failures are kept as the line's last sync error. Advisors and administrators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "Update a credit line from Odoo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPortfolioResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}/payments": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates the payment (amount above zero and at most the invoice's balance, read from Odoo now; date not in the future, today when empty; a bank Odoo accepts; a reference not used by another payment) and sends it to Odoo, which applies it to the invoice's oldest installment. 201: registered. 200: Odoo already had that reference (status already_registered, nothing duplicated) or a double submission of a stored payment (replayed). 422 odoo_rejected: Odoo refused it; it is stored as failed with Odoo's code. 503: Odoo unavailable; nothing stored, retry with the same reference. Advisors and administrators.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "Register a rancher's payment in Odoo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterLivestockCreditPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPaymentResult"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPaymentResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-lines/{id}/portfolio": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "What Prestia last read from TVGAN's Odoo for the line: the link to the Odoo contact, the credit snapshot Odoo computes (approved, used, available, overdue days, can buy and why not), the quota invoices with their installments (open ones first, by the due date of their oldest unpaid installment), the payments registered from Prestia and the block history. It does not call Odoo. Advisors and administrators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "Get a credit line's portfolio (Odoo)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Credit line UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockCreditPortfolioResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/livestock-credit-lines/{id}/promissory-note": {
             "get": {
                 "security": [
@@ -1539,6 +1931,49 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/livestock-credit-portfolio/banks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The options of the payment form's bank field, read from Odoo (cached for a few minutes). Advisors and administrators.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock credit portfolio"
+                ],
+                "summary": "TVGAN banks Odoo accepts payments into",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OdooBankList"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortfolioErrorResponse"
                         }
                     }
                 }
@@ -5662,6 +6097,110 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.LinkOdooPartnerRequest": {
+            "type": "object",
+            "properties": {
+                "partnerId": {
+                    "type": "integer",
+                    "example": 71817
+                }
+            }
+        },
+        "dto.LivestockCreditBlockEventResponse": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean"
+                },
+                "by": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LivestockCreditInstallmentResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "825260.80"
+                },
+                "dueDate": {
+                    "type": "string",
+                    "example": "2026-12-12"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "residual": {
+                    "type": "string",
+                    "example": "825260.80"
+                }
+            }
+        },
+        "dto.LivestockCreditInvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "amountResidual": {
+                    "type": "string",
+                    "example": "2476030.00"
+                },
+                "amountTotal": {
+                    "type": "string",
+                    "example": "2476030.00"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-12"
+                },
+                "dueDate": {
+                    "type": "string",
+                    "example": "2027-02-10"
+                },
+                "installments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockCreditInstallmentResponse"
+                    }
+                },
+                "nextDueDate": {
+                    "description": "NextDueDate is the due date of the oldest installment with a balance.",
+                    "type": "string",
+                    "example": "2026-12-12"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "FE12262"
+                },
+                "odooInvoiceId": {
+                    "type": "integer",
+                    "example": 27506
+                },
+                "open": {
+                    "type": "boolean"
+                },
+                "order": {
+                    "type": "string",
+                    "example": "COT02404"
+                },
+                "paymentState": {
+                    "description": "PaymentState: not_paid, in_payment, partial, paid or reversed.",
+                    "type": "string",
+                    "example": "not_paid"
+                },
+                "syncedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LivestockCreditLineAssessmentSummary": {
             "type": "object",
             "properties": {
@@ -5764,6 +6303,14 @@ const docTemplate = `{
                 "nationalId": {
                     "type": "string"
                 },
+                "odoo": {
+                    "description": "Odoo is the line's link to TVGAN's Odoo and the overdue days and block\nof its last credit snapshot.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockCreditLineOdooSummary"
+                        }
+                    ]
+                },
                 "partner": {
                     "type": "string",
                     "example": "cuppogan"
@@ -5798,6 +6345,32 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.LivestockCreditLineOdooSummary": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean"
+                },
+                "canBuy": {
+                    "type": "boolean"
+                },
+                "linkStatus": {
+                    "description": "LinkStatus: pending, linked, not_in_odoo or ambiguous.",
+                    "type": "string",
+                    "example": "linked"
+                },
+                "overdueDays": {
+                    "type": "integer"
+                },
+                "snapshotAt": {
+                    "type": "string"
+                },
+                "synced": {
+                    "description": "Synced is whether Odoo's credit snapshot was ever read.",
+                    "type": "boolean"
                 }
             }
         },
@@ -5926,6 +6499,14 @@ const docTemplate = `{
                 "nationalId": {
                     "type": "string"
                 },
+                "odoo": {
+                    "description": "Odoo is the line's link to TVGAN's Odoo and the overdue days and block\nof its last credit snapshot.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockCreditLineOdooSummary"
+                        }
+                    ]
+                },
                 "partner": {
                     "type": "string",
                     "example": "cuppogan"
@@ -5943,6 +6524,197 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "active"
+                }
+            }
+        },
+        "dto.LivestockCreditOdooCredit": {
+            "type": "object",
+            "properties": {
+                "approved": {
+                    "type": "boolean"
+                },
+                "approvedAmount": {
+                    "type": "string",
+                    "example": "5000000.00"
+                },
+                "availableAmount": {
+                    "type": "string",
+                    "example": "2423970.00"
+                },
+                "blockReason": {
+                    "type": "string",
+                    "example": "tiene cuotas vencidas (12 días de mora)"
+                },
+                "blocked": {
+                    "type": "boolean"
+                },
+                "canBuy": {
+                    "type": "boolean"
+                },
+                "lastUpdate": {
+                    "type": "string",
+                    "example": "2026-11-12 13:09:58"
+                },
+                "overdueDays": {
+                    "type": "integer"
+                },
+                "promissoryNoteDate": {
+                    "type": "string",
+                    "example": "2026-11-12"
+                },
+                "snapshotAt": {
+                    "type": "string"
+                },
+                "usedAmount": {
+                    "type": "string",
+                    "example": "2576030.00"
+                },
+                "validationStatus": {
+                    "type": "string",
+                    "example": "aprobado"
+                }
+            }
+        },
+        "dto.LivestockCreditOdooState": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OdooPartnerCandidateResponse"
+                    }
+                },
+                "credit": {
+                    "description": "Credit is absent until the first successful read.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockCreditOdooCredit"
+                        }
+                    ]
+                },
+                "enabled": {
+                    "description": "Enabled is whether Prestia has an Odoo token; without it the stored data\nis shown and nothing can be sent.",
+                    "type": "boolean"
+                },
+                "lastSyncAt": {
+                    "type": "string"
+                },
+                "lastSyncError": {
+                    "type": "string"
+                },
+                "lastSyncErrorCode": {
+                    "type": "string"
+                },
+                "linkStatus": {
+                    "type": "string",
+                    "example": "linked"
+                },
+                "partnerId": {
+                    "type": "integer",
+                    "example": 71817
+                }
+            }
+        },
+        "dto.LivestockCreditPaymentResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "825260.80"
+                },
+                "bank": {
+                    "type": "string",
+                    "example": "BANCOLOMBIA"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-16"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoiceNumber": {
+                    "type": "string",
+                    "example": "FE12262"
+                },
+                "odooInvoiceId": {
+                    "type": "integer"
+                },
+                "odooPaymentId": {
+                    "type": "integer"
+                },
+                "odooPaymentNumber": {
+                    "type": "string",
+                    "example": "PBCOL/2026/01768"
+                },
+                "reference": {
+                    "type": "string",
+                    "example": "TRX-20261116-001"
+                },
+                "registeredBy": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "registered"
+                }
+            }
+        },
+        "dto.LivestockCreditPaymentResult": {
+            "type": "object",
+            "properties": {
+                "payment": {
+                    "$ref": "#/definitions/dto.LivestockCreditPaymentResponse"
+                },
+                "portfolio": {
+                    "$ref": "#/definitions/dto.LivestockCreditPortfolioResponse"
+                },
+                "replayed": {
+                    "description": "Replayed is a double submission answered with the payment already\nstored; nothing was sent to Odoo.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.LivestockCreditPortfolioResponse": {
+            "type": "object",
+            "properties": {
+                "blockEvents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockCreditBlockEventResponse"
+                    }
+                },
+                "creditLineId": {
+                    "type": "string"
+                },
+                "invoices": {
+                    "description": "Invoices: open ones first, by the due date of their oldest unpaid\ninstallment, then the paid ones.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockCreditInvoiceResponse"
+                    }
+                },
+                "odoo": {
+                    "$ref": "#/definitions/dto.LivestockCreditOdooState"
+                },
+                "payments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockCreditPaymentResponse"
+                    }
+                },
+                "suggestedInvoiceId": {
+                    "description": "SuggestedInvoiceID is the open invoice due first, which the payment\nform preselects.",
+                    "type": "integer"
                 }
             }
         },
@@ -6539,6 +7311,54 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.OdooBankList": {
+            "type": "object",
+            "properties": {
+                "banks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OdooBankResponse"
+                    }
+                }
+            }
+        },
+        "dto.OdooBankResponse": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "string"
+                },
+                "bank": {
+                    "type": "string",
+                    "example": "BANCOLOMBIA"
+                },
+                "journal": {
+                    "type": "string",
+                    "example": "Bancolombia"
+                }
+            }
+        },
+        "dto.OdooPartnerCandidateResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 71817
+                },
+                "name": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PaginatedResponse": {
             "type": "object",
             "properties": {
@@ -6645,6 +7465,25 @@ const docTemplate = `{
                 },
                 "reference": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.PortfolioErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "odoo_rejected"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "odooCode": {
+                    "type": "string",
+                    "example": "AMOUNT_EXCEEDS_RESIDUAL"
+                },
+                "retryable": {
+                    "type": "boolean"
                 }
             }
         },
@@ -6996,6 +7835,32 @@ const docTemplate = `{
                 },
                 "province": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.RegisterLivestockCreditPaymentRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "825260.80"
+                },
+                "bank": {
+                    "type": "string",
+                    "example": "BANCOLOMBIA"
+                },
+                "date": {
+                    "description": "Date is YYYY-MM-DD, today when empty; never in the future.",
+                    "type": "string",
+                    "example": "2026-11-16"
+                },
+                "invoiceId": {
+                    "type": "integer",
+                    "example": 27506
+                },
+                "reference": {
+                    "type": "string",
+                    "example": "TRX-20261116-001"
                 }
             }
         },
@@ -7765,6 +8630,19 @@ const docTemplate = `{
             "properties": {
                 "active": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.SetLivestockCreditBlockRequest": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Acuerdo de pago incumplido"
                 }
             }
         },
