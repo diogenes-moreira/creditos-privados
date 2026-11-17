@@ -78,6 +78,10 @@ type LivestockCreditLine struct {
 	DocumentSize      int64  `gorm:"not null"`
 	PartnerArchiveURI string `gorm:"type:varchar(500)"`
 
+	// Odoo is the line's link to its contact in TVGAN's Odoo, where the
+	// credit is invoiced and collected, and the last credit snapshot.
+	Odoo LivestockCreditLineOdoo `gorm:"embedded;embeddedPrefix:odoo_"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

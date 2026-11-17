@@ -411,6 +411,80 @@ definitions:
       portfolio:
         $ref: '#/definitions/dto.PortfolioResponse'
     type: object
+  dto.LinkOdooPartnerRequest:
+    properties:
+      partnerId:
+        example: 71817
+        type: integer
+    type: object
+  dto.LivestockCreditBlockEventResponse:
+    properties:
+      blocked:
+        type: boolean
+      by:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      reason:
+        type: string
+    type: object
+  dto.LivestockCreditInstallmentResponse:
+    properties:
+      amount:
+        example: "825260.80"
+        type: string
+      dueDate:
+        example: "2026-12-12"
+        type: string
+      number:
+        type: integer
+      residual:
+        example: "825260.80"
+        type: string
+    type: object
+  dto.LivestockCreditInvoiceResponse:
+    properties:
+      amountResidual:
+        example: "2476030.00"
+        type: string
+      amountTotal:
+        example: "2476030.00"
+        type: string
+      date:
+        example: "2026-11-12"
+        type: string
+      dueDate:
+        example: "2027-02-10"
+        type: string
+      installments:
+        items:
+          $ref: '#/definitions/dto.LivestockCreditInstallmentResponse'
+        type: array
+      nextDueDate:
+        description: NextDueDate is the due date of the oldest installment with a
+          balance.
+        example: "2026-12-12"
+        type: string
+      number:
+        example: FE12262
+        type: string
+      odooInvoiceId:
+        example: 27506
+        type: integer
+      open:
+        type: boolean
+      order:
+        example: COT02404
+        type: string
+      paymentState:
+        description: 'PaymentState: not_paid, in_payment, partial, paid or reversed.'
+        example: not_paid
+        type: string
+      syncedAt:
+        type: string
+    type: object
   dto.LivestockCreditLineAssessmentSummary:
     properties:
       activeCeiling:
@@ -487,6 +561,12 @@ definitions:
         type: string
       nationalId:
         type: string
+      odoo:
+        allOf:
+        - $ref: '#/definitions/dto.LivestockCreditLineOdooSummary'
+        description: |-
+          Odoo is the line's link to TVGAN's Odoo and the overdue days and block
+          of its last credit snapshot.
       partner:
         example: cuppogan
         type: string
@@ -512,6 +592,24 @@ definitions:
         type: string
       updatedAt:
         type: string
+    type: object
+  dto.LivestockCreditLineOdooSummary:
+    properties:
+      blocked:
+        type: boolean
+      canBuy:
+        type: boolean
+      linkStatus:
+        description: 'LinkStatus: pending, linked, not_in_odoo or ambiguous.'
+        example: linked
+        type: string
+      overdueDays:
+        type: integer
+      snapshotAt:
+        type: string
+      synced:
+        description: Synced is whether Odoo's credit snapshot was ever read.
+        type: boolean
     type: object
   dto.LivestockCreditLinePage:
     properties:
@@ -599,6 +697,12 @@ definitions:
         type: string
       nationalId:
         type: string
+      odoo:
+        allOf:
+        - $ref: '#/definitions/dto.LivestockCreditLineOdooSummary'
+        description: |-
+          Odoo is the line's link to TVGAN's Odoo and the overdue days and block
+          of its last credit snapshot.
       partner:
         example: cuppogan
         type: string
@@ -612,6 +716,145 @@ definitions:
       status:
         example: active
         type: string
+    type: object
+  dto.LivestockCreditOdooCredit:
+    properties:
+      approved:
+        type: boolean
+      approvedAmount:
+        example: "5000000.00"
+        type: string
+      availableAmount:
+        example: "2423970.00"
+        type: string
+      blockReason:
+        example: tiene cuotas vencidas (12 días de mora)
+        type: string
+      blocked:
+        type: boolean
+      canBuy:
+        type: boolean
+      lastUpdate:
+        example: "2026-11-12 13:09:58"
+        type: string
+      overdueDays:
+        type: integer
+      promissoryNoteDate:
+        example: "2026-11-12"
+        type: string
+      snapshotAt:
+        type: string
+      usedAmount:
+        example: "2576030.00"
+        type: string
+      validationStatus:
+        example: aprobado
+        type: string
+    type: object
+  dto.LivestockCreditOdooState:
+    properties:
+      candidates:
+        items:
+          $ref: '#/definitions/dto.OdooPartnerCandidateResponse'
+        type: array
+      credit:
+        allOf:
+        - $ref: '#/definitions/dto.LivestockCreditOdooCredit'
+        description: Credit is absent until the first successful read.
+      enabled:
+        description: |-
+          Enabled is whether Prestia has an Odoo token; without it the stored data
+          is shown and nothing can be sent.
+        type: boolean
+      lastSyncAt:
+        type: string
+      lastSyncError:
+        type: string
+      lastSyncErrorCode:
+        type: string
+      linkStatus:
+        example: linked
+        type: string
+      partnerId:
+        example: 71817
+        type: integer
+    type: object
+  dto.LivestockCreditPaymentResponse:
+    properties:
+      amount:
+        example: "825260.80"
+        type: string
+      bank:
+        example: BANCOLOMBIA
+        type: string
+      createdAt:
+        type: string
+      date:
+        example: "2026-11-16"
+        type: string
+      errorCode:
+        type: string
+      errorMessage:
+        type: string
+      id:
+        type: string
+      invoiceNumber:
+        example: FE12262
+        type: string
+      odooInvoiceId:
+        type: integer
+      odooPaymentId:
+        type: integer
+      odooPaymentNumber:
+        example: PBCOL/2026/01768
+        type: string
+      reference:
+        example: TRX-20261116-001
+        type: string
+      registeredBy:
+        type: string
+      status:
+        example: registered
+        type: string
+    type: object
+  dto.LivestockCreditPaymentResult:
+    properties:
+      payment:
+        $ref: '#/definitions/dto.LivestockCreditPaymentResponse'
+      portfolio:
+        $ref: '#/definitions/dto.LivestockCreditPortfolioResponse'
+      replayed:
+        description: |-
+          Replayed is a double submission answered with the payment already
+          stored; nothing was sent to Odoo.
+        type: boolean
+    type: object
+  dto.LivestockCreditPortfolioResponse:
+    properties:
+      blockEvents:
+        items:
+          $ref: '#/definitions/dto.LivestockCreditBlockEventResponse'
+        type: array
+      creditLineId:
+        type: string
+      invoices:
+        description: |-
+          Invoices: open ones first, by the due date of their oldest unpaid
+          installment, then the paid ones.
+        items:
+          $ref: '#/definitions/dto.LivestockCreditInvoiceResponse'
+        type: array
+      odoo:
+        $ref: '#/definitions/dto.LivestockCreditOdooState'
+      payments:
+        items:
+          $ref: '#/definitions/dto.LivestockCreditPaymentResponse'
+        type: array
+      suggestedInvoiceId:
+        description: |-
+          SuggestedInvoiceID is the open invoice due first, which the payment
+          form preselects.
+        type: integer
     type: object
   dto.LivestockHerdRequest:
     properties:
@@ -1036,6 +1279,38 @@ definitions:
     required:
     - link
     type: object
+  dto.OdooBankList:
+    properties:
+      banks:
+        items:
+          $ref: '#/definitions/dto.OdooBankResponse'
+        type: array
+    type: object
+  dto.OdooBankResponse:
+    properties:
+      account:
+        type: string
+      bank:
+        example: BANCOLOMBIA
+        type: string
+      journal:
+        example: Bancolombia
+        type: string
+    type: object
+  dto.OdooPartnerCandidateResponse:
+    properties:
+      city:
+        type: string
+      document:
+        type: string
+      id:
+        example: 71817
+        type: integer
+      name:
+        type: string
+      state:
+        type: string
+    type: object
   dto.PaginatedResponse:
     properties:
       data: {}
@@ -1110,6 +1385,19 @@ definitions:
         type: string
       reference:
         type: string
+    type: object
+  dto.PortfolioErrorResponse:
+    properties:
+      code:
+        example: odoo_rejected
+        type: string
+      error:
+        type: string
+      odooCode:
+        example: AMOUNT_EXCEEDS_RESIDUAL
+        type: string
+      retryable:
+        type: boolean
     type: object
   dto.PortfolioPositionItemResponse:
     properties:
@@ -1357,6 +1645,25 @@ definitions:
     - lastName
     - phone
     - province
+    type: object
+  dto.RegisterLivestockCreditPaymentRequest:
+    properties:
+      amount:
+        example: "825260.80"
+        type: string
+      bank:
+        example: BANCOLOMBIA
+        type: string
+      date:
+        description: Date is YYYY-MM-DD, today when empty; never in the future.
+        example: "2026-11-16"
+        type: string
+      invoiceId:
+        example: 27506
+        type: integer
+      reference:
+        example: TRX-20261116-001
+        type: string
     type: object
   dto.RegisterRequest:
     properties:
@@ -1882,6 +2189,15 @@ definitions:
         type: boolean
     required:
     - active
+    type: object
+  dto.SetLivestockCreditBlockRequest:
+    properties:
+      blocked:
+        example: true
+        type: boolean
+      reason:
+        example: Acuerdo de pago incumplido
+        type: string
     type: object
   dto.SimulateLoanRequest:
     properties:
@@ -3106,6 +3422,281 @@ paths:
       summary: Get a livestock credit line
       tags:
       - Livestock quota
+  /admin/livestock-credit-lines/{id}/block:
+    post:
+      consumes:
+      - application/json
+      description: Sends only credit.blocked to Odoo (the other credit fields belong
+        to CuppoGan's service) and keeps the decision, its mandatory reason and who
+        took it in Prestia's history. Odoo's own block for overdue installments is
+        independent. Advisors and administrators.
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Block or unblock, with the reason
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetLivestockCreditBlockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPortfolioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Block or unblock a rancher's purchases on the quota
+      tags:
+      - Livestock credit portfolio
+  /admin/livestock-credit-lines/{id}/odoo/partner:
+    put:
+      consumes:
+      - application/json
+      description: 'For a national ID repeated in Odoo (ambiguous): links the line
+        to the contact staff picks. Odoo is read to check the contact''s document
+        is the line''s national ID (or that Odoo''s search by it returned the contact);
+        then the snapshot and invoices are loaded. Advisors and administrators.'
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Odoo contact id
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LinkOdooPartnerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPortfolioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Link a credit line to an Odoo contact
+      tags:
+      - Livestock credit portfolio
+  /admin/livestock-credit-lines/{id}/odoo/sync:
+    post:
+      description: 'Reads the line''s Odoo contact now: links it by national ID if
+        it is not linked yet (one match links it, none leaves it not_in_odoo, several
+        leave it ambiguous for staff to pick), then stores the credit snapshot and
+        every quota invoice. Odoo failures are kept as the line''s last sync error.
+        Advisors and administrators.'
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPortfolioResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a credit line from Odoo
+      tags:
+      - Livestock credit portfolio
+  /admin/livestock-credit-lines/{id}/payments:
+    post:
+      consumes:
+      - application/json
+      description: 'Validates the payment (amount above zero and at most the invoice''s
+        balance, read from Odoo now; date not in the future, today when empty; a bank
+        Odoo accepts; a reference not used by another payment) and sends it to Odoo,
+        which applies it to the invoice''s oldest installment. 201: registered. 200:
+        Odoo already had that reference (status already_registered, nothing duplicated)
+        or a double submission of a stored payment (replayed). 422 odoo_rejected:
+        Odoo refused it; it is stored as failed with Odoo''s code. 503: Odoo unavailable;
+        nothing stored, retry with the same reference. Advisors and administrators.'
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterLivestockCreditPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPaymentResult'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPaymentResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register a rancher's payment in Odoo
+      tags:
+      - Livestock credit portfolio
+  /admin/livestock-credit-lines/{id}/portfolio:
+    get:
+      description: 'What Prestia last read from TVGAN''s Odoo for the line: the link
+        to the Odoo contact, the credit snapshot Odoo computes (approved, used, available,
+        overdue days, can buy and why not), the quota invoices with their installments
+        (open ones first, by the due date of their oldest unpaid installment), the
+        payments registered from Prestia and the block history. It does not call Odoo.
+        Advisors and administrators.'
+      parameters:
+      - description: Credit line UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LivestockCreditPortfolioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a credit line's portfolio (Odoo)
+      tags:
+      - Livestock credit portfolio
   /admin/livestock-credit-lines/{id}/promissory-note:
     get:
       description: 'Streams the signed PDF stored with the line, inline, named after
@@ -3189,6 +3780,34 @@ paths:
       summary: Search livestock credit lines
       tags:
       - Livestock quota
+  /admin/livestock-credit-portfolio/banks:
+    get:
+      description: The options of the payment form's bank field, read from Odoo (cached
+        for a few minutes). Advisors and administrators.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OdooBankList'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: TVGAN banks Odoo accepts payments into
+      tags:
+      - Livestock credit portfolio
   /admin/livestock-quota-policies:
     get:
       parameters:

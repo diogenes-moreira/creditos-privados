@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Alert, Box, Button, Grid, InputAdornment, Paper, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Grid, InputAdornment, Paper, Stack, TextField, Typography } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { adminGetLivestockCreditLines } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
@@ -97,6 +97,12 @@ const LivestockCreditLines: React.FC = () => {
       label: t("livestockCreditLines.columns.status"),
       render: (row) => <StatusBadge status={row.status} />,
     },
+    {
+      id: "portfolio",
+      label: t("livestockCreditLines.columns.portfolio"),
+      minWidth: 150,
+      render: (row) => <PortfolioBadges line={row} />,
+    },
   ];
 
   return (
@@ -167,6 +173,33 @@ const LivestockCreditLines: React.FC = () => {
         />
       )}
     </Box>
+  );
+};
+
+/** Overdue days and block from the line's last Odoo snapshot. */
+const PortfolioBadges: React.FC<{ line: LivestockCreditLine }> = ({ line }) => {
+  const { t } = useTranslation();
+  const o = line.odoo;
+  if (!o || o.linkStatus !== "linked" || !o.synced) {
+    const status = o?.linkStatus ?? "pending";
+    return (
+      <Chip
+        size="small"
+        variant="outlined"
+        color={status === "ambiguous" || status === "not_in_odoo" ? "warning" : "default"}
+        label={t(`livestockCreditLines.portfolio.linkStatus.${status}`, { defaultValue: status })}
+      />
+    );
+  }
+  return (
+    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+      {o.overdueDays > 0 ? (
+        <Chip size="small" color="error" label={t("livestockCreditLines.portfolio.overdue", { count: o.overdueDays })} />
+      ) : (
+        <Chip size="small" color="success" variant="outlined" label={t("livestockCreditLines.portfolio.upToDate")} />
+      )}
+      {o.blocked && <Chip size="small" color="error" variant="outlined" label={t("livestockCreditLines.portfolio.blockedYes")} />}
+    </Stack>
   );
 };
 

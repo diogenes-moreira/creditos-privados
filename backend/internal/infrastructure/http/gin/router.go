@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
@@ -17,6 +18,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/odoo"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/pdf"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/ruv"
@@ -41,6 +43,8 @@ type Router struct {
 	googleConfig    config.GoogleOAuthConfig
 	otpProviders    messaging.OTPProviders
 	partners        config.PartnersConfig
+	odoo            config.OdooConfig
+	timeZone        string
 }
 
 func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
@@ -56,6 +60,8 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 		livestockQuota:  cfg.LivestockQuota,
 		googleConfig:    cfg.Google,
 		partners:        cfg.Partners,
+		odoo:            cfg.Odoo,
+		timeZone:        cfg.DB.TimeZone,
 		otpProviders: messaging.OTPProviders{
 			Provider: cfg.OTPProvider,
 			Kapso: messaging.KapsoConfig{
@@ -114,6 +120,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	livestockQuotaRepo := postgres.NewLivestockQuotaRepository(r.db)
 	livestockPolicyRepo := postgres.NewLivestockQuotaPolicyRepository(r.db)
 	livestockCreditLineRepo := postgres.NewLivestockCreditLineRepository(r.db)
+	livestockPortfolioRepo := postgres.NewLivestockCreditPortfolioRepository(r.db)
 
 	// Adapters
 	authService := auth.NewLocalAuthService(jwtSecret, 24)
@@ -209,6 +216,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	livestockPolicyHandler := handler.NewLivestockQuotaPolicyHandler(livestockPolicyService)
 	livestockCreditLineHandler := handler.NewLivestockCreditLineHandler(
 		service.NewLivestockCreditLineService(livestockCreditLineRepo, livestockQuotaRepo).WithAudit(auditService))
+	livestockPortfolioHandler := handler.NewLivestockCreditPortfolioHandler(
+		r.livestockPortfolioService(livestockCreditLineRepo, livestockPortfolioRepo, auditService))
 
 	// Optional path prefix for when the service is mounted under a sub-path.
 	// Empty by default: the app is served from the root.
@@ -318,6 +327,13 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		// with the signed promissory note.
 		livestockCreditLineHandler.RegisterBackOfficeRoutes(advisorRoutes)
 	}
+
+	// Portfolio (cartera) of the livestock credit lines on TVGAN's Odoo:
+	// snapshot, invoices, payments and blocks. Its own group so the roles can
+	// be narrowed in model.CreditPortfolioRoles without touching the rest.
+	portfolioRoutes := authenticated.Group("/admin")
+	portfolioRoutes.Use(middleware.RequireRole(userRepo, model.CreditPortfolioRoles()...))
+	livestockPortfolioHandler.RegisterRoutes(portfolioRoutes)
 
 	adminRoutes := authenticated.Group("/admin")
 	adminRoutes.Use(middleware.RequireRole(userRepo, model.RoleAdmin))
@@ -439,4 +455,40 @@ func (r *Router) setupRoutes(jwtSecret string) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		})
 	}
+}
+
+// livestockPortfolioService builds the portfolio service on TVGAN's Odoo and
+// starts its periodic sync. Without ODOO_API_TOKEN (or ODOO_API_BASE_URL) the
+// stored data stays readable and every Odoo operation answers odoo_disabled.
+func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineRepository, repo port.LivestockCreditPortfolioRepository, audit *service.AuditService) *service.LivestockCreditPortfolioService {
+	loc, err := time.LoadLocation(r.timeZone)
+	if err != nil {
+		loc = time.UTC
+	}
+	client := odoo.New(odoo.Config{
+		BaseURL:           r.odoo.BaseURL,
+		Token:             r.odoo.Token,
+		Timeout:           time.Duration(r.odoo.TimeoutSeconds) * time.Second,
+		RequestsPerMinute: r.odoo.RequestsPerMinute,
+		RequestsPerHour:   r.odoo.RequestsPerHour,
+	})
+	if client == nil {
+		log.Println("ODOO_API_TOKEN or ODOO_API_BASE_URL not set: the livestock credit portfolio (Odoo sync, payments, blocks) is disabled")
+		return service.NewLivestockCreditPortfolioService(lines, repo, nil).WithAudit(audit).WithLocation(loc)
+	}
+	perHour := r.odoo.RequestsPerHour
+	if perHour <= 0 {
+		perHour = odoo.DefaultRequestsPerHour
+	}
+	// The unattended sync leaves a quarter of the hourly budget to staff.
+	s := service.NewLivestockCreditPortfolioService(lines, repo, client).
+		WithAudit(audit).WithLocation(loc).WithSyncReserve(perHour / 4)
+	interval := time.Duration(r.odoo.SyncIntervalMinutes) * time.Minute
+	if interval > 0 {
+		log.Printf("Livestock credit portfolio: syncing from Odoo every %s", interval)
+		go s.Run(context.Background(), interval)
+	} else {
+		log.Println("ODOO_SYNC_INTERVAL_MINUTES=0: the periodic Odoo sync is off (on-demand sync still works)")
+	}
+	return s
 }
