@@ -237,6 +237,7 @@ func newPortfolioFixture(t *testing.T, withOdoo bool) portfolioFixture {
 	g := r.Group("/admin")
 	g.Use(middleware.AuthMiddleware(authService), middleware.RequireRole(users, model.CreditPortfolioRoles()...))
 	h.RegisterRoutes(g)
+	h.RegisterSchedulerRoutes(r.Group("", middleware.RequireServiceKey("scheduler", schedulerKey)))
 
 	line := &model.LivestockCreditLine{ID: uuid.New(), Status: model.LivestockCreditLineActive, NationalID: "1000000103"}
 	lines.lines = append(lines.lines, line)
@@ -383,6 +384,45 @@ func TestPortfolioSyncPayAndBlockThroughOdoo(t *testing.T) {
 	assert.Contains(t, actions, "register_livestock_credit_payment")
 	assert.Contains(t, actions, "block_livestock_credit_line")
 	assert.Contains(t, actions, "unblock_livestock_credit_line")
+}
+
+const schedulerKey = "scheduler-key"
+
+func TestPortfolioSchedulerSyncsEveryLine(t *testing.T) {
+	f := newPortfolioFixture(t, true)
+	sync := func(key string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/livestock-credit-portfolio/odoo/sync", nil)
+		if key != "" {
+			req.Header.Set(middleware.ServiceKeyHeader, key)
+		}
+		w := httptest.NewRecorder()
+		f.router.ServeHTTP(w, req)
+		return w
+	}
+
+	assert.Equal(t, http.StatusUnauthorized, sync("").Code)
+	assert.Equal(t, http.StatusUnauthorized, sync("wrong").Code)
+	assert.Empty(t, f.odoo.requests, "nothing reaches Odoo without the key")
+
+	w := sync(schedulerKey)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var res dto.PortfolioSyncRoundResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.Equal(t, 1, res.Synced)
+
+	p := decodePortfolio(t, f.do(t, "advisor", http.MethodGet, f.path("/portfolio"), nil))
+	assert.Equal(t, "linked", p.Odoo.LinkStatus)
+	assert.Len(t, p.Invoices, 2)
+}
+
+func TestPortfolioSchedulerSyncWithoutOdooToken(t *testing.T) {
+	f := newPortfolioFixture(t, false)
+	req := httptest.NewRequest(http.MethodPost, "/livestock-credit-portfolio/odoo/sync", nil)
+	req.Header.Set(middleware.ServiceKeyHeader, schedulerKey)
+	w := httptest.NewRecorder()
+	f.router.ServeHTTP(w, req)
+	e := decodePortfolioError(t, w, http.StatusServiceUnavailable)
+	assert.Equal(t, "odoo_disabled", e.Code)
 }
 
 func TestPortfolioWithoutOdooToken(t *testing.T) {

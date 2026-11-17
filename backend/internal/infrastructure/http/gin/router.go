@@ -253,6 +253,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	} else {
 		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry and /livestock-quotas/activations disabled")
 	}
+	if r.partners.SchedulerAPIKey != "" {
+		livestockPortfolioHandler.RegisterSchedulerRoutes(api.Group("", middleware.RequireServiceKey("scheduler", r.partners.SchedulerAPIKey)))
+	} else {
+		log.Println("SCHEDULER_API_KEY not set: POST /livestock-credit-portfolio/odoo/sync disabled")
+	}
 
 	// Authenticated routes
 	authenticated := api.Group("")

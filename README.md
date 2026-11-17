@@ -172,6 +172,7 @@ npm run dev    # http://localhost:4321
 | `ODOO_API_TIMEOUT_SECONDS` | Tope por petición a Odoo | `15` |
 | `ODOO_API_REQUESTS_PER_MINUTE` / `ODOO_API_REQUESTS_PER_HOUR` | Límite propio de Prestia hacia Odoo, por instancia (Odoo admite 60/min y 600/h por IP, compartidos con cuppogan-service) | `15` / `150` |
 | `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `15` |
+| `SCHEDULER_API_KEY` | Clave (`X-API-Key`) con la que Cloud Scheduler dispara la sincronización con Odoo. Sin ella, la ruta no existe | - |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |
@@ -428,7 +429,7 @@ Encendida desde el 2026-11-17 contra producción (`https://www.tvgan.com.co/api/
 - IP de salida: Prestia y cuppogan-service salen a internet por el conector Serverless VPC Access `cuppogan-egress-conn` + Cloud NAT, con la IP fija `34.30.16.187`, que TVGAN tiene en su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás). Los deploys conservan el conector.
 - Para apagarla: quitar las dos entradas de `deploy.yml` (la cartera queda deshabilitada y lo guardado se sigue viendo).
 
-La sincronización periódica corre dentro del proceso: con `--min-instances=0` y CPU asignada solo durante las peticiones, Cloud Run puede no ejecutarla a tiempo. El botón «Actualizar desde Odoo» de cada cupo no depende de ella.
+Sincronización automática: Cloud Scheduler (`prestia-odoo-sync`, us-central1) llama cada 15 minutos a `POST /api/v1/livestock-credit-portfolio/odoo/sync` con el header `X-API-Key` = secreto `SCHEDULER_API_KEY` (sin el secreto la ruta no se registra). Es la misma ronda que el temporizador interno (`ODOO_SYNC_INTERVAL_MINUTES`), que en Cloud Run con `--min-instances=0` solo corre mientras hay una instancia viva. El botón «Actualizar desde Odoo» de cada cupo sigue disponible.
 
 ## Deploy con Docker (self-hosted)
 

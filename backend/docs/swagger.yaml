@@ -1434,6 +1434,12 @@ definitions:
       totalOutstanding:
         type: string
     type: object
+  dto.PortfolioSyncRoundResponse:
+    properties:
+      synced:
+        description: Synced is how many credit lines were refreshed from Odoo.
+        type: integer
+    type: object
   dto.PrepayLoanRequest:
     properties:
       amount:
@@ -5242,6 +5248,34 @@ paths:
       summary: Readiness check
       tags:
       - Health
+  /livestock-credit-portfolio/odoo/sync:
+    post:
+      description: 'One unattended sync round, the same the in-process timer runs:
+        active lines, least recently synced first, until the hourly request budget
+        reaches the share kept for staff. Lines repeated in Odoo (ambiguous) wait
+        for staff. Meant for Cloud Scheduler: on Cloud Run the in-process timer only
+        runs while an instance is up. Authenticated with the scheduler''s service
+        key (X-API-Key).'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PortfolioSyncRoundResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.PortfolioErrorResponse'
+      security:
+      - ServiceKey: []
+      summary: Update every credit line from Odoo (scheduler)
+      tags:
+      - Livestock credit portfolio
   /livestock-quotas:
     post:
       consumes:
