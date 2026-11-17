@@ -149,6 +149,10 @@ type LivestockCreditLineSummary struct {
 
 	DocumentSHA256 string `json:"documentSha256"`
 	DocumentSize   int64  `json:"documentSize"`
+
+	// Odoo is the line's link to TVGAN's Odoo and the overdue days and block
+	// of its last credit snapshot.
+	Odoo LivestockCreditLineOdooSummary `json:"odoo"`
 }
 
 // LivestockCreditLinePage is a page of credit lines.
@@ -215,6 +219,7 @@ func ToLivestockCreditLineSummary(l *model.LivestockCreditLine) LivestockCreditL
 		CreatedAt:            l.CreatedAt,
 		DocumentSHA256:       l.DocumentSHA256,
 		DocumentSize:         l.DocumentSize,
+		Odoo:                 ToLivestockCreditLineOdooSummary(l.Odoo),
 	}
 }
 

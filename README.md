@@ -167,6 +167,11 @@ npm run dev    # http://localhost:4321
 | `RUV_USERNAME` / `RUV_PASSWORD` | Usuario del RUV | - |
 | `LIVESTOCK_QUOTA_STRATEGY` | Cómo se decide el cupo ganadero: `tiers` (escalones del piloto) o `engine` (motor individual). Un valor inválido impide arrancar | `tiers` |
 | `LIVESTOCK_QUOTA_CURRENT_CYCLE` | Ciclo del RUV sobre el que se miden los escalones (`AAAA-C`) | `2026-1` |
+| `ODOO_API_BASE_URL` | API de Odoo de TVGAN para CuppoGan (`…/api/v1/cuppogan`): cartera de los cupos CuppoGan | - |
+| `ODOO_API_TOKEN` | Token Bearer de esa API. Sin él (o sin la URL) la cartera queda apagada y lo guardado se sigue viendo | - |
+| `ODOO_API_TIMEOUT_SECONDS` | Tope por petición a Odoo | `15` |
+| `ODOO_API_REQUESTS_PER_MINUTE` / `ODOO_API_REQUESTS_PER_HOUR` | Límite propio de Prestia hacia Odoo, por instancia (Odoo admite 60/min y 600/h por IP, compartidos con cuppogan-service) | `15` / `150` |
+| `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `15` |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |
@@ -414,6 +419,16 @@ Build del frontend: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
 
 `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSLMODE`, `DB_INSTANCE`,
 `JWT_SECRET`, `FIREBASE_CREDENTIALS`.
+
+### Cartera en Odoo (cupos CuppoGan)
+
+La integración con el Odoo de TVGAN queda apagada hasta crear el secreto del token. Para encenderla:
+
+1. Crear el secreto `ODOO_API_TOKEN` en Secret Manager (token de producción que entrega TVGAN) y darle acceso a la cuenta de servicio de Cloud Run.
+2. En `.github/workflows/deploy.yml`, agregar `||ODOO_API_BASE_URL=<URL de producción>` al final de `--set-env-vars` y `,ODOO_API_TOKEN=ODOO_API_TOKEN:latest` al final de `--set-secrets`. Agregarlo **antes** de crear el secreto rompe el deploy.
+3. Informar a TVGAN la IP pública de salida de Prestia para su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás).
+
+La sincronización periódica corre dentro del proceso: con `--min-instances=0` y CPU asignada solo durante las peticiones, Cloud Run puede no ejecutarla a tiempo. El botón «Actualizar desde Odoo» de cada cupo no depende de ella.
 
 ## Deploy con Docker (self-hosted)
 

@@ -18,8 +18,10 @@ type Config struct {
 	SendGrid SendGridConfig
 	// OTPProvider selects the delivery channel: "kapso", "twilio" or
 	// "sendgrid". Empty uses whichever is configured.
-	OTPProvider     string
-	Partners        PartnersConfig
+	OTPProvider string
+	Partners    PartnersConfig
+	// Odoo is TVGAN's Odoo, the ledger of the livestock credit portfolio.
+	Odoo            OdooConfig
 	Country         string
 	DefaultIVARate  float64
 	LatePenaltyRate float64
@@ -177,6 +179,23 @@ type PartnersConfig struct {
 	CuppoganAPIKey string
 }
 
+// OdooConfig points at TVGAN's Odoo API for CuppoGan (/api/v1/cuppogan),
+// where the purchases on the livestock quota are invoiced and collected. With
+// no token the portfolio features are off and the stored data stays readable.
+type OdooConfig struct {
+	BaseURL string
+	Token   string
+	// TimeoutSeconds bounds each request.
+	TimeoutSeconds int
+	// RequestsPerMinute and RequestsPerHour throttle Prestia client-side:
+	// Odoo allows 60/min and 600/h per IP, shared with CuppoGan's service.
+	RequestsPerMinute int
+	RequestsPerHour   int
+	// SyncIntervalMinutes is how often every line is refreshed from Odoo;
+	// 0 turns the periodic sync off (the on-demand button still works).
+	SyncIntervalMinutes int
+}
+
 type AIConfig struct {
 	APIKey    string
 	Model     string
@@ -269,6 +288,14 @@ func Load() *Config {
 		},
 		Partners: PartnersConfig{
 			CuppoganAPIKey: getEnv("CUPPOGAN_API_KEY", ""),
+		},
+		Odoo: OdooConfig{
+			BaseURL:             getEnv("ODOO_API_BASE_URL", ""),
+			Token:               getEnv("ODOO_API_TOKEN", ""),
+			TimeoutSeconds:      getEnvInt("ODOO_API_TIMEOUT_SECONDS", 15),
+			RequestsPerMinute:   getEnvInt("ODOO_API_REQUESTS_PER_MINUTE", 15),
+			RequestsPerHour:     getEnvInt("ODOO_API_REQUESTS_PER_HOUR", 150),
+			SyncIntervalMinutes: getEnvInt("ODOO_SYNC_INTERVAL_MINUTES", 15),
 		},
 		Country:         country,
 		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", defaults.IVARate),
