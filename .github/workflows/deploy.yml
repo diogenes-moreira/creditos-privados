@@ -10,8 +10,10 @@ env:
   SERVICE_NAME: prestia-app
   REPOSITORY: docker-repo
   IMAGE: us-central1-docker.pkg.dev/fedegan-prestia-30x/docker-repo/prestia-app
-  # Cloud SQL instance connection name: <project>:<region>:<instance>
-  SQL_INSTANCE: fedegan-prestia-30x:us-central1:prestia-db
+  # Cloud SQL instance connection name: <project>:<region>:<instance>. The
+  # project's own instance, so the service does not depend on another
+  # project's database when ownership of this one changes hands.
+  SQL_INSTANCE: fedegan-prestia-30x:us-central1:cuppogan-db
 
 jobs:
   deploy:
@@ -60,6 +62,6 @@ jobs:
             --cpu=1
             --min-instances=0
             --max-instances=3
-            --add-cloudsql-instances=${{ env.SQL_INSTANCE }}
+            --set-cloudsql-instances=${{ env.SQL_INSTANCE }}
             --set-env-vars=^||^GIN_MODE=release||SERVER_PORT=8080||FRONTEND_DIR=/app/public||COUNTRY=CO||OTP_PROVIDER=sendgrid||GOOGLE_OAUTH_CLIENT_ID=${{ vars.GOOGLE_OAUTH_CLIENT_ID }}||RISK_ANALYSIS_MODEL=claude-opus-5||RISK_ANALYSIS_EFFORT=high||RISK_ANALYSIS_MAX_TOKENS=16000||ODOO_API_BASE_URL=https://www.tvgan.com.co/api/v1/cuppogan
             --set-secrets=DB_HOST=DB_HOST:latest,DB_PORT=DB_PORT:latest,DB_USER=DB_USER:latest,DB_PASSWORD=DB_PASSWORD:latest,DB_NAME=DB_NAME:latest,DB_SSLMODE=DB_SSLMODE:latest,DB_INSTANCE=DB_INSTANCE:latest,JWT_SECRET=JWT_SECRET:latest,SENDGRID_API_KEY=SENDGRID_API_KEY:latest,SENDGRID_FROM_EMAIL=SENDGRID_FROM_EMAIL:latest,TWILIO_ACCOUNT_SID=TWILIO_ACCOUNT_SID:latest,TWILIO_AUTH_TOKEN=TWILIO_AUTH_TOKEN:latest,TWILIO_WHATSAPP_FROM=TWILIO_WHATSAPP_FROM:latest,TWILIO_WHATSAPP_TEMPLATE_SID=TWILIO_WHATSAPP_TEMPLATE_SID:latest,RUV_BASE_URL=RUV_BASE_URL:latest,RUV_CLIENT_ID=RUV_CLIENT_ID:latest,RUV_CLIENT_SECRET=RUV_CLIENT_SECRET:latest,RUV_USERNAME=RUV_USERNAME:latest,RUV_PASSWORD=RUV_PASSWORD:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,CUPPOGAN_API_KEY=CUPPOGAN_API_KEY:latest,ODOO_API_TOKEN=ODOO_API_TOKEN:latest,SCHEDULER_API_KEY=SCHEDULER_API_KEY:latest
