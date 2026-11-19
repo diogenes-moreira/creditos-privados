@@ -497,7 +497,7 @@
     "registerAnother": "Cadastrar outro cliente",
     "registerClientDescription": "Preencha os dados do cliente para cadastrá-lo na CuppoGan",
     "dniInvalid": "DNI inválido",
-    "cuitInvalid": "CUIT inválido",
+    "cuitInvalid": "{{label}} inválido",
     "dateOfBirth": "Data de nascimento",
     "phoneInvalid": "Telefone inválido",
     "emailInvalid": "E-mail inválido",
@@ -1105,6 +1105,7 @@
       "hashHelp": "A nota promissória é verificada contra este hash cada vez que é aberta.",
       "viewNote": "Ver nota promissória",
       "downloadNote": "Baixar",
+      "viewClient": "Ver cliente",
       "copy": "Copiar hash",
       "copied": "Hash copiado",
       "noteCorrupted": "A nota promissória armazenada não corresponde ao SHA-256 registrado, por isso não é exibida. Avise a equipe técnica.",
@@ -1194,7 +1195,9 @@
         "reference": "Referência",
         "status": "Estado",
         "odooPayment": "Pagamento no Odoo",
-        "registeredBy": "Registrado por"
+        "registeredBy": "Registrado por",
+        "split": "Capital {{capital}} · juros {{interest}}",
+        "interestPending": "Juros recebidos ainda não informados ao Odoo: {{amount}}. A API do Odoo recebe só o capital por enquanto; registre-os na contabilidade da TVGAN."
       },
       "paymentStatus": {
         "registered": "Registrado",
@@ -1229,7 +1232,8 @@
         "alreadyRegistered": "O Odoo já tinha um pagamento com essa referência: nada foi duplicado.",
         "replayed": "Esse pagamento já estava registrado.",
         "error": "Não foi possível registrar o pagamento.",
-        "banksError": "Não foi possível carregar os bancos do Odoo."
+        "banksError": "Não foi possível carregar os bancos do Odoo.",
+        "loanHint": "Vence hoje (com juros): {{due}}. Para quitar hoje: {{payoff}}. O que exceder o vencido vai para o capital."
       },
       "blockDialog": {
         "blockTitle": "Bloquear compras a prazo",
@@ -1265,6 +1269,18 @@
         "document_mismatch": "Esse contato do Odoo tem outro documento.",
         "odoo_customer_not_found": "O Odoo não tem esse contato.",
         "already_linked": "O limite já está vinculado a outro contato do Odoo."
+      },
+      "loan": {
+        "summary": "Crédito na Prestia a {{rate}} % nominal anual · capital pendente {{capital}} · vence hoje {{due}} · para quitar hoje {{payoff}}",
+        "capital": "Capital",
+        "interest": "Juros",
+        "total": "Parcela",
+        "status": {
+          "pending": "Pendente",
+          "partial": "Parcial",
+          "paid": "Paga",
+          "overdue": "Vencida"
+        }
       }
     }
   }

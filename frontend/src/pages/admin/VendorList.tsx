@@ -28,6 +28,7 @@ import type { Vendor, RegisterVendorRequest } from "../../api/types";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import LocationSelector from "../../components/LocationSelector";
+import { getCountryConfig } from "../../config/countryConfig";
 
 const VendorList: React.FC = () => {
   const { t } = useTranslation();
@@ -91,7 +92,7 @@ const VendorList: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>{t("adminVendor.businessName")}</TableCell>
-              <TableCell>{t("adminVendor.cuit")}</TableCell>
+              <TableCell>{getCountryConfig().taxIdLabel}</TableCell>
               <TableCell>{t("adminVendor.city")}</TableCell>
               <TableCell>{t("common.status")}</TableCell>
               <TableCell>{t("common.date")}</TableCell>
@@ -127,7 +128,7 @@ const VendorList: React.FC = () => {
             <TextField label={t("adminVendor.email")} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             <TextField label={t("adminVendor.password")} type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
             <TextField label={t("adminVendor.businessName")} value={formData.businessName} onChange={(e) => setFormData({ ...formData, businessName: e.target.value })} />
-            <TextField label={t("adminVendor.cuit")} value={formData.cuit} onChange={(e) => setFormData({ ...formData, cuit: e.target.value })} />
+            <TextField label={getCountryConfig().taxIdLabel} value={formData.cuit} onChange={(e) => setFormData({ ...formData, cuit: e.target.value })} />
             <TextField label={t("adminVendor.phone")} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             <TextField label={t("adminVendor.address")} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
             <Grid container spacing={2}>

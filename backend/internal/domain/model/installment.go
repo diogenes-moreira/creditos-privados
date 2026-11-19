@@ -18,15 +18,20 @@ const (
 )
 
 type Installment struct {
-	ID              uuid.UUID         `gorm:"type:uuid;primaryKey"`
-	LoanID          uuid.UUID         `gorm:"type:uuid;index;not null"`
-	Number          int               `gorm:"not null"`
-	DueDate         time.Time         `gorm:"not null"`
-	CapitalAmount   decimal.Decimal   `gorm:"type:decimal(18,2);not null"`
-	InterestAmount  decimal.Decimal   `gorm:"type:decimal(18,2);not null"`
-	IVAAmount       decimal.Decimal   `gorm:"type:decimal(18,2);not null;default:0"`
-	TotalAmount     decimal.Decimal   `gorm:"type:decimal(18,2);not null"`
-	PaidAmount      decimal.Decimal   `gorm:"type:decimal(18,2);not null;default:0"`
+	ID             uuid.UUID       `gorm:"type:uuid;primaryKey"`
+	LoanID         uuid.UUID       `gorm:"type:uuid;index;not null"`
+	Number         int             `gorm:"not null"`
+	DueDate        time.Time       `gorm:"not null"`
+	CapitalAmount  decimal.Decimal `gorm:"type:decimal(18,2);not null"`
+	InterestAmount decimal.Decimal `gorm:"type:decimal(18,2);not null"`
+	IVAAmount      decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+	TotalAmount    decimal.Decimal `gorm:"type:decimal(18,2);not null"`
+	PaidAmount     decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+	// PaidCapital and PaidInterest split PaidAmount where the loan keeps the
+	// split (livestock quota loans, whose capital is reported to Odoo apart
+	// from the interest). Zero elsewhere.
+	PaidCapital     decimal.Decimal   `gorm:"type:decimal(18,2);not null;default:0"`
+	PaidInterest    decimal.Decimal   `gorm:"type:decimal(18,2);not null;default:0"`
 	RemainingAmount decimal.Decimal   `gorm:"type:decimal(18,2);not null"`
 	PenaltyApplied  bool              `gorm:"not null;default:false"`
 	Status          InstallmentStatus `gorm:"type:varchar(20);not null;default:'pending'"`

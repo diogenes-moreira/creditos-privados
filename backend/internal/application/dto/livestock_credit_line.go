@@ -37,6 +37,19 @@ type LivestockCreditActivationMetadata struct {
 	SignatureProvider     string `json:"signatureProvider" example:"truora-zapsign"`
 	SignatureDocumentID   string `json:"signatureDocumentId"`
 	SignatureValidationID string `json:"signatureValidationId"`
+
+	// The rancher as Prestia's client (all optional). Without names, FullName
+	// is split; without a date of birth (YYYY-MM-DD) a generic one is used and
+	// the client's comments say so; without an e-mail, or with one another
+	// user has, it is <nationalId>@cuppogan.com.
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	Email       string `json:"email,omitempty"`
+	DateOfBirth string `json:"dateOfBirth,omitempty" example:"1975-04-30"`
+	// Address, City and Province (department) of the rancher's main holding.
+	Address  string `json:"address,omitempty"`
+	City     string `json:"city,omitempty"`
+	Province string `json:"province,omitempty"`
 }
 
 // ToLivestockCreditActivation maps the metadata and the document to the domain.
@@ -45,7 +58,22 @@ func ToLivestockCreditActivation(m LivestockCreditActivationMetadata, document [
 	if err != nil {
 		return model.LivestockCreditActivation{}, fmt.Errorf("assessmentId must be a UUID")
 	}
+	var dob *time.Time
+	if m.DateOfBirth != "" {
+		d, err := time.Parse("2006-01-02", m.DateOfBirth)
+		if err != nil {
+			return model.LivestockCreditActivation{}, fmt.Errorf("dateOfBirth must be YYYY-MM-DD")
+		}
+		dob = &d
+	}
 	return model.LivestockCreditActivation{
+		FirstName:             m.FirstName,
+		LastName:              m.LastName,
+		Email:                 m.Email,
+		DateOfBirth:           dob,
+		Address:               m.Address,
+		City:                  m.City,
+		Province:              m.Province,
 		AssessmentID:          id,
 		NationalID:            m.NationalID,
 		IDType:                m.IDType,
@@ -81,6 +109,18 @@ type LivestockCreditLineResponse struct {
 	DocumentSize         int64     `json:"documentSize"`
 	ActivatedAt          time.Time `json:"activatedAt"`
 	RegisteredAt         time.Time `json:"registeredAt"`
+	// ClientID and CreditLineID are the rancher and the credit line in
+	// Prestia's own tables.
+	ClientID     *string `json:"clientId,omitempty"`
+	CreditLineID *string `json:"creditLineId,omitempty"`
+}
+
+func uuidString(id *uuid.UUID) *string {
+	if id == nil {
+		return nil
+	}
+	s := id.String()
+	return &s
 }
 
 func ToLivestockCreditLineResponse(l *model.LivestockCreditLine) LivestockCreditLineResponse {
@@ -96,6 +136,8 @@ func ToLivestockCreditLineResponse(l *model.LivestockCreditLine) LivestockCredit
 		DocumentSize:         l.DocumentSize,
 		ActivatedAt:          l.ActivatedAt,
 		RegisteredAt:         l.CreatedAt,
+		ClientID:             uuidString(l.ClientID),
+		CreditLineID:         uuidString(l.CreditLineID),
 	}
 }
 
@@ -196,6 +238,8 @@ type LivestockCreditLineDetail struct {
 	// PartnerArchiveURI is where the partner keeps its own copy (informative).
 	PartnerArchiveURI string    `json:"partnerArchiveUri"`
 	UpdatedAt         time.Time `json:"updatedAt"`
+	// ClientID is the rancher in Prestia's clients (absent until enrolled).
+	ClientID *string `json:"clientId,omitempty"`
 	// Assessment is absent only if the stored assessment cannot be read.
 	Assessment *LivestockCreditLineAssessmentSummary `json:"assessment,omitempty"`
 }
@@ -239,6 +283,7 @@ func ToLivestockCreditLineDetail(l *model.LivestockCreditLine, a *model.Livestoc
 		SignatureValidationID:      l.SignatureValidationID,
 		PartnerArchiveURI:          l.PartnerArchiveURI,
 		UpdatedAt:                  l.UpdatedAt,
+		ClientID:                   uuidString(l.ClientID),
 	}
 	if a == nil {
 		return d

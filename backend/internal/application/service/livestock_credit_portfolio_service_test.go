@@ -161,6 +161,7 @@ func (f *fakeOdoo) RemainingBudget() int { return f.budget }
 // copies, like a database.
 type portfolioStore struct {
 	port.LivestockCreditLineRepository
+	port.LivestockCreditPortfolioRepository
 	lines    map[uuid.UUID]model.LivestockCreditLine
 	invoices map[uuid.UUID]map[int64]model.LivestockCreditInvoice
 	payments []model.LivestockCreditPayment
@@ -217,6 +218,7 @@ func (s *portfolioStore) ListLinesForSync(_ context.Context, limit int) ([]model
 }
 
 func (s *portfolioStore) UpsertInvoices(_ context.Context, lineID uuid.UUID, invoices []model.LivestockCreditInvoice, complete bool) error {
+	previous := s.invoices[lineID]
 	if s.invoices[lineID] == nil || complete {
 		keep := map[int64]model.LivestockCreditInvoice{}
 		if !complete {
@@ -228,6 +230,10 @@ func (s *portfolioStore) UpsertInvoices(_ context.Context, lineID uuid.UUID, inv
 		s.invoices[lineID] = keep
 	}
 	for _, inv := range invoices {
+		// Like the Postgres upsert: the row keeps its id and loan.
+		if prev, ok := previous[inv.OdooInvoiceID]; ok {
+			inv.ID, inv.LoanID = prev.ID, prev.LoanID
+		}
 		s.invoices[lineID][inv.OdooInvoiceID] = inv
 	}
 	return nil

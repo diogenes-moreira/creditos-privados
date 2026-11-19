@@ -497,7 +497,7 @@
     "registerAnother": "Registrar otro cliente",
     "registerClientDescription": "Completá los datos del cliente para registrarlo en CuppoGan",
     "dniInvalid": "DNI inválido",
-    "cuitInvalid": "CUIT inválido",
+    "cuitInvalid": "{{label}} inválido",
     "dateOfBirth": "Fecha de nacimiento",
     "phoneInvalid": "Teléfono inválido",
     "emailInvalid": "Email inválido",
@@ -1105,6 +1105,7 @@
       "hashHelp": "El pagaré se verifica contra esta huella cada vez que se abre.",
       "viewNote": "Ver pagaré",
       "downloadNote": "Descargar",
+      "viewClient": "Ver cliente",
       "copy": "Copiar huella",
       "copied": "Huella copiada",
       "noteCorrupted": "El pagaré guardado no coincide con su huella SHA-256 registrada, así que no se muestra. Avisa al equipo técnico.",
@@ -1194,7 +1195,9 @@
         "reference": "Referencia",
         "status": "Estado",
         "odooPayment": "Pago en Odoo",
-        "registeredBy": "Registrado por"
+        "registeredBy": "Registrado por",
+        "split": "Capital {{capital}} · intereses {{interest}}",
+        "interestPending": "Intereses cobrados pendientes de informar a Odoo: {{amount}}. La API de Odoo todavía recibe solo el capital; regístrelos en la contabilidad de TVGAN."
       },
       "paymentStatus": {
         "registered": "Registrado",
@@ -1229,7 +1232,8 @@
         "alreadyRegistered": "Odoo ya tenía un pago con esa referencia: no se duplicó.",
         "replayed": "Ese pago ya estaba registrado.",
         "error": "No se pudo registrar el pago.",
-        "banksError": "No se pudieron cargar los bancos de Odoo."
+        "banksError": "No se pudieron cargar los bancos de Odoo.",
+        "loanHint": "Vence hoy (con intereses): {{due}}. Para cancelar todo hoy: {{payoff}}. Lo que exceda lo vencido se aplica a capital."
       },
       "blockDialog": {
         "blockTitle": "Bloquear compras a cupo",
@@ -1265,6 +1269,18 @@
         "document_mismatch": "Ese contacto de Odoo tiene otro documento.",
         "odoo_customer_not_found": "Odoo no tiene ese contacto.",
         "already_linked": "El cupo ya está vinculado a otro contacto de Odoo."
+      },
+      "loan": {
+        "summary": "Crédito en Prestia al {{rate}} % nominal anual · capital pendiente {{capital}} · vence hoy {{due}} · para cancelar hoy {{payoff}}",
+        "capital": "Capital",
+        "interest": "Intereses",
+        "total": "Cuota",
+        "status": {
+          "pending": "Pendiente",
+          "partial": "Parcial",
+          "paid": "Pagada",
+          "overdue": "Vencida"
+        }
       }
     }
   }

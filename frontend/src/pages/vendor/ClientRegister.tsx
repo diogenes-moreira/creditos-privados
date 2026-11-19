@@ -235,7 +235,7 @@ const ClientRegister: React.FC = () => {
                       label={config.taxIdLabel}
                       error={!!errors.cuit}
                       helperText={
-                        errors.cuit ? t("vendor.cuitInvalid") : undefined
+                        errors.cuit ? t("vendor.cuitInvalid", { label: config.taxIdLabel }) : undefined
                       }
                     />
                   )}

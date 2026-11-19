@@ -11,8 +11,12 @@ import (
 // their signed promissory notes. The finders return nil, nil when nothing
 // matches.
 type LivestockCreditLineRepository interface {
-	// Create stores the line and its document together, or neither.
-	Create(ctx context.Context, line *model.LivestockCreditLine, doc *model.LivestockCreditLineDocument) error
+	// Create stores the line, its document and the enrollment of the rancher
+	// in Prestia's own tables (nil: none) together, or nothing.
+	Create(ctx context.Context, line *model.LivestockCreditLine, doc *model.LivestockCreditLineDocument, enrollment *model.LivestockClientEnrollment) error
+	// LinkClient stores the enrollment of a line registered without one and
+	// points the line at its client and credit line, together or not at all.
+	LinkClient(ctx context.Context, line *model.LivestockCreditLine, enrollment *model.LivestockClientEnrollment) error
 	FindByPromissoryNote(ctx context.Context, number string) (*model.LivestockCreditLine, error)
 	FindByPartnerReference(ctx context.Context, partner, reference string) (*model.LivestockCreditLine, error)
 	FindByAssessment(ctx context.Context, assessmentID uuid.UUID) (*model.LivestockCreditLine, error)

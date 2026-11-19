@@ -6208,6 +6208,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.LivestockCreditInstallmentResponse"
                     }
                 },
+                "loan": {
+                    "description": "Loan is Prestia's credit on the invoice: Odoo's capital plus the\ninterest of the credit line's rate. Absent until opened.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockInvoiceLoanResponse"
+                        }
+                    ]
+                },
                 "nextDueDate": {
                     "description": "NextDueDate is the due date of the oldest installment with a balance.",
                     "type": "string",
@@ -6309,6 +6317,10 @@ const docTemplate = `{
                     ]
                 },
                 "assessmentId": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "description": "ClientID is the rancher in Prestia's clients (absent until enrolled).",
                     "type": "string"
                 },
                 "createdAt": {
@@ -6442,6 +6454,13 @@ const docTemplate = `{
                     "example": "1000000.00"
                 },
                 "assessmentId": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "description": "ClientID and CreditLineID are the rancher and the credit line in\nPrestia's own tables.",
+                    "type": "string"
+                },
+                "creditLineId": {
                     "type": "string"
                 },
                 "currency": {
@@ -6663,6 +6682,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "BANCOLOMBIA"
                 },
+                "capital": {
+                    "description": "Capital went to Odoo; Interest stays in Prestia, InterestPendingReport\nuntil Odoo can take it.",
+                    "type": "string",
+                    "example": "800000.00"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6678,6 +6702,13 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "interest": {
+                    "type": "string",
+                    "example": "25260.80"
+                },
+                "interestPendingReport": {
+                    "type": "boolean"
                 },
                 "invoiceNumber": {
                     "type": "string",
@@ -6732,6 +6763,11 @@ const docTemplate = `{
                 },
                 "creditLineId": {
                     "type": "string"
+                },
+                "interestPendingReport": {
+                    "description": "InterestPendingReport is the interest collected that Odoo has not been\ntold about yet (its API takes the capital only, for now).",
+                    "type": "string",
+                    "example": "19452.75"
                 },
                 "invoices": {
                     "description": "Invoices: open ones first, by the due date of their oldest unpaid\ninstallment, then the paid ones.",
@@ -6814,6 +6850,83 @@ const docTemplate = `{
                     "description": "NotVaccinated is the registry's unvaccinated total for the holding.",
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "dto.LivestockInvoiceLoanInstallment": {
+            "type": "object",
+            "properties": {
+                "capital": {
+                    "type": "string",
+                    "example": "333300.00"
+                },
+                "dueDate": {
+                    "type": "string",
+                    "example": "2026-12-12"
+                },
+                "interest": {
+                    "type": "string",
+                    "example": "19452.75"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "paidCapital": {
+                    "type": "string",
+                    "example": "0.00"
+                },
+                "paidInterest": {
+                    "type": "string",
+                    "example": "0.00"
+                },
+                "remaining": {
+                    "type": "string",
+                    "example": "352752.75"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "total": {
+                    "type": "string",
+                    "example": "352752.75"
+                }
+            }
+        },
+        "dto.LivestockInvoiceLoanResponse": {
+            "type": "object",
+            "properties": {
+                "dueToday": {
+                    "description": "DueToday is what is due by today, interest included; PayoffToday adds\nthe capital not yet due (the most a payment today can be).",
+                    "type": "string",
+                    "example": "352752.75"
+                },
+                "installments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockInvoiceLoanInstallment"
+                    }
+                },
+                "loanId": {
+                    "type": "string"
+                },
+                "nominalAnnualRate": {
+                    "description": "NominalAnnualRate is the rate it computes with (monthly × 12; 23.3433 = 26.01 % TEA).",
+                    "type": "string",
+                    "example": "23.3433"
+                },
+                "outstandingCapital": {
+                    "description": "OutstandingCapital is the capital not yet paid (what Odoo shows as the invoice's balance).",
+                    "type": "string",
+                    "example": "666700.00"
+                },
+                "payoffToday": {
+                    "type": "string",
+                    "example": "1019452.75"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
                 }
             }
         },

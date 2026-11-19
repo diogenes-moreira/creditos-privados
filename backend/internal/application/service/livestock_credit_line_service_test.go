@@ -37,9 +37,25 @@ type fakeCreditLines struct {
 	// to play a concurrent request that registered the line first.
 	hidden []*model.LivestockCreditLine
 	listed []port.LivestockCreditLineFilter
+	// enrollments are the ones stored with Create or LinkClient.
+	enrollments []*model.LivestockClientEnrollment
 }
 
-func (f *fakeCreditLines) Create(_ context.Context, l *model.LivestockCreditLine, d *model.LivestockCreditLineDocument) error {
+func (f *fakeCreditLines) LinkClient(_ context.Context, l *model.LivestockCreditLine, e *model.LivestockClientEnrollment) error {
+	f.enroll(l, e)
+	return nil
+}
+
+// enroll plays the repository: keeps the enrollment and points the line at it.
+func (f *fakeCreditLines) enroll(l *model.LivestockCreditLine, e *model.LivestockClientEnrollment) {
+	if e == nil {
+		return
+	}
+	f.enrollments = append(f.enrollments, e)
+	l.ClientID, l.CreditLineID = &e.Client.ID, &e.CreditLine.ID
+}
+
+func (f *fakeCreditLines) Create(_ context.Context, l *model.LivestockCreditLine, d *model.LivestockCreditLineDocument, enr *model.LivestockClientEnrollment) error {
 	if len(f.hidden) > 0 {
 		f.lines = append(f.lines, f.hidden...)
 		f.hidden = nil
@@ -51,6 +67,7 @@ func (f *fakeCreditLines) Create(_ context.Context, l *model.LivestockCreditLine
 			return errors.New("duplicate key value violates unique constraint")
 		}
 	}
+	f.enroll(l, enr)
 	f.lines = append(f.lines, l)
 	f.docs = append(f.docs, d)
 	return nil

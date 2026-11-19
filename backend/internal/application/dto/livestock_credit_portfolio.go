@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -103,24 +104,85 @@ type LivestockCreditInvoiceResponse struct {
 	NextDueDate  string                               `json:"nextDueDate" example:"2026-12-12"`
 	Installments []LivestockCreditInstallmentResponse `json:"installments"`
 	SyncedAt     time.Time                            `json:"syncedAt"`
+	// Loan is Prestia's credit on the invoice: Odoo's capital plus the
+	// interest of the credit line's rate. Absent until opened.
+	Loan *LivestockInvoiceLoanResponse `json:"loan,omitempty"`
+}
+
+// LivestockInvoiceLoanResponse is the loan of a quota invoice, as of today.
+type LivestockInvoiceLoanResponse struct {
+	LoanID string `json:"loanId"`
+	Status string `json:"status" example:"active"`
+	// NominalAnnualRate is the rate it computes with (monthly × 12; 23.3433 = 26.01 % TEA).
+	NominalAnnualRate string `json:"nominalAnnualRate" example:"23.3433"`
+	// OutstandingCapital is the capital not yet paid (what Odoo shows as the invoice's balance).
+	OutstandingCapital string `json:"outstandingCapital" example:"666700.00"`
+	// DueToday is what is due by today, interest included; PayoffToday adds
+	// the capital not yet due (the most a payment today can be).
+	DueToday     string                            `json:"dueToday" example:"352752.75"`
+	PayoffToday  string                            `json:"payoffToday" example:"1019452.75"`
+	Installments []LivestockInvoiceLoanInstallment `json:"installments"`
+}
+
+// LivestockInvoiceLoanInstallment is one installment of the loan.
+type LivestockInvoiceLoanInstallment struct {
+	Number       int    `json:"number"`
+	DueDate      string `json:"dueDate" example:"2026-12-12"`
+	Capital      string `json:"capital" example:"333300.00"`
+	Interest     string `json:"interest" example:"19452.75"`
+	Total        string `json:"total" example:"352752.75"`
+	PaidCapital  string `json:"paidCapital" example:"0.00"`
+	PaidInterest string `json:"paidInterest" example:"0.00"`
+	Remaining    string `json:"remaining" example:"352752.75"`
+	Status       string `json:"status" example:"pending"`
+}
+
+// AddInvoiceLoans adds each invoice's loan, and the interest collected and
+// not yet reported to Odoo.
+func AddInvoiceLoans(r *LivestockCreditPortfolioResponse, invoices []model.LivestockCreditInvoice, loans map[uuid.UUID]*model.Loan, today time.Time) {
+	for k, inv := range invoices {
+		if inv.LoanID == nil || k >= len(r.Invoices) {
+			continue
+		}
+		loan, ok := loans[*inv.LoanID]
+		if !ok {
+			continue
+		}
+		out := &LivestockInvoiceLoanResponse{LoanID: loan.ID.String(), Status: string(loan.Status),
+			NominalAnnualRate: loan.InterestRate.StringFixed(4), OutstandingCapital: loan.OutstandingCapital().StringFixed(2),
+			DueToday: loan.LivestockDue(today).StringFixed(2), PayoffToday: loan.LivestockPayoff(today).StringFixed(2),
+			Installments: make([]LivestockInvoiceLoanInstallment, len(loan.Installments))}
+		for j, i := range loan.Installments {
+			out.Installments[j] = LivestockInvoiceLoanInstallment{Number: i.Number, DueDate: i.DueDate.Format(time.DateOnly),
+				Capital: i.CapitalAmount.StringFixed(2), Interest: i.InterestAmount.StringFixed(2), Total: i.TotalAmount.StringFixed(2),
+				PaidCapital: i.PaidCapital.StringFixed(2), PaidInterest: i.PaidInterest.StringFixed(2),
+				Remaining: i.RemainingAmount.StringFixed(2), Status: string(i.Status)}
+		}
+		r.Invoices[k].Loan = out
+	}
 }
 
 // LivestockCreditPaymentResponse is a payment staff registered.
 type LivestockCreditPaymentResponse struct {
-	ID                string    `json:"id"`
-	OdooInvoiceID     int64     `json:"odooInvoiceId"`
-	InvoiceNumber     string    `json:"invoiceNumber" example:"FE12262"`
-	Amount            string    `json:"amount" example:"825260.80"`
-	Date              string    `json:"date" example:"2026-11-16"`
-	Bank              string    `json:"bank" example:"BANCOLOMBIA"`
-	Reference         string    `json:"reference" example:"TRX-20261116-001"`
-	Status            string    `json:"status" example:"registered"`
-	OdooPaymentID     *int64    `json:"odooPaymentId,omitempty"`
-	OdooPaymentNumber string    `json:"odooPaymentNumber" example:"PBCOL/2026/01768"`
-	ErrorCode         string    `json:"errorCode,omitempty"`
-	ErrorMessage      string    `json:"errorMessage,omitempty"`
-	RegisteredBy      string    `json:"registeredBy"`
-	CreatedAt         time.Time `json:"createdAt"`
+	ID            string `json:"id"`
+	OdooInvoiceID int64  `json:"odooInvoiceId"`
+	InvoiceNumber string `json:"invoiceNumber" example:"FE12262"`
+	Amount        string `json:"amount" example:"825260.80"`
+	// Capital went to Odoo; Interest stays in Prestia, InterestPendingReport
+	// until Odoo can take it.
+	Capital               string    `json:"capital" example:"800000.00"`
+	Interest              string    `json:"interest" example:"25260.80"`
+	InterestPendingReport bool      `json:"interestPendingReport"`
+	Date                  string    `json:"date" example:"2026-11-16"`
+	Bank                  string    `json:"bank" example:"BANCOLOMBIA"`
+	Reference             string    `json:"reference" example:"TRX-20261116-001"`
+	Status                string    `json:"status" example:"registered"`
+	OdooPaymentID         *int64    `json:"odooPaymentId,omitempty"`
+	OdooPaymentNumber     string    `json:"odooPaymentNumber" example:"PBCOL/2026/01768"`
+	ErrorCode             string    `json:"errorCode,omitempty"`
+	ErrorMessage          string    `json:"errorMessage,omitempty"`
+	RegisteredBy          string    `json:"registeredBy"`
+	CreatedAt             time.Time `json:"createdAt"`
 }
 
 // LivestockCreditBlockEventResponse is a block or unblock decided in Prestia.
@@ -141,9 +203,12 @@ type LivestockCreditPortfolioResponse struct {
 	Invoices []LivestockCreditInvoiceResponse `json:"invoices"`
 	// SuggestedInvoiceID is the open invoice due first, which the payment
 	// form preselects.
-	SuggestedInvoiceID *int64                              `json:"suggestedInvoiceId,omitempty"`
-	Payments           []LivestockCreditPaymentResponse    `json:"payments"`
-	BlockEvents        []LivestockCreditBlockEventResponse `json:"blockEvents"`
+	SuggestedInvoiceID *int64                           `json:"suggestedInvoiceId,omitempty"`
+	Payments           []LivestockCreditPaymentResponse `json:"payments"`
+	// InterestPendingReport is the interest collected that Odoo has not been
+	// told about yet (its API takes the capital only, for now).
+	InterestPendingReport string                              `json:"interestPendingReport" example:"19452.75"`
+	BlockEvents           []LivestockCreditBlockEventResponse `json:"blockEvents"`
 }
 
 // RegisterLivestockCreditPaymentRequest is a payment to send to Odoo.
@@ -240,10 +305,20 @@ func ToLivestockCreditInvoiceResponse(i model.LivestockCreditInvoice) LivestockC
 func ToLivestockCreditPaymentResponse(p model.LivestockCreditPayment) LivestockCreditPaymentResponse {
 	return LivestockCreditPaymentResponse{
 		ID: p.ID.String(), OdooInvoiceID: p.OdooInvoiceID, InvoiceNumber: p.InvoiceNumber,
-		Amount: p.Amount.StringFixed(2), Date: p.PaymentDate, Bank: p.Bank, Reference: p.Reference,
+		Amount: p.Amount.StringFixed(2), Capital: capitalOf(p).StringFixed(2), Interest: p.InterestAmount.StringFixed(2),
+		InterestPendingReport: p.Status != model.PaymentFailed && p.InterestAmount.IsPositive() && p.InterestReportedAt == nil,
+		Date:                  p.PaymentDate, Bank: p.Bank, Reference: p.Reference,
 		Status: string(p.Status), OdooPaymentID: p.OdooPaymentID, OdooPaymentNumber: p.OdooPaymentNumber,
 		ErrorCode: p.ErrorCode, ErrorMessage: p.ErrorMessage, RegisteredBy: p.RegisteredByEmail, CreatedAt: p.CreatedAt,
 	}
+}
+
+// capitalOf is the payment's capital: all of it on a payment without loan.
+func capitalOf(p model.LivestockCreditPayment) decimal.Decimal {
+	if p.LoanPaymentID == nil {
+		return p.Amount
+	}
+	return p.CapitalAmount
 }
 
 func ToLivestockCreditPortfolioResponse(enabled bool, line *model.LivestockCreditLine, invoices []model.LivestockCreditInvoice,
@@ -258,9 +333,14 @@ func ToLivestockCreditPortfolioResponse(enabled bool, line *model.LivestockCredi
 	for i := range invoices {
 		r.Invoices[i] = ToLivestockCreditInvoiceResponse(invoices[i])
 	}
+	pending := decimal.Zero
 	for i := range payments {
 		r.Payments[i] = ToLivestockCreditPaymentResponse(payments[i])
+		if r.Payments[i].InterestPendingReport {
+			pending = pending.Add(payments[i].InterestAmount)
+		}
 	}
+	r.InterestPendingReport = pending.StringFixed(2)
 	for i, e := range events {
 		r.BlockEvents[i] = LivestockCreditBlockEventResponse{ID: e.ID.String(), Blocked: e.Blocked, Reason: e.Reason,
 			By: e.UserEmail, CreatedAt: e.CreatedAt}

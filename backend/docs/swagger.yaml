@@ -462,6 +462,12 @@ definitions:
         items:
           $ref: '#/definitions/dto.LivestockCreditInstallmentResponse'
         type: array
+      loan:
+        allOf:
+        - $ref: '#/definitions/dto.LivestockInvoiceLoanResponse'
+        description: |-
+          Loan is Prestia's credit on the invoice: Odoo's capital plus the
+          interest of the credit line's rate. Absent until opened.
       nextDueDate:
         description: NextDueDate is the due date of the oldest installment with a
           balance.
@@ -540,6 +546,9 @@ definitions:
         description: Assessment is absent only if the stored assessment cannot be
           read.
       assessmentId:
+        type: string
+      clientId:
+        description: ClientID is the rancher in Prestia's clients (absent until enrolled).
         type: string
       createdAt:
         type: string
@@ -632,6 +641,13 @@ definitions:
         example: "1000000.00"
         type: string
       assessmentId:
+        type: string
+      clientId:
+        description: |-
+          ClientID and CreditLineID are the rancher and the credit line in
+          Prestia's own tables.
+        type: string
+      creditLineId:
         type: string
       currency:
         type: string
@@ -787,6 +803,12 @@ definitions:
       bank:
         example: BANCOLOMBIA
         type: string
+      capital:
+        description: |-
+          Capital went to Odoo; Interest stays in Prestia, InterestPendingReport
+          until Odoo can take it.
+        example: "800000.00"
+        type: string
       createdAt:
         type: string
       date:
@@ -798,6 +820,11 @@ definitions:
         type: string
       id:
         type: string
+      interest:
+        example: "25260.80"
+        type: string
+      interestPendingReport:
+        type: boolean
       invoiceNumber:
         example: FE12262
         type: string
@@ -836,6 +863,12 @@ definitions:
           $ref: '#/definitions/dto.LivestockCreditBlockEventResponse'
         type: array
       creditLineId:
+        type: string
+      interestPendingReport:
+        description: |-
+          InterestPendingReport is the interest collected that Odoo has not been
+          told about yet (its API takes the capital only, for now).
+        example: "19452.75"
         type: string
       invoices:
         description: |-
@@ -901,6 +934,66 @@ definitions:
         description: NotVaccinated is the registry's unvaccinated total for the holding.
         minimum: 0
         type: integer
+    type: object
+  dto.LivestockInvoiceLoanInstallment:
+    properties:
+      capital:
+        example: "333300.00"
+        type: string
+      dueDate:
+        example: "2026-12-12"
+        type: string
+      interest:
+        example: "19452.75"
+        type: string
+      number:
+        type: integer
+      paidCapital:
+        example: "0.00"
+        type: string
+      paidInterest:
+        example: "0.00"
+        type: string
+      remaining:
+        example: "352752.75"
+        type: string
+      status:
+        example: pending
+        type: string
+      total:
+        example: "352752.75"
+        type: string
+    type: object
+  dto.LivestockInvoiceLoanResponse:
+    properties:
+      dueToday:
+        description: |-
+          DueToday is what is due by today, interest included; PayoffToday adds
+          the capital not yet due (the most a payment today can be).
+        example: "352752.75"
+        type: string
+      installments:
+        items:
+          $ref: '#/definitions/dto.LivestockInvoiceLoanInstallment'
+        type: array
+      loanId:
+        type: string
+      nominalAnnualRate:
+        description: NominalAnnualRate is the rate it computes with (monthly × 12;
+          23.3433 = 26.01 % TEA).
+        example: "23.3433"
+        type: string
+      outstandingCapital:
+        description: OutstandingCapital is the capital not yet paid (what Odoo shows
+          as the invoice's balance).
+        example: "666700.00"
+        type: string
+      payoffToday:
+        example: "1019452.75"
+        type: string
+      status:
+        example: active
+        type: string
     type: object
   dto.LivestockQuotaCeilingsResponse:
     properties:

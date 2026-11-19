@@ -497,7 +497,7 @@
     "registerAnother": "Register another client",
     "registerClientDescription": "Fill in the client details to register them in CuppoGan",
     "dniInvalid": "Invalid DNI",
-    "cuitInvalid": "Invalid CUIT",
+    "cuitInvalid": "Invalid {{label}}",
     "dateOfBirth": "Date of birth",
     "phoneInvalid": "Invalid phone number",
     "emailInvalid": "Invalid email",
@@ -1105,6 +1105,7 @@
       "hashHelp": "The promissory note is checked against this hash every time it is opened.",
       "viewNote": "View promissory note",
       "downloadNote": "Download",
+      "viewClient": "View client",
       "copy": "Copy hash",
       "copied": "Hash copied",
       "noteCorrupted": "The stored promissory note does not match its registered SHA-256, so it is not shown. Tell the technical team.",
@@ -1194,7 +1195,9 @@
         "reference": "Reference",
         "status": "Status",
         "odooPayment": "Odoo payment",
-        "registeredBy": "Registered by"
+        "registeredBy": "Registered by",
+        "split": "Capital {{capital}} · interest {{interest}}",
+        "interestPending": "Interest collected not yet reported to Odoo: {{amount}}. Odoo's API only takes the capital for now; record it in TVGAN's books."
       },
       "paymentStatus": {
         "registered": "Registered",
@@ -1229,7 +1232,8 @@
         "alreadyRegistered": "Odoo already had a payment with that reference: nothing was duplicated.",
         "replayed": "That payment was already registered.",
         "error": "Could not register the payment.",
-        "banksError": "Could not load Odoo's banks."
+        "banksError": "Could not load Odoo's banks.",
+        "loanHint": "Due today (with interest): {{due}}. To pay off today: {{payoff}}. Anything over what is due goes to capital."
       },
       "blockDialog": {
         "blockTitle": "Block credit purchases",
@@ -1265,6 +1269,18 @@
         "document_mismatch": "That Odoo contact has another document.",
         "odoo_customer_not_found": "Odoo has no such contact.",
         "already_linked": "The line is already linked to another Odoo contact."
+      },
+      "loan": {
+        "summary": "Prestia credit at {{rate}} % nominal annual · capital owed {{capital}} · due today {{due}} · payoff today {{payoff}}",
+        "capital": "Capital",
+        "interest": "Interest",
+        "total": "Installment",
+        "status": {
+          "pending": "Pending",
+          "partial": "Partial",
+          "paid": "Paid",
+          "overdue": "Overdue"
+        }
       }
     }
   }

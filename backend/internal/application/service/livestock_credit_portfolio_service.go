@@ -28,6 +28,10 @@ type LivestockCreditPortfolio struct {
 	// Suggested is the invoice the payment form preselects: the open one
 	// whose oldest unpaid installment is due first.
 	Suggested *model.LivestockCreditInvoice
+	// Loans are Prestia's loans of the invoices, by id; Today is the date
+	// what is due is computed for.
+	Loans map[uuid.UUID]*model.Loan
+	Today time.Time
 }
 
 // PaymentOutcome is a payment registration's answer.
@@ -58,6 +62,22 @@ type LivestockCreditPortfolioService struct {
 	now     func() time.Time
 	loc     *time.Location
 	reserve int
+	// creditLines and loans hold Prestia's side of the credit: each quota
+	// invoice's loan (WithLoans). Without them invoices are only shown.
+	creditLines port.CreditLineRepository
+	loans       port.LoanRepository
+}
+
+// WithLoans makes Prestia keep the credit: every quota invoice of an enrolled
+// line opens a loan (Odoo's capital and dates, the line's interest), and
+// payments are applied to it, with only their capital sent to Odoo.
+func (s *LivestockCreditPortfolioService) WithLoans(creditLines port.CreditLineRepository, loans port.LoanRepository) *LivestockCreditPortfolioService {
+	s.creditLines, s.loans = creditLines, loans
+	return s
+}
+
+func (s *LivestockCreditPortfolioService) keepsLoans() bool {
+	return s.creditLines != nil && s.loans != nil
 }
 
 // NewLivestockCreditPortfolioService builds the service. A nil gateway (no
@@ -126,8 +146,22 @@ func (s *LivestockCreditPortfolioService) portfolioOf(ctx context.Context, line 
 	if err != nil {
 		return nil, fmt.Errorf("reading the block history: %w", err)
 	}
+	loans := map[uuid.UUID]*model.Loan{}
+	if s.keepsLoans() {
+		for _, inv := range invoices {
+			if inv.LoanID == nil {
+				continue
+			}
+			loan, err := s.loans.FindByIDWithInstallments(ctx, *inv.LoanID)
+			if err != nil {
+				return nil, fmt.Errorf("reading the loan of invoice %s: %w", inv.Number, err)
+			}
+			loans[loan.ID] = loan
+		}
+	}
+	today, _ := time.Parse(time.DateOnly, s.today())
 	return &LivestockCreditPortfolio{Enabled: s.Enabled(), Line: line, Invoices: invoices, Payments: payments,
-		BlockEvents: events, Suggested: model.OldestOpenInvoice(invoices)}, nil
+		BlockEvents: events, Suggested: model.OldestOpenInvoice(invoices), Loans: loans, Today: today}, nil
 }
 
 func (s *LivestockCreditPortfolioService) line(ctx context.Context, id uuid.UUID) (*model.LivestockCreditLine, error) {
@@ -294,8 +328,54 @@ func (s *LivestockCreditPortfolioService) refresh(ctx context.Context, line *mod
 	if err := s.repo.UpsertInvoices(ctx, line.ID, rows, complete); err != nil {
 		return fmt.Errorf("storing the invoices: %w", err)
 	}
+	s.openInvoiceLoans(ctx, line)
 	line.ApplyOdooCustomer(customer, now)
 	return s.saveState(ctx, line)
+}
+
+// openInvoiceLoans opens the loan of every quota invoice of the line that has
+// none, on the line's credit line and rate. Failures are logged and retried on
+// the next sync: they never stop the sync.
+func (s *LivestockCreditPortfolioService) openInvoiceLoans(ctx context.Context, line *model.LivestockCreditLine) {
+	if !s.keepsLoans() || line.CreditLineID == nil || line.ClientID == nil {
+		return
+	}
+	invoices, err := s.repo.ListInvoices(ctx, line.ID)
+	if err != nil {
+		log.Printf("Odoo sync: line %s: invoices not read to open loans: %v", line.ID, err)
+		return
+	}
+	var creditLine *model.CreditLine
+	for _, inv := range invoices {
+		if inv.LoanID != nil {
+			continue
+		}
+		if creditLine == nil {
+			if creditLine, err = s.creditLines.FindByID(ctx, *line.CreditLineID); err != nil {
+				log.Printf("Odoo sync: line %s: credit line not read: %v", line.ID, err)
+				return
+			}
+		}
+		loan, err := model.NewLivestockInvoiceLoan(*line.ClientID, creditLine.ID, inv, creditLine.InterestRate)
+		if err != nil {
+			log.Printf("Odoo sync: line %s: no loan for invoice %s: %v", line.ID, inv.Number, err)
+			continue
+		}
+		if err := s.repo.OpenInvoiceLoan(ctx, inv.ID, loan); err != nil {
+			log.Printf("Odoo sync: line %s: loan of invoice %s not stored: %v", line.ID, inv.Number, err)
+			continue
+		}
+		note := ""
+		if inv.AmountResidual.LessThan(inv.AmountTotal) {
+			// Paid in Odoo before Prestia kept the credit: those payments are
+			// not in the loan. Staff reconciles it.
+			note = fmt.Sprintf("; Odoo already shows %s paid, not applied to the loan",
+				inv.AmountTotal.Sub(inv.AmountResidual).StringFixed(2))
+		}
+		s.record(ctx, nil, "open_livestock_invoice_loan", line,
+			fmt.Sprintf("loan %s opened for invoice %s: %s in %d installments at %s %% nominal%s",
+				loan.ID, inv.Number, loan.Principal.StringFixed(2), loan.NumInstallments, loan.InterestRate.StringFixed(4), note))
+	}
 }
 
 func (s *LivestockCreditPortfolioService) saveState(ctx context.Context, line *model.LivestockCreditLine) error {
@@ -407,6 +487,15 @@ func (s *LivestockCreditPortfolioService) RegisterPayment(ctx context.Context, l
 		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "invoice_of_another_customer",
 			Message: fmt.Sprintf("invoice %s is not this rancher's", invoice.Number)}
 	}
+	if s.keepsLoans() {
+		row, err := s.invoiceRow(ctx, line.ID, invoice.ID)
+		if err != nil {
+			return nil, err
+		}
+		if row != nil && row.LoanID != nil {
+			return s.registerLoanPayment(ctx, line, invoice, *row.LoanID, req, actor)
+		}
+	}
 	if req.Amount.GreaterThan(invoice.AmountResidual) {
 		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "amount_exceeds_residual",
 			Message: fmt.Sprintf("the amount (%s) exceeds the balance of invoice %s (%s)",
@@ -462,6 +551,121 @@ func (s *LivestockCreditPortfolioService) RegisterPayment(ctx context.Context, l
 	case model.PaymentFailed:
 		return nil, &model.PortfolioRejection{Kind: model.PortfolioOdooRejected, Code: "odoo_rejected",
 			Message: oe.Message, OdooCode: oe.Code}
+	}
+	portfolio, err := s.portfolioOf(ctx, line)
+	if err != nil {
+		return nil, err
+	}
+	return &PaymentOutcome{Payment: payment, Portfolio: portfolio}, nil
+}
+
+func (s *LivestockCreditPortfolioService) invoiceRow(ctx context.Context, lineID uuid.UUID, odooInvoiceID int64) (*model.LivestockCreditInvoice, error) {
+	invoices, err := s.repo.ListInvoices(ctx, lineID)
+	if err != nil {
+		return nil, fmt.Errorf("reading the invoices: %w", err)
+	}
+	for i := range invoices {
+		if invoices[i].OdooInvoiceID == odooInvoiceID {
+			return &invoices[i], nil
+		}
+	}
+	return nil, nil
+}
+
+// registerLoanPayment applies what the rancher paid to the invoice's loan:
+// the installments due by the payment date take it first (interest, then
+// capital), the rest prepays capital and lowers the interest not yet due. Only
+// the capital goes to Odoo, on the invoice; the interest stays in Prestia,
+// pending to report to Odoo. Odoo answers as in RegisterPayment; the loan is
+// only touched once Odoo has the capital (or there is none to send). A loan
+// not stored after Odoo took the capital is fixed by retrying the same
+// reference: Odoo answers it was already registered and the loan is updated.
+func (s *LivestockCreditPortfolioService) registerLoanPayment(ctx context.Context, line *model.LivestockCreditLine, invoice *model.OdooInvoice, loanID uuid.UUID, req model.LivestockCreditPaymentRequest, actor Actor) (*PaymentOutcome, error) {
+	loan, err := s.loans.FindByIDWithInstallments(ctx, loanID)
+	if err != nil {
+		return nil, fmt.Errorf("reading the loan of invoice %s: %w", invoice.Number, err)
+	}
+	on, err := time.Parse(time.DateOnly, req.Date)
+	if err != nil {
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "invalid_date", Message: "the date must be YYYY-MM-DD"}
+	}
+	payoff := loan.LivestockPayoff(on)
+	split, err := loan.ApplyLivestockPayment(req.Amount, on)
+	if err != nil {
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "amount_exceeds_balance",
+			Message: fmt.Sprintf("the amount (%s) exceeds what can be paid on invoice %s on %s (%s: due installments plus the capital not yet due)",
+				req.Amount.StringFixed(2), invoice.Number, req.Date, payoff.StringFixed(2))}
+	}
+	if split.Capital.GreaterThan(invoice.AmountResidual) {
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioConflict, Code: "odoo_balance_mismatch",
+			Message: fmt.Sprintf("the payment's capital (%s) exceeds the balance Odoo shows for invoice %s (%s): reconcile the invoice first",
+				split.Capital.StringFixed(2), invoice.Number, invoice.AmountResidual.StringFixed(2))}
+	}
+	banks, err := s.odoo.Banks(ctx)
+	if err != nil {
+		return nil, odooRejection(err)
+	}
+	if !bankAccepted(banks, req.Bank) {
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "invalid_bank",
+			Message: fmt.Sprintf("Odoo does not take payments into %s", req.Bank)}
+	}
+
+	payment := model.NewLivestockCreditPayment(line.ID, req, invoice.Number, actor.UserID, actor.Email)
+	payment.CapitalAmount, payment.InterestAmount = split.Capital, split.Interest
+	var result *model.OdooPaymentResult
+	var oe *port.OdooError
+	if split.Capital.IsPositive() {
+		result, err = s.odoo.RegisterPayment(ctx, invoice.ID, model.OdooPaymentRequest{
+			Amount: split.Capital, Date: req.Date, Bank: req.Bank, Reference: req.Reference,
+		})
+		switch {
+		case err == nil:
+			payment.MarkRegistered(result.PaymentID, result.PaymentNumber)
+		case errors.As(err, &oe) && oe.Code == port.OdooPaymentAlreadyRegistered:
+			payment.MarkAlreadyRegistered(oe.Code, oe.Message)
+		case errors.As(err, &oe) && !oe.Unavailable():
+			payment.MarkFailed(oe.Code, oe.Message)
+			if storeErr := s.repo.CreatePayment(ctx, payment); storeErr != nil {
+				return nil, fmt.Errorf("storing the rejected payment: %w", storeErr)
+			}
+			s.record(ctx, actor.UserID, "register_livestock_credit_payment", line,
+				fmt.Sprintf("payment %s of %s (capital %s) on invoice %s rejected by Odoo: %s",
+					req.Reference, req.Amount.StringFixed(2), split.Capital.StringFixed(2), invoice.Number, oe.Code))
+			return nil, &model.PortfolioRejection{Kind: model.PortfolioOdooRejected, Code: "odoo_rejected", Message: oe.Message, OdooCode: oe.Code}
+		default:
+			r := odooRejection(err)
+			s.record(ctx, actor.UserID, "livestock_credit_payment_not_sent", line,
+				fmt.Sprintf("payment %s of %s on invoice %s not registered, Odoo unavailable (%s); it can be retried",
+					req.Reference, req.Amount.StringFixed(2), invoice.Number, r.OdooCode))
+			return nil, r
+		}
+	} else {
+		payment.MarkRecordedInPrestiaOnly()
+	}
+
+	loanPayment, err := model.NewPayment(loan.ID, req.Amount, model.PaymentTransfer, req.Reference)
+	if err != nil {
+		return nil, err
+	}
+	payment.LoanPaymentID = &loanPayment.ID
+	if err := s.repo.RecordLoanPayment(ctx, loan, loanPayment, split.Capital, payment); err != nil {
+		if again, findErr := s.repo.FindActivePaymentByReference(ctx, req.Reference); findErr == nil && again != nil {
+			return s.answerExisting(ctx, line, again, req)
+		}
+		s.record(ctx, actor.UserID, "livestock_credit_payment_not_stored", line,
+			fmt.Sprintf("payment %s: Odoo has the capital %s of invoice %s but the loan was not updated (%v); retry the same reference",
+				req.Reference, split.Capital.StringFixed(2), invoice.Number, err))
+		return nil, fmt.Errorf("storing the payment on the loan: %w", err)
+	}
+	s.record(ctx, actor.UserID, "register_livestock_credit_payment", line,
+		fmt.Sprintf("payment %s of %s on invoice %s into %s dated %s: capital %s (to Odoo: %s %s), interest %s (pending to report)",
+			payment.Reference, payment.Amount.StringFixed(2), payment.InvoiceNumber, payment.Bank, payment.PaymentDate,
+			split.Capital.StringFixed(2), payment.Status, payment.OdooPaymentNumber, split.Interest.StringFixed(2)))
+	switch {
+	case result != nil:
+		s.applyPaymentResult(ctx, line, result)
+	case payment.Status == model.PaymentAlreadyRegistered:
+		_ = s.syncLine(ctx, line, false)
 	}
 	portfolio, err := s.portfolioOf(ctx, line)
 	if err != nil {

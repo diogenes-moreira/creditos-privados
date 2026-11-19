@@ -984,6 +984,8 @@ export interface LivestockCreditLineDetail extends LivestockCreditLine {
   signatureValidationId: string;
   partnerArchiveUri: string;
   updatedAt: string;
+  /** The rancher in Prestia's clients (absent until enrolled). */
+  clientId?: string;
   assessment?: LivestockCreditLineAssessment;
 }
 
@@ -1051,6 +1053,32 @@ export interface LivestockCreditInvoice {
   nextDueDate: string;
   installments: LivestockCreditInstallment[];
   syncedAt: string;
+  /** Prestia's credit on the invoice: Odoo's capital plus interest. */
+  loan?: LivestockInvoiceLoan;
+}
+
+export interface LivestockInvoiceLoanInstallment {
+  number: number;
+  dueDate: string;
+  capital: string;
+  interest: string;
+  total: string;
+  paidCapital: string;
+  paidInterest: string;
+  remaining: string;
+  status: string;
+}
+
+export interface LivestockInvoiceLoan {
+  loanId: string;
+  status: string;
+  nominalAnnualRate: string;
+  outstandingCapital: string;
+  /** Due by today, interest included. */
+  dueToday: string;
+  /** The most a payment today can be: due today plus the capital not yet due. */
+  payoffToday: string;
+  installments: LivestockInvoiceLoanInstallment[];
 }
 
 export type LivestockCreditPaymentStatus = "registered" | "already_registered" | "failed";
@@ -1060,6 +1088,11 @@ export interface LivestockCreditPayment {
   odooInvoiceId: number;
   invoiceNumber: string;
   amount: string;
+  /** Sent to Odoo. */
+  capital: string;
+  /** Kept in Prestia; pending to report to Odoo. */
+  interest: string;
+  interestPendingReport: boolean;
   date: string;
   bank: string;
   reference: string;
@@ -1088,6 +1121,8 @@ export interface LivestockCreditPortfolio {
   suggestedInvoiceId?: number;
   payments: LivestockCreditPayment[];
   blockEvents: LivestockCreditBlockEvent[];
+  /** Interest collected that Odoo was not told about yet. */
+  interestPendingReport: string;
 }
 
 export interface RegisterLivestockCreditPaymentRequest {

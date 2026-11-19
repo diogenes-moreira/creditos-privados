@@ -1319,11 +1319,11 @@ const ClientDetail: React.FC = () => {
                   onChange={(e) => setEditClientData({ ...editClientData, lastName: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="DNI" value={editClientData.dni}
+                <TextField fullWidth label={getCountryConfig().nationalIdLabel} value={editClientData.dni}
                   onChange={(e) => setEditClientData({ ...editClientData, dni: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="CUIT" value={editClientData.cuit}
+                <TextField fullWidth label={getCountryConfig().taxIdLabel} value={editClientData.cuit}
                   onChange={(e) => setEditClientData({ ...editClientData, cuit: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={6}>
