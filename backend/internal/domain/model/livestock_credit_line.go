@@ -82,6 +82,13 @@ type LivestockCreditLine struct {
 	// credit is invoiced and collected, and the last credit snapshot.
 	Odoo LivestockCreditLineOdoo `gorm:"embedded;embeddedPrefix:odoo_"`
 
+	// ClientID and CreditLineID are the rancher and the approved credit line
+	// in Prestia's own tables (clients, credit_lines): the activation enrolls
+	// the rancher there, so they show up with every other client. Nil only on
+	// a line registered before that, until the partner replays its activation.
+	ClientID     *uuid.UUID `gorm:"type:uuid;index"`
+	CreditLineID *uuid.UUID `gorm:"type:uuid;index"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -117,6 +124,17 @@ type LivestockCreditActivation struct {
 	SignatureProvider     string
 	SignatureDocumentID   string
 	SignatureValidationID string
+
+	// The rancher as Prestia's client. Optional: a partner that does not send
+	// them gets the names split from FullName, a generic date of birth and an
+	// e-mail made from the national ID (see LivestockClientEnrollment).
+	FirstName   string
+	LastName    string
+	Email       string
+	DateOfBirth *time.Time
+	Address     string
+	City        string
+	Province    string
 
 	Document            []byte
 	DocumentContentType string

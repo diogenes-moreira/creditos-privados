@@ -10,6 +10,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // Credit line listing page sizes.
@@ -35,10 +36,37 @@ type LivestockCreditLineService struct {
 	lines       port.LivestockCreditLineRepository
 	assessments port.LivestockQuotaRepository
 	audit       *AuditService
+	enrollment  *clientEnrollment
+}
+
+// LivestockCreditTerms are the terms of the CreditLine an activation opens in
+// Prestia: the interest rate and the most installments a purchase can take.
+type LivestockCreditTerms struct {
+	InterestRate    decimal.Decimal
+	MaxInstallments int
+}
+
+// clientEnrollment is what enrolling a rancher as Prestia's client needs.
+type clientEnrollment struct {
+	users   port.UserRepository
+	clients port.ClientRepository
+	auth    port.AuthService
+	country string
+	terms   LivestockCreditTerms
 }
 
 func NewLivestockCreditLineService(lines port.LivestockCreditLineRepository, assessments port.LivestockQuotaRepository) *LivestockCreditLineService {
 	return &LivestockCreditLineService{lines: lines, assessments: assessments}
+}
+
+// WithClients enrolls the rancher of every activation in Prestia's own
+// tables: a Client (with its User and current account) unless one with that
+// national ID exists, and an approved CreditLine for the quota. It also
+// enrolls the rancher of a line registered before, when its activation is
+// replayed.
+func (s *LivestockCreditLineService) WithClients(users port.UserRepository, clients port.ClientRepository, auth port.AuthService, country string, terms LivestockCreditTerms) *LivestockCreditLineService {
+	s.enrollment = &clientEnrollment{users: users, clients: clients, auth: auth, country: country, terms: terms}
+	return s
 }
 
 // WithAudit records every registered line in the audit log.
@@ -56,7 +84,13 @@ func (s *LivestockCreditLineService) RegisterActivation(ctx context.Context, a m
 		return nil, false, err
 	}
 	if line, err := s.existing(ctx, a, partner); line != nil || err != nil {
-		return line, false, err
+		if err == nil && line.ClientID == nil && s.enrollment != nil {
+			err = s.linkClient(ctx, a, line)
+		}
+		if err != nil {
+			return nil, false, err
+		}
+		return line, false, nil
 	}
 
 	assessment, err := s.assessments.FindByID(ctx, a.AssessmentID)
@@ -72,7 +106,13 @@ func (s *LivestockCreditLineService) RegisterActivation(ctx context.Context, a m
 	}
 
 	line, doc := model.NewLivestockCreditLine(a, partner)
-	if err := s.lines.Create(ctx, line, doc); err != nil {
+	var enrollment *model.LivestockClientEnrollment
+	if s.enrollment != nil {
+		if enrollment, err = s.enroll(ctx, a); err != nil {
+			return nil, false, err
+		}
+	}
+	if err := s.lines.Create(ctx, line, doc, enrollment); err != nil {
 		// A concurrent request may have registered it first (unique indexes):
 		// answer as if this one had arrived second.
 		if existing, findErr := s.existing(ctx, a, partner); existing != nil || findErr != nil {
@@ -84,8 +124,95 @@ func (s *LivestockCreditLineService) RegisterActivation(ctx context.Context, a m
 		s.audit.Record(ctx, nil, "register_livestock_credit_line", "livestock_credit_line", line.ID.String(),
 			fmt.Sprintf("%s activated a %s %s credit line on assessment %s (promissory note %s)",
 				partner, line.Amount.StringFixed(2), line.Currency, line.AssessmentID, line.PromissoryNoteNumber))
+		s.recordEnrollment(ctx, line, enrollment, partner)
 	}
 	return line, true, nil
+}
+
+// linkClient enrolls the rancher of a line registered before activations did.
+func (s *LivestockCreditLineService) linkClient(ctx context.Context, a model.LivestockCreditActivation, line *model.LivestockCreditLine) error {
+	enrollment, err := s.enroll(ctx, a)
+	if err != nil {
+		return err
+	}
+	if err := s.lines.LinkClient(ctx, line, enrollment); err != nil {
+		return fmt.Errorf("enrolling the rancher of credit line %s: %w", line.ID, err)
+	}
+	s.recordEnrollment(ctx, line, enrollment, line.Partner)
+	return nil
+}
+
+// enroll builds the rancher's client (unless Prestia has one with that
+// national ID) and the approved credit line of the quota. Nothing is stored.
+func (s *LivestockCreditLineService) enroll(ctx context.Context, a model.LivestockCreditActivation) (*model.LivestockClientEnrollment, error) {
+	e := s.enrollment
+	out := &model.LivestockClientEnrollment{}
+	if client, err := e.clients.FindByDNI(ctx, a.NationalID); err == nil && client != nil {
+		out.Client = client
+	} else {
+		nit, err := model.NaturalPersonNIT(a.NationalID)
+		if err != nil {
+			return nil, invalidClient(err)
+		}
+		first, last := a.ClientNames()
+		dob, generic := a.ClientDateOfBirth()
+		client, err := model.NewClient(uuid.Nil, first, last, a.NationalID, nit, dob, a.MobilePhone,
+			a.Address, a.City, a.Province, "Colombia", false, e.country)
+		if err != nil {
+			return nil, invalidClient(err)
+		}
+		if generic {
+			client.SetComments(model.GenericDateOfBirthComment)
+		}
+		email := s.clientEmail(ctx, a)
+		authUser, err := e.auth.CreateUser(ctx, email, "")
+		if err != nil {
+			return nil, fmt.Errorf("creating the client's sign-in: %w", err)
+		}
+		user, err := model.NewUser(authUser.UID, email, model.RoleClient)
+		if err != nil {
+			return nil, invalidClient(err)
+		}
+		user.SetPhone(a.MobilePhone)
+		client.UserID = user.ID
+		out.User, out.Client, out.Account = user, client, model.NewCurrentAccount(client.ID)
+	}
+	creditLine, err := model.NewCreditLine(out.Client.ID, a.Amount, e.terms.InterestRate, e.terms.MaxInstallments, false)
+	if err != nil {
+		return nil, fmt.Errorf("the configured livestock credit terms are invalid: %w", err)
+	}
+	approvedAt := a.ActivatedAt.UTC()
+	creditLine.Status, creditLine.ApprovedAt = model.CreditLineApproved, &approvedAt
+	out.CreditLine = creditLine
+	return out, nil
+}
+
+// clientEmail is the e-mail sent, unless missing or another user's; then
+// <national ID>@cuppogan.com.
+func (s *LivestockCreditLineService) clientEmail(ctx context.Context, a model.LivestockCreditActivation) string {
+	if email := a.ClientEmail(); email != "" {
+		if u, err := s.enrollment.users.FindByEmail(ctx, email); err != nil || u == nil {
+			return email
+		}
+	}
+	return a.RegistryEmail()
+}
+
+func (s *LivestockCreditLineService) recordEnrollment(ctx context.Context, line *model.LivestockCreditLine, e *model.LivestockClientEnrollment, partner string) {
+	if s.audit == nil || e == nil {
+		return
+	}
+	if e.NewClient() {
+		s.audit.Record(ctx, nil, "register", "client", e.Client.ID.String(),
+			fmt.Sprintf("Client %s registered by %s (livestock credit line %s)", e.Client.FullName(), partner, line.ID))
+	}
+	s.audit.Record(ctx, nil, "approve", "credit_line", e.CreditLine.ID.String(),
+		fmt.Sprintf("Credit line of %s %s approved by %s's activation (promissory note %s)",
+			e.CreditLine.MaxAmount.StringFixed(2), line.Currency, partner, line.PromissoryNoteNumber))
+}
+
+func invalidClient(err error) error {
+	return &model.ActivationRejection{Kind: model.ActivationUnprocessable, Code: "invalid_client", Message: err.Error()}
 }
 
 // existing finds a line registered under any of the activation's identifiers.

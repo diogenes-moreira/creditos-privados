@@ -6311,6 +6311,10 @@ const docTemplate = `{
                 "assessmentId": {
                     "type": "string"
                 },
+                "clientId": {
+                    "description": "ClientID is the rancher in Prestia's clients (absent until enrolled).",
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6442,6 +6446,13 @@ const docTemplate = `{
                     "example": "1000000.00"
                 },
                 "assessmentId": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "description": "ClientID and CreditLineID are the rancher and the credit line in\nPrestia's own tables.",
+                    "type": "string"
+                },
+                "creditLineId": {
                     "type": "string"
                 },
                 "currency": {

@@ -984,6 +984,8 @@ export interface LivestockCreditLineDetail extends LivestockCreditLine {
   signatureValidationId: string;
   partnerArchiveUri: string;
   updatedAt: string;
+  /** The rancher in Prestia's clients (absent until enrolled). */
+  clientId?: string;
   assessment?: LivestockCreditLineAssessment;
 }
 

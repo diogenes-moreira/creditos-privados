@@ -54,6 +54,7 @@ import {
 import type { Vendor, Purchase, VendorPayment, WithdrawalRequest, Client, CreditLine } from "../../api/types";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
+import { getCountryConfig } from "../../config/countryConfig";
 
 const statusColors: Record<string, "warning" | "success" | "error" | "info" | "default"> = {
   pending: "warning",
@@ -269,7 +270,7 @@ const VendorDetail: React.FC = () => {
             <Typography variant="h6" gutterBottom>{t("admin.personalInfo")}</Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}><Typography color="text.secondary">{t("adminVendor.businessName")}</Typography><Typography fontWeight={600}>{vendor.businessName}</Typography></Grid>
-              <Grid item xs={6}><Typography color="text.secondary">{t("adminVendor.cuit")}</Typography><Typography fontWeight={600}>{vendor.cuit}</Typography></Grid>
+              <Grid item xs={6}><Typography color="text.secondary">{getCountryConfig().taxIdLabel}</Typography><Typography fontWeight={600}>{vendor.cuit}</Typography></Grid>
               <Grid item xs={6}><Typography color="text.secondary">{t("adminVendor.email")}</Typography><Typography>{vendor.email}</Typography></Grid>
               <Grid item xs={6}><Typography color="text.secondary">{t("adminVendor.phone")}</Typography><Typography>{vendor.phone}</Typography></Grid>
               <Grid item xs={6}><Typography color="text.secondary">{t("adminVendor.address")}</Typography><Typography>{vendor.address}</Typography></Grid>

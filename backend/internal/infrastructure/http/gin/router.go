@@ -215,7 +215,11 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	livestockQuotaHandler := handler.NewLivestockQuotaHandler(livestockQuotaService)
 	livestockPolicyHandler := handler.NewLivestockQuotaPolicyHandler(livestockPolicyService)
 	livestockCreditLineHandler := handler.NewLivestockCreditLineHandler(
-		service.NewLivestockCreditLineService(livestockCreditLineRepo, livestockQuotaRepo).WithAudit(auditService))
+		service.NewLivestockCreditLineService(livestockCreditLineRepo, livestockQuotaRepo).WithAudit(auditService).
+			WithClients(userRepo, clientRepo, authService, r.country, service.LivestockCreditTerms{
+				InterestRate:    r.partners.LivestockCreditInterestRate,
+				MaxInstallments: r.partners.LivestockCreditMaxInstallments,
+			}))
 	livestockPortfolioHandler := handler.NewLivestockCreditPortfolioHandler(
 		r.livestockPortfolioService(livestockCreditLineRepo, livestockPortfolioRepo, auditService))
 

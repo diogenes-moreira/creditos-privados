@@ -217,6 +217,11 @@ const LivestockCreditLineDetail: React.FC = () => {
                   >
                     {t("livestockCreditLines.detail.downloadNote")}
                   </Button>
+                  {line.clientId && (
+                    <Button variant="outlined" onClick={() => navigate(`/admin/clients/${line.clientId}`)}>
+                      {t("livestockCreditLines.detail.viewClient")}
+                    </Button>
+                  )}
                 </Stack>
               </Stack>
             </Grid>

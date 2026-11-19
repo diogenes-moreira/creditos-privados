@@ -541,6 +541,9 @@ definitions:
           read.
       assessmentId:
         type: string
+      clientId:
+        description: ClientID is the rancher in Prestia's clients (absent until enrolled).
+        type: string
       createdAt:
         type: string
       currency:
@@ -632,6 +635,13 @@ definitions:
         example: "1000000.00"
         type: string
       assessmentId:
+        type: string
+      clientId:
+        description: |-
+          ClientID and CreditLineID are the rancher and the credit line in
+          Prestia's own tables.
+        type: string
+      creditLineId:
         type: string
       currency:
         type: string

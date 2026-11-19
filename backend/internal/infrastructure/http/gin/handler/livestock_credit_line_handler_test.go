@@ -31,9 +31,17 @@ type memoryCreditLines struct {
 	docs  []*model.LivestockCreditLineDocument
 }
 
-func (m *memoryCreditLines) Create(_ context.Context, l *model.LivestockCreditLine, d *model.LivestockCreditLineDocument) error {
+func (m *memoryCreditLines) Create(_ context.Context, l *model.LivestockCreditLine, d *model.LivestockCreditLineDocument, e *model.LivestockClientEnrollment) error {
+	m.LinkClient(context.Background(), l, e)
 	m.lines = append(m.lines, l)
 	m.docs = append(m.docs, d)
+	return nil
+}
+
+func (m *memoryCreditLines) LinkClient(_ context.Context, l *model.LivestockCreditLine, e *model.LivestockClientEnrollment) error {
+	if e != nil {
+		l.ClientID, l.CreditLineID = &e.Client.ID, &e.CreditLine.ID
+	}
 	return nil
 }
 

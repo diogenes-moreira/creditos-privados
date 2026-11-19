@@ -19,6 +19,7 @@ import { getVendorProfile, updateVendorProfile } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import LocationSelector from "../../components/LocationSelector";
+import { getCountryConfig } from "../../config/countryConfig";
 
 const profileSchema = z.object({
   phone: z.string().min(1),
@@ -103,7 +104,7 @@ const VendorProfile: React.FC = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t("vendor.cuit")}
+                label={getCountryConfig().taxIdLabel}
                 value={profile?.cuit || ""}
                 InputProps={{ readOnly: true }}
                 disabled

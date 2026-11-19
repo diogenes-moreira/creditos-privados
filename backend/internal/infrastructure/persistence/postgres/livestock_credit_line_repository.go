@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
 
@@ -21,13 +23,51 @@ func NewLivestockCreditLineRepository(db *gorm.DB) *LivestockCreditLineRepositor
 // Create stores the line and its promissory note in one transaction. The SQL
 // log is lowered to warnings for it: at the default level GORM would print the
 // rancher's personal data and the PDF.
-func (r *LivestockCreditLineRepository) Create(ctx context.Context, line *model.LivestockCreditLine, doc *model.LivestockCreditLineDocument) error {
+func (r *LivestockCreditLineRepository) Create(ctx context.Context, line *model.LivestockCreditLine, doc *model.LivestockCreditLineDocument, enrollment *model.LivestockClientEnrollment) error {
 	return r.quiet().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := createEnrollment(tx, line, enrollment); err != nil {
+			return err
+		}
 		if err := tx.Omit("Assessment").Create(line).Error; err != nil {
 			return err
 		}
 		return tx.Create(doc).Error
 	})
+}
+
+func (r *LivestockCreditLineRepository) LinkClient(ctx context.Context, line *model.LivestockCreditLine, enrollment *model.LivestockClientEnrollment) error {
+	return r.quiet().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := createEnrollment(tx, line, enrollment); err != nil {
+			return err
+		}
+		return tx.Model(&model.LivestockCreditLine{}).Where("id = ?", line.ID).
+			Updates(map[string]any{"client_id": line.ClientID, "credit_line_id": line.CreditLineID}).Error
+	})
+}
+
+// createEnrollment stores the new user, client and account (if the client is
+// new) and the credit line, without touching their associations, and points
+// the line at them.
+func createEnrollment(tx *gorm.DB, line *model.LivestockCreditLine, e *model.LivestockClientEnrollment) error {
+	if e == nil {
+		return nil
+	}
+	if e.NewClient() {
+		if err := tx.Omit(clause.Associations).Create(e.User).Error; err != nil {
+			return fmt.Errorf("creating the client's user: %w", err)
+		}
+		if err := tx.Omit(clause.Associations).Create(e.Client).Error; err != nil {
+			return fmt.Errorf("creating the client: %w", err)
+		}
+		if err := tx.Omit(clause.Associations).Create(e.Account).Error; err != nil {
+			return fmt.Errorf("creating the client's account: %w", err)
+		}
+	}
+	if err := tx.Omit(clause.Associations).Create(e.CreditLine).Error; err != nil {
+		return fmt.Errorf("creating the credit line: %w", err)
+	}
+	line.ClientID, line.CreditLineID = &e.Client.ID, &e.CreditLine.ID
+	return nil
 }
 
 func (r *LivestockCreditLineRepository) FindByPromissoryNote(ctx context.Context, number string) (*model.LivestockCreditLine, error) {
