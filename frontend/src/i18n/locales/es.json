@@ -182,6 +182,8 @@
     "german": "Alemán",
     "frenchFull": "Francés (cuota fija)",
     "germanFull": "Alemán (capital fijo)",
+    "interestIncluded": "Interés incluido",
+    "interestIncludedFull": "Interés incluido (cuota fija, mismo capital e interés en cada cuota)",
     "system": "Sistema",
     "disbursedAt": "Fecha de desembolso",
     "totalPaid": "Total pagado",
@@ -1233,7 +1235,7 @@
         "replayed": "Ese pago ya estaba registrado.",
         "error": "No se pudo registrar el pago.",
         "banksError": "No se pudieron cargar los bancos de Odoo.",
-        "loanHint": "Vence hoy (con intereses): {{due}}. Para cancelar todo hoy: {{payoff}}. Lo que exceda lo vencido se aplica a capital."
+        "loanHint": "Vence hoy: {{due}}. Saldo de la factura: {{payoff}}. Las cuotas se pagan completas: un pago anticipado no descuenta intereses."
       },
       "blockDialog": {
         "blockTitle": "Bloquear compras a cupo",
@@ -1271,7 +1273,7 @@
         "already_linked": "El cupo ya está vinculado a otro contacto de Odoo."
       },
       "loan": {
-        "summary": "Crédito en Prestia al {{rate}} % nominal anual · capital pendiente {{capital}} · vence hoy {{due}} · para cancelar hoy {{payoff}}",
+        "summary": "Cuota fija con interés incluido ({{rate}} % nominal anual) · capital pendiente {{capital}} · vence hoy {{due}} · saldo {{payoff}}",
         "capital": "Capital",
         "interest": "Intereses",
         "total": "Cuota",

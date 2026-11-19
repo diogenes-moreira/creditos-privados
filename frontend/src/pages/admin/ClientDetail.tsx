@@ -89,6 +89,7 @@ import KPICard from "../../components/KPICard";
 import ClientRiskPanel from "../../components/ClientRiskPanel";
 import { formatMoney as fmtMoney, getCountryConfig } from "../../config/countryConfig";
 import type { Loan, Payment, Purchase, Movement, CreditLine, Installment, CancellationSettlement } from "../../api/types";
+import { amortizationLabel, type AmortizationType } from "../../utils/amortization";
 
 const ClientDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -110,7 +111,7 @@ const ClientDetail: React.FC = () => {
   const [loanCreditLine, setLoanCreditLine] = useState<CreditLine | null>(null);
   const [loanAmount, setLoanAmount] = useState("");
   const [loanInstallments, setLoanInstallments] = useState(12);
-  const [loanAmortType, setLoanAmortType] = useState<"french" | "german">("french");
+  const [loanAmortType, setLoanAmortType] = useState<AmortizationType>("french");
   // Payment dialog state
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentLoan, setPaymentLoan] = useState<Loan | null>(null);
@@ -480,7 +481,7 @@ const ClientDetail: React.FC = () => {
     { id: "principal", label: t("loans.principal"), align: "right", render: (row) => <MoneyDisplay amount={row.principal} fontWeight={500} /> },
     { id: "interestRate", label: t("admin.rate"), align: "center", render: (row) => `${row.interestRate}%` },
     { id: "numInstallments", label: t("loans.installments"), align: "center" },
-    { id: "amortizationType", label: t("loans.system"), render: (row) => <Chip label={row.amortizationType === "french" ? t("loans.french") : t("loans.german")} size="small" variant="outlined" /> },
+    { id: "amortizationType", label: t("loans.system"), render: (row) => <Chip label={amortizationLabel(t, row.amortizationType)} size="small" variant="outlined" /> },
     { id: "status", label: t("common.status"), render: (row) => <StatusBadge status={row.status} /> },
     { id: "createdAt", label: t("common.date"), render: (row) => format(new Date(row.createdAt), "dd/MM/yyyy") },
     { id: "actions" as keyof Loan, label: t("common.actions"), minWidth: 340, render: (row) =>
@@ -912,10 +913,11 @@ const ClientDetail: React.FC = () => {
                 fullWidth
                 label={t("loans.amortizationSystem")}
                 value={loanAmortType}
-                onChange={(e) => setLoanAmortType(e.target.value as "french" | "german")}
+                onChange={(e) => setLoanAmortType(e.target.value as AmortizationType)}
               >
                 <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
                 <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+                <MenuItem value="interest_included">{t("loans.interestIncludedFull")}</MenuItem>
               </TextField>
             </Box>
           )}
@@ -1257,7 +1259,7 @@ const ClientDetail: React.FC = () => {
                 <Typography variant="body2">
                   {t("loans.principal")}: <MoneyDisplay amount={detailLoan.principal} variant="body2" fontWeight={600} />
                   {" | "}{t("loans.interestRate")}: {detailLoan.interestRate}%
-                  {" | "}{t("loans.system")}: {detailLoan.amortizationType === "french" ? t("loans.french") : t("loans.german")}
+                  {" | "}{t("loans.system")}: {amortizationLabel(t, detailLoan.amortizationType)}
                   {" | "}<StatusBadge status={detailLoan.status} />
                 </Typography>
               </Box>

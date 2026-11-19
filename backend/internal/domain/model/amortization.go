@@ -12,6 +12,15 @@ type AmortizationType string
 const (
 	AmortizationFrench AmortizationType = "french"
 	AmortizationGerman AmortizationType = "german"
+	// AmortizationInterestIncluded is the fixed installment with the interest
+	// included and spread evenly: the installment is the French one (same
+	// amount every month, worth the principal at the monthly rate), and each
+	// installment carries the same capital (principal / n) and the same
+	// interest (the rest). $101.04 in 3 months at 1.945271 % a month: 3
+	// installments of $35.00, each $33.68 capital + $1.32 interest. It is how
+	// an installment price that already includes the interest (a quota
+	// invoice in TVGAN's Odoo) is split back into capital and interest.
+	AmortizationInterestIncluded AmortizationType = "interest_included"
 )
 
 // Interest rates across the domain (CreditLine.InterestRate, Loan.InterestRate,
@@ -109,6 +118,46 @@ func CalculateFrenchAmortization(principal, annualRate decimal.Decimal, installm
 		})
 	}
 
+	schedule.TotalInterest = totalInterest.Round(2)
+	schedule.TotalIVA = totalIVA.Round(2)
+	schedule.TotalPayment = principal.Add(totalInterest).Add(totalIVA).Round(2)
+	return schedule
+}
+
+// CalculateInterestIncludedAmortization computes the fixed installment with the
+// interest included and spread evenly (AmortizationInterestIncluded): the
+// French installment, with the same capital (principal / n, the last one
+// taking the rounding) and the same interest in each. annualRate is an annual
+// percentage (monthly × 12); ivaRate the IVA percentage on the interest (zero
+// to skip it).
+func CalculateInterestIncludedAmortization(principal, annualRate decimal.Decimal, installments int, startDate time.Time, ivaRate decimal.Decimal) AmortizationSchedule {
+	french := CalculateFrenchAmortization(principal, annualRate, installments, startDate, decimal.Zero)
+	hundred := decimal.NewFromInt(100)
+	payment := decimal.Zero
+	if len(french.Installments) > 0 {
+		payment = french.Installments[0].Total
+	}
+	capitalEach := principal.Div(decimal.NewFromInt(int64(installments))).Round(2)
+	remaining := principal
+	schedule := AmortizationSchedule{}
+	totalInterest, totalIVA := decimal.Zero, decimal.Zero
+	for i := 1; i <= installments; i++ {
+		capital := capitalEach
+		if i == installments {
+			capital = remaining
+		}
+		remaining = remaining.Sub(capital)
+		interest := payment.Sub(capital)
+		if interest.IsNegative() {
+			interest = decimal.Zero
+		}
+		iva := interest.Mul(ivaRate).Div(hundred).Round(2)
+		totalInterest, totalIVA = totalInterest.Add(interest), totalIVA.Add(iva)
+		schedule.Installments = append(schedule.Installments, InstallmentCalc{
+			Number: i, DueDate: startDate.AddDate(0, i, 0), Capital: capital, Interest: interest, IVA: iva,
+			Total: capital.Add(interest).Add(iva), Remaining: remaining,
+		})
+	}
 	schedule.TotalInterest = totalInterest.Round(2)
 	schedule.TotalIVA = totalIVA.Round(2)
 	schedule.TotalPayment = principal.Add(totalInterest).Add(totalIVA).Round(2)

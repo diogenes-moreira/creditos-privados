@@ -23,6 +23,7 @@ import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
 import { formatMoney as fmtMoney } from "../../config/countryConfig";
+import { amortizationLabel } from "../../utils/amortization";
 
 const ClientDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -118,7 +119,7 @@ const ClientDashboard: React.FC = () => {
                   </Box>
                   <MoneyDisplay amount={loan.principal} variant="h6" fontWeight={600} />
                   <Typography variant="body2" color="text.secondary" mt={1}>
-                    {loan.numInstallments} {t("loans.installments")} - {loan.amortizationType === "french" ? t("loans.french") : t("loans.german")}
+                    {loan.numInstallments} {t("loans.installments")} - {amortizationLabel(t, loan.amortizationType)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t("loans.interestRate")}: {loan.interestRate}%

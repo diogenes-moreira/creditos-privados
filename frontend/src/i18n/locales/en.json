@@ -182,6 +182,8 @@
     "german": "German",
     "frenchFull": "French (fixed payment)",
     "germanFull": "German (fixed capital)",
+    "interestIncluded": "Interest included",
+    "interestIncludedFull": "Interest included (fixed payment, same capital and interest in each)",
     "system": "System",
     "disbursedAt": "Disbursement date",
     "totalPaid": "Total paid",
@@ -1233,7 +1235,7 @@
         "replayed": "That payment was already registered.",
         "error": "Could not register the payment.",
         "banksError": "Could not load Odoo's banks.",
-        "loanHint": "Due today (with interest): {{due}}. To pay off today: {{payoff}}. Anything over what is due goes to capital."
+        "loanHint": "Due today: {{due}}. Invoice balance: {{payoff}}. Installments are paid in full: paying early does not discount interest."
       },
       "blockDialog": {
         "blockTitle": "Block credit purchases",
@@ -1271,7 +1273,7 @@
         "already_linked": "The line is already linked to another Odoo contact."
       },
       "loan": {
-        "summary": "Prestia credit at {{rate}} % nominal annual · capital owed {{capital}} · due today {{due}} · payoff today {{payoff}}",
+        "summary": "Fixed installment, interest included ({{rate}} % nominal annual) · capital owed {{capital}} · due today {{due}} · balance {{payoff}}",
         "capital": "Capital",
         "interest": "Interest",
         "total": "Installment",

@@ -41,16 +41,20 @@ type Loan struct {
 	InterestRate     decimal.Decimal  `gorm:"type:decimal(8,4);not null"`
 	NumInstallments  int              `gorm:"not null"`
 	AmortizationType AmortizationType `gorm:"type:varchar(20);not null"`
-	Status           LoanStatus       `gorm:"type:varchar(20);not null;default:'quoted'"`
-	DisbursedAt      *time.Time       `gorm:""`
-	ApprovedBy       *uuid.UUID       `gorm:"type:uuid"`
-	ApprovedAt       *time.Time       `gorm:""`
-	CompletedAt      *time.Time       `gorm:""`
-	CancelledAt      *time.Time       `gorm:""`
-	Installments     []Installment    `gorm:"foreignKey:LoanID"`
-	CreatedAt        time.Time        `gorm:"not null"`
-	UpdatedAt        time.Time        `gorm:"not null"`
-	DeletedAt        gorm.DeletedAt   `gorm:"index"`
+	// ExternalReference is the partner's document the loan mirrors (e.g.
+	// "odoo-invoice:27506" for a livestock quota invoice); empty for
+	// Prestia's own loans.
+	ExternalReference string         `gorm:"type:varchar(60);index"`
+	Status            LoanStatus     `gorm:"type:varchar(20);not null;default:'quoted'"`
+	DisbursedAt       *time.Time     `gorm:""`
+	ApprovedBy        *uuid.UUID     `gorm:"type:uuid"`
+	ApprovedAt        *time.Time     `gorm:""`
+	CompletedAt       *time.Time     `gorm:""`
+	CancelledAt       *time.Time     `gorm:""`
+	Installments      []Installment  `gorm:"foreignKey:LoanID"`
+	CreatedAt         time.Time      `gorm:"not null"`
+	UpdatedAt         time.Time      `gorm:"not null"`
+	DeletedAt         gorm.DeletedAt `gorm:"index"`
 }
 
 func NewLoan(clientID, creditLineID uuid.UUID, principal, interestRate decimal.Decimal, numInstallments int, amortType AmortizationType) (*Loan, error) {
@@ -60,7 +64,7 @@ func NewLoan(clientID, creditLineID uuid.UUID, principal, interestRate decimal.D
 	if numInstallments < 1 {
 		return nil, fmt.Errorf("number of installments must be at least 1")
 	}
-	if amortType != AmortizationFrench && amortType != AmortizationGerman {
+	if amortType != AmortizationFrench && amortType != AmortizationGerman && amortType != AmortizationInterestIncluded {
 		return nil, fmt.Errorf("invalid amortization type: %s", amortType)
 	}
 
@@ -75,6 +79,15 @@ func NewLoan(clientID, creditLineID uuid.UUID, principal, interestRate decimal.D
 		Status:           LoanQuoted,
 	}, nil
 }
+
+// ErrPartnerManagedLoan refuses Prestia's generic operations on a loan that
+// mirrors an invoice in a partner's ledger (Odoo): its payments must reach
+// that ledger too.
+var ErrPartnerManagedLoan = fmt.Errorf("this loan follows a quota invoice in Odoo: register its payments in the CuppoGan portfolio")
+
+// PartnerManaged tells whether the loan mirrors a partner's invoice
+// (ExternalReference set), so its payments go through the partner's flow.
+func (l *Loan) PartnerManaged() bool { return l.ExternalReference != "" }
 
 func (l *Loan) RequestApproval() error {
 	if l.Status != LoanQuoted {
@@ -118,6 +131,8 @@ func (l *Loan) Disburse(startDate time.Time, ivaRate decimal.Decimal) ([]Install
 		schedule = CalculateFrenchAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate, ivaRate)
 	case AmortizationGerman:
 		schedule = CalculateGermanAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate, ivaRate)
+	case AmortizationInterestIncluded:
+		schedule = CalculateInterestIncludedAmortization(l.Principal, l.InterestRate, l.NumInstallments, startDate, ivaRate)
 	}
 
 	installments := make([]Installment, len(schedule.Installments))
@@ -231,6 +246,8 @@ func (l *Loan) RecalculateRemainingInstallments(outstandingPrincipal, interestRa
 		schedule = CalculateFrenchAmortization(outstandingPrincipal, interestRate, numRemaining, startDate, ivaRate)
 	case AmortizationGerman:
 		schedule = CalculateGermanAmortization(outstandingPrincipal, interestRate, numRemaining, startDate, ivaRate)
+	case AmortizationInterestIncluded:
+		schedule = CalculateInterestIncludedAmortization(outstandingPrincipal, interestRate, numRemaining, startDate, ivaRate)
 	}
 
 	// Update each pending installment with recalculated amounts
@@ -266,7 +283,7 @@ func (l *Loan) RecalculateReducingTerm(outstandingPrincipal, interestRate, ivaRa
 	var newN int
 
 	switch l.AmortizationType {
-	case AmortizationFrench:
+	case AmortizationFrench, AmortizationInterestIncluded: // the same installment amount
 		if monthlyRate.IsZero() {
 			originalCapital := l.Principal.Div(decimal.NewFromInt(int64(l.NumInstallments)))
 			newNDec := outstandingPrincipal.Div(originalCapital)
@@ -314,6 +331,8 @@ func (l *Loan) RecalculateReducingTerm(outstandingPrincipal, interestRate, ivaRa
 		schedule = CalculateFrenchAmortization(outstandingPrincipal, interestRate, newN, startDate, ivaRate)
 	case AmortizationGerman:
 		schedule = CalculateGermanAmortization(outstandingPrincipal, interestRate, newN, startDate, ivaRate)
+	case AmortizationInterestIncluded:
+		schedule = CalculateInterestIncludedAmortization(outstandingPrincipal, interestRate, newN, startDate, ivaRate)
 	}
 
 	// Update the first newN pending installments

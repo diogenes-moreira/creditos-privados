@@ -46,6 +46,7 @@ import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import type { Loan, Client, CreditLine } from "../../api/types";
+import { amortizationLabel, type AmortizationType } from "../../utils/amortization";
 
 type ActionType = "approve" | "disburse" | "cancel" | "prepay";
 
@@ -65,7 +66,7 @@ const LoanManagement: React.FC = () => {
   const [selectedCreditLine, setSelectedCreditLine] = useState<CreditLine | null>(null);
   const [loanAmount, setLoanAmount] = useState("");
   const [loanInstallments, setLoanInstallments] = useState(12);
-  const [loanAmortType, setLoanAmortType] = useState<"french" | "german">("french");
+  const [loanAmortType, setLoanAmortType] = useState<AmortizationType>("french");
 
   const { data: loans, isLoading } = useQuery({
     queryKey: ["admin-pending-loans"],
@@ -208,7 +209,7 @@ const LoanManagement: React.FC = () => {
       label: t("loans.system"),
       render: (row) => (
         <Chip
-          label={row.amortizationType === "french" ? t("loans.french") : t("loans.german")}
+          label={amortizationLabel(t, row.amortizationType)}
           size="small"
           variant="outlined"
         />
@@ -400,10 +401,11 @@ const LoanManagement: React.FC = () => {
                       fullWidth
                       label={t("loans.amortizationSystem")}
                       value={loanAmortType}
-                      onChange={(e) => setLoanAmortType(e.target.value as "french" | "german")}
+                      onChange={(e) => setLoanAmortType(e.target.value as AmortizationType)}
                     >
                       <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
                       <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+                      <MenuItem value="interest_included">{t("loans.interestIncludedFull")}</MenuItem>
                     </TextField>
                   </>
                 )}

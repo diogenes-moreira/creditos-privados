@@ -37,6 +37,7 @@ import { getErrorMessage } from "../../api/errorUtils";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import { formatMoney as fmtMoney } from "../../config/countryConfig";
 import type { Client, CreditLine } from "../../api/types";
+import type { AmortizationType } from "../../utils/amortization";
 
 const NewPurchase: React.FC = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const NewPurchase: React.FC = () => {
   const [description, setDescription] = useState("");
   const [amountError, setAmountError] = useState("");
   const [numInstallments, setNumInstallments] = useState(1);
-  const [amortizationType, setAmortizationType] = useState<"french" | "german">("french");
+  const [amortizationType, setAmortizationType] = useState<AmortizationType>("french");
 
   const formatMoney = (value: number) => fmtMoney(value);
 
@@ -385,10 +386,11 @@ const NewPurchase: React.FC = () => {
                   <Select
                     value={amortizationType}
                     label={t("vendor.amortizationSystem")}
-                    onChange={(e) => setAmortizationType(e.target.value as "french" | "german")}
+                    onChange={(e) => setAmortizationType(e.target.value as AmortizationType)}
                   >
                     <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
                     <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+                    <MenuItem value="interest_included">{t("loans.interestIncludedFull")}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

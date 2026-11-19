@@ -26,13 +26,14 @@ import { simulateLoan, requestLoan } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import type { SimulationResult, Installment } from "../../api/types";
+import { amortizationLabel } from "../../utils/amortization";
 
 const schema = z.object({
   creditLineId: z.string().min(1, "Selecciona una linea de credito"),
   amount: z.number().min(1000, "El monto minimo es $1.000").max(5000000, "El monto maximo es $5.000.000"),
   installments: z.number().min(1, "Minimo 1 cuota").max(60, "Maximo 60 cuotas"),
   interestRate: z.number().min(0.1, "Tasa requerida"),
-  amortizationType: z.enum(["french", "german"]),
+  amortizationType: z.enum(["french", "german", "interest_included"]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -228,6 +229,7 @@ const CreditApplication: React.FC = () => {
                       >
                         <MenuItem value="french">{t("loans.french")}</MenuItem>
                         <MenuItem value="german">{t("loans.german")}</MenuItem>
+                        <MenuItem value="interest_included">{t("loans.interestIncluded")}</MenuItem>
                       </TextField>
                     )}
                   />
@@ -305,7 +307,7 @@ const CreditApplication: React.FC = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">{t("loans.system")}</Typography>
-                <Typography>{formValues.amortizationType === "french" ? t("loans.french") : t("loans.german")}</Typography>
+                <Typography>{amortizationLabel(t, formValues.amortizationType)}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">{t("loans.totalPayment")}</Typography>

@@ -45,6 +45,9 @@ func (s *PaymentService) RecordPayment(ctx context.Context, userID uuid.UUID, lo
 	if err != nil {
 		return nil, fmt.Errorf("loan not found: %w", err)
 	}
+	if loan.PartnerManaged() {
+		return nil, model.ErrPartnerManagedLoan
+	}
 	if loan.Status != model.LoanActive {
 		return nil, fmt.Errorf("can only pay active loans")
 	}

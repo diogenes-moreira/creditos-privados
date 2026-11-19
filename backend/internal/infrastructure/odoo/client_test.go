@@ -129,6 +129,19 @@ func TestSetBlockedSendsOnlyBlocked(t *testing.T) {
 	assert.True(t, cu.Credit.Blocked)
 }
 
+func TestSetApprovedAmountSendsOnlyTheAmountAsANumber(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/api/v1/cuppogan/customers/71817/credit", r.URL.Path)
+		raw, _ := io.ReadAll(r.Body)
+		assert.JSONEq(t, `{"approved_amount": 1299155}`, string(raw))
+		assert.NotContains(t, string(raw), `"1299155"`, "a number, not a string")
+		_, _ = io.WriteString(w, customerJSON)
+	})
+	_, err := c.SetApprovedAmount(context.Background(), 71817, decimal.RequireFromString("1299155.00"))
+	require.NoError(t, err)
+}
+
 func TestErrorMapping(t *testing.T) {
 	cases := []struct {
 		status      int

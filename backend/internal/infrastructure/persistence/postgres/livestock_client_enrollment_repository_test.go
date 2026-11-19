@@ -122,7 +122,11 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	require.Error(t, portfolio.OpenInvoiceLoan(ctx, rows[0].ID, loan), "one loan per invoice")
 	var used model.CreditLine
 	require.NoError(t, db.First(&used, "id = ?", e.CreditLine.ID).Error)
-	assert.Equal(t, "1000000.00", used.UsedAmount.StringFixed(2))
+	assert.Equal(t, "1000000.00", used.UsedAmount.StringFixed(2), "the invoice's total, interest included")
+	var mirrored model.Loan
+	require.NoError(t, db.First(&mirrored, "id = ?", loan.ID).Error)
+	assert.Equal(t, model.AmortizationInterestIncluded, mirrored.AmortizationType)
+	assert.Equal(t, "odoo-invoice:27506", mirrored.ExternalReference)
 
 	// A complete sync where Odoo no longer reports the invoice keeps it: it has a loan.
 	require.NoError(t, portfolio.UpsertInvoices(ctx, line.ID, nil, true))
@@ -134,28 +138,28 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	loans := NewLoanRepository(db)
 	qloan, err := loans.FindByIDWithInstallments(ctx, *rows[0].LoanID)
 	require.NoError(t, err)
-	split, err := qloan.ApplyLivestockPayment(d("352752.75"), time.Date(2026, 12, 12, 0, 0, 0, 0, time.UTC))
+	split, err := qloan.ApplyLivestockPayment(d("333300"), time.Date(2026, 12, 12, 0, 0, 0, 0, time.UTC))
 	require.NoError(t, err)
-	loanPayment, err := model.NewPayment(qloan.ID, d("352752.75"), model.PaymentTransfer, "R-1")
+	loanPayment, err := model.NewPayment(qloan.ID, d("333300"), model.PaymentTransfer, "R-1")
 	require.NoError(t, err)
 	payment := model.NewLivestockCreditPayment(line.ID, model.LivestockCreditPaymentRequest{InvoiceID: 27506,
-		Amount: d("352752.75"), Date: "2026-12-12", Bank: "DAVIVIENDA", Reference: "R-1"}, "FE12262", nil, "")
+		Amount: d("333300"), Date: "2026-12-12", Bank: "DAVIVIENDA", Reference: "R-1"}, "FE12262", nil, "")
 	payment.CapitalAmount, payment.InterestAmount, payment.LoanPaymentID = split.Capital, split.Interest, &loanPayment.ID
 	payment.MarkRegistered(2112, "PDAVI/1")
-	require.NoError(t, portfolio.RecordLoanPayment(ctx, qloan, loanPayment, split.Capital, payment))
+	require.NoError(t, portfolio.RecordLoanPayment(ctx, qloan, loanPayment, d("333300"), payment))
 
 	after, err := loans.FindByIDWithInstallments(ctx, qloan.ID)
 	require.NoError(t, err)
 	assert.Equal(t, model.InstallmentPaid, after.Installments[0].Status)
-	assert.Equal(t, "333300.00", after.Installments[0].PaidCapital.StringFixed(2))
-	assert.Equal(t, "19452.75", after.Installments[0].PaidInterest.StringFixed(2))
+	assert.Equal(t, "320740.65", after.Installments[0].PaidCapital.StringFixed(2))
+	assert.Equal(t, "12559.35", after.Installments[0].PaidInterest.StringFixed(2))
 	require.NoError(t, db.First(&used, "id = ?", e.CreditLine.ID).Error)
-	assert.Equal(t, "666700.00", used.UsedAmount.StringFixed(2), "the capital paid is available again")
+	assert.Equal(t, "666700.00", used.UsedAmount.StringFixed(2), "the payment frees the quota")
 	var loanPayments int64
 	db.Model(&model.Payment{}).Where("loan_id = ?", qloan.ID).Count(&loanPayments)
 	assert.EqualValues(t, 1, loanPayments)
 	payments, err := portfolio.ListPayments(ctx, line.ID)
 	require.NoError(t, err)
 	require.Len(t, payments, 1)
-	assert.Equal(t, "19452.75", payments[0].InterestAmount.StringFixed(2))
+	assert.Equal(t, "12559.35", payments[0].InterestAmount.StringFixed(2))
 }

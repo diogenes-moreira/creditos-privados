@@ -47,14 +47,14 @@ type SimulateLoanRequest struct {
 	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
 	Amount           string `json:"amount" binding:"required"`
 	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
-	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german interest_included"`
 }
 
 type RequestLoanRequest struct {
 	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
 	Amount           string `json:"amount" binding:"required"`
 	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
-	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german interest_included"`
 }
 
 type AdminCreateLoanRequest struct {
@@ -62,7 +62,7 @@ type AdminCreateLoanRequest struct {
 	CreditLineID     string `json:"creditLineId" binding:"required,uuid"`
 	Amount           string `json:"amount" binding:"required"`
 	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
-	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german interest_included"`
 }
 
 type RecordPaymentRequest struct {
@@ -139,7 +139,7 @@ type RecordPurchaseRequest struct {
 	Amount           string `json:"amount" binding:"required"`
 	Description      string `json:"description" binding:"required"`
 	NumInstallments  int    `json:"numInstallments" binding:"required,min=1"`
-	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german"`
+	AmortizationType string `json:"amortizationType" binding:"required,oneof=french german interest_included"`
 }
 
 type RecordVendorPaymentRequest struct {

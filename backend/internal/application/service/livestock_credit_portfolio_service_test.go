@@ -30,6 +30,7 @@ type fakeOdoo struct {
 	calls    map[string]int
 	payments []model.OdooPaymentRequest
 	blocked  []bool
+	approved []decimal.Decimal
 }
 
 func newFakeOdoo() *fakeOdoo {
@@ -152,6 +153,18 @@ func (f *fakeOdoo) SetBlocked(_ context.Context, id int64, blocked bool) (*model
 	c.Credit.Blocked = blocked
 	c.Credit.CanBuy = !blocked && c.Credit.OverdueDays == 0
 	f.customers[id] = c
+	return &c, nil
+}
+
+func (f *fakeOdoo) SetApprovedAmount(_ context.Context, id int64, amount decimal.Decimal) (*model.OdooCustomer, error) {
+	if err := f.call("approved"); err != nil {
+		return nil, err
+	}
+	c := f.customers[id]
+	c.Credit.AvailableAmount = c.Credit.AvailableAmount.Add(amount.Sub(c.Credit.ApprovedAmount))
+	c.Credit.ApprovedAmount = amount
+	f.customers[id] = c
+	f.approved = append(f.approved, amount)
 	return &c, nil
 }
 
