@@ -32,7 +32,8 @@
     "name": "Nome",
     "type": "Tipo",
     "unknownError": "Ocorreu um erro inesperado",
-    "close": "Fechar"
+    "close": "Fechar",
+    "noData": "Não há dados para exibir"
   },
   "auth": {
     "login": "Entrar",

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   TableBody,
@@ -43,9 +44,11 @@ function DataTable<T>({
   onPageChange,
   onPageSizeChange,
   loading = false,
-  emptyMessage = "No hay datos para mostrar",
+  emptyMessage,
   keyExtractor,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" py={4}>
@@ -76,7 +79,7 @@ function DataTable<T>({
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">{emptyMessage}</Typography>
+                  <Typography color="text.secondary">{emptyMessage ?? t("common.noData")}</Typography>
                 </TableCell>
               </TableRow>
             ) : (
@@ -108,7 +111,10 @@ function DataTable<T>({
           page={page}
           onPageChange={(_, newPage) => onPageChange(newPage)}
           onRowsPerPageChange={(e) => onPageSizeChange?.(parseInt(e.target.value, 10))}
-          labelRowsPerPage="Filas por pagina"
+          labelRowsPerPage={t("common.rowsPerPage")}
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}–${to} ${t("common.of")} ${count !== -1 ? count : `> ${to}`}`
+          }
         />
       )}
     </Paper>

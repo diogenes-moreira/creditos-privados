@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogTitle,
@@ -24,13 +25,14 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   open,
   title,
   message,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   confirmColor = "primary",
   onConfirm,
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
@@ -39,7 +41,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onCancel} disabled={loading}>
-          {cancelLabel}
+          {cancelLabel ?? t("common.cancel")}
         </Button>
         <Button
           onClick={onConfirm}
@@ -47,7 +49,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           color={confirmColor}
           disabled={loading}
         >
-          {loading ? "Procesando..." : confirmLabel}
+          {loading ? t("common.processing") : (confirmLabel ?? t("common.confirm"))}
         </Button>
       </DialogActions>
     </Dialog>

@@ -32,7 +32,8 @@
     "name": "Name",
     "type": "Type",
     "unknownError": "An unexpected error occurred",
-    "close": "Close"
+    "close": "Close",
+    "noData": "No data to display"
   },
   "auth": {
     "login": "Log in",
