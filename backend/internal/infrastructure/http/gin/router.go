@@ -217,9 +217,10 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	livestockCreditLineHandler := handler.NewLivestockCreditLineHandler(
 		service.NewLivestockCreditLineService(livestockCreditLineRepo, livestockQuotaRepo).WithAudit(auditService).
 			WithClients(userRepo, clientRepo, authService, r.country, service.LivestockCreditTerms{
-				InterestRate:    r.partners.LivestockCreditInterestRate,
+				InterestRate:    livestockNominalRate(r.partners.LivestockCreditRateTEA),
 				MaxInstallments: r.partners.LivestockCreditMaxInstallments,
-			}))
+			}).
+			WithLoans(creditLineRepo, loanRepo))
 	livestockPortfolioHandler := handler.NewLivestockCreditPortfolioHandler(
 		r.livestockPortfolioService(livestockCreditLineRepo, livestockPortfolioRepo, auditService))
 
@@ -254,8 +255,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		api.POST("/livestock-quotas", cuppogan, livestockQuotaHandler.Assess)
 		api.POST("/livestock-quotas/registry", cuppogan, livestockQuotaHandler.AssessFromRegistryForPartner)
 		api.POST("/livestock-quotas/activations", cuppogan, livestockCreditLineHandler.RegisterActivation)
+		api.POST("/livestock-quotas/loans", cuppogan, livestockCreditLineHandler.OpenLoan)
 	} else {
-		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry and /livestock-quotas/activations disabled")
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry, /livestock-quotas/activations and /livestock-quotas/loans disabled")
 	}
 	if r.partners.SchedulerAPIKey != "" {
 		livestockPortfolioHandler.RegisterSchedulerRoutes(api.Group("", middleware.RequireServiceKey("scheduler", r.partners.SchedulerAPIKey)))
@@ -500,4 +502,13 @@ func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineReposit
 		log.Println("ODOO_SYNC_INTERVAL_MINUTES=0: the periodic Odoo sync is off (on-demand sync still works)")
 	}
 	return s
+}
+
+// livestockNominalRate is a TEA as Prestia's nominal annual rate.
+func livestockNominalRate(tea decimal.Decimal) decimal.Decimal {
+	nominal, err := model.NominalAnnualRate(tea, model.RateEffectiveAnnual)
+	if err != nil {
+		log.Fatalf("LIVESTOCK_CREDIT_RATE_TEA: %v", err)
+	}
+	return nominal
 }

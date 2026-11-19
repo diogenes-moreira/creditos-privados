@@ -39,6 +39,15 @@ type fakeCreditLines struct {
 	listed []port.LivestockCreditLineFilter
 	// enrollments are the ones stored with Create or LinkClient.
 	enrollments []*model.LivestockClientEnrollment
+	// loans and creditLineUpdates are what CreateLoan stored.
+	loans             []*model.Loan
+	creditLineUpdates []model.CreditLine
+}
+
+func (f *fakeCreditLines) CreateLoan(_ context.Context, l *model.LivestockCreditLine, cl *model.CreditLine, loan *model.Loan) error {
+	f.loans = append(f.loans, loan)
+	f.creditLineUpdates = append(f.creditLineUpdates, *cl)
+	return nil
 }
 
 func (f *fakeCreditLines) LinkClient(_ context.Context, l *model.LivestockCreditLine, e *model.LivestockClientEnrollment) error {

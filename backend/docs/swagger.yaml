@@ -912,6 +912,101 @@ definitions:
         minimum: 0
         type: integer
     type: object
+  dto.LivestockLoanInstallment:
+    properties:
+      capital:
+        example: "97163.21"
+        type: string
+      dueDate:
+        type: string
+      interest:
+        example: "25271.86"
+        type: string
+      number:
+        type: integer
+      total:
+        example: "122435.07"
+        type: string
+    type: object
+  dto.LivestockLoanRequest:
+    properties:
+      installments:
+        description: Installments are monthly; the first is due a month after the
+          loan opens.
+        example: 12
+        type: integer
+      partnerReference:
+        description: PartnerReference is the activation's partnerReference (CuppoGan's
+          onboarding ID).
+        type: string
+      rate:
+        description: |-
+          Rate is the interest rate as agreed, in RateType: TEA (tasa efectiva
+          anual) or NOMINAL_ANNUAL (Prestia's monthly rate × 12).
+        example: "26.01"
+        type: string
+      rateType:
+        example: TEA
+        type: string
+      system:
+        description: 'System is the amortization system: french (fixed payment) or
+          german (fixed capital).'
+        example: french
+        type: string
+      total:
+        description: Total is the loan's principal; at most the credit line's available
+          amount.
+        example: "1299155.00"
+        type: string
+    type: object
+  dto.LivestockLoanResponse:
+    properties:
+      clientId:
+        type: string
+      creditLineId:
+        type: string
+      currency:
+        example: COP
+        type: string
+      disbursedAt:
+        type: string
+      installments:
+        example: 12
+        type: integer
+      loanId:
+        type: string
+      monthlyRate:
+        example: "1.945275"
+        type: string
+      nominalAnnualRate:
+        example: "23.3433"
+        type: string
+      rate:
+        description: |-
+          Rate and RateType as agreed; NominalAnnualRate is what Prestia computes
+          with (monthly rate × 12) and MonthlyRate the monthly percentage.
+        example: "26.01"
+        type: string
+      rateType:
+        example: TEA
+        type: string
+      schedule:
+        items:
+          $ref: '#/definitions/dto.LivestockLoanInstallment'
+        type: array
+      status:
+        example: active
+        type: string
+      system:
+        example: french
+        type: string
+      total:
+        example: "1299155.00"
+        type: string
+      totalToPay:
+        example: "1469220.84"
+        type: string
+    type: object
   dto.LivestockQuotaCeilingsResponse:
     properties:
       capacity:
@@ -5382,6 +5477,60 @@ paths:
       security:
       - ServiceKey: []
       summary: Register a livestock credit line activated by a partner
+      tags:
+      - Livestock quota
+  /livestock-quotas/loans:
+    post:
+      consumes:
+      - application/json
+      description: 'The partner opens the loan of a quota it activated, on the terms
+        it agreed with the rancher: total, interest rate (TEA — tasa efectiva anual
+        — or NOMINAL_ANNUAL, Prestia''s monthly rate × 12), monthly installments and
+        amortization system (french or german). Prestia converts the rate to its nominal
+        annual convention, adopts the terms on the rancher''s credit line, computes
+        the schedule (first installment a month after opening, no VAT on interest)
+        and records the disbursement. One loan per activation: replaying the same
+        request returns 200 with the loan; other terms are 409. Error codes: missing_partner_reference,
+        invalid_total, invalid_rate, invalid_rate_type, invalid_installments, invalid_system
+        (400), unknown_activation, exceeds_credit_line (422), not_enrolled, loan_exists
+        (409).'
+      parameters:
+      - description: Loan terms
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LivestockLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Already opened (replay)
+          schema:
+            $ref: '#/definitions/dto.LivestockLoanResponse'
+        "201":
+          description: Opened
+          schema:
+            $ref: '#/definitions/dto.LivestockLoanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/dto.CodedErrorResponse'
+      security:
+      - ServiceKey: []
+      summary: Open the loan of an activated livestock quota
       tags:
       - Livestock quota
   /livestock-quotas/registry:

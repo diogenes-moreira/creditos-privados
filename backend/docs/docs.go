@@ -4384,6 +4384,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/livestock-quotas/loans": {
+            "post": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "The partner opens the loan of a quota it activated, on the terms it agreed with the rancher: total, interest rate (TEA — tasa efectiva anual — or NOMINAL_ANNUAL, Prestia's monthly rate × 12), monthly installments and amortization system (french or german). Prestia converts the rate to its nominal annual convention, adopts the terms on the rancher's credit line, computes the schedule (first installment a month after opening, no VAT on interest) and records the disbursement. One loan per activation: replaying the same request returns 200 with the loan; other terms are 409. Error codes: missing_partner_reference, invalid_total, invalid_rate, invalid_rate_type, invalid_installments, invalid_system (400), unknown_activation, exceeds_credit_line (422), not_enrolled, loan_exists (409).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Livestock quota"
+                ],
+                "summary": "Open the loan of an activated livestock quota",
+                "parameters": [
+                    {
+                        "description": "Loan terms",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockLoanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Already opened (replay)",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockLoanResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Opened",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LivestockLoanResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CodedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/livestock-quotas/registry": {
             "post": {
                 "security": [
@@ -6825,6 +6894,126 @@ const docTemplate = `{
                     "description": "NotVaccinated is the registry's unvaccinated total for the holding.",
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "dto.LivestockLoanInstallment": {
+            "type": "object",
+            "properties": {
+                "capital": {
+                    "type": "string",
+                    "example": "97163.21"
+                },
+                "dueDate": {
+                    "type": "string"
+                },
+                "interest": {
+                    "type": "string",
+                    "example": "25271.86"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "string",
+                    "example": "122435.07"
+                }
+            }
+        },
+        "dto.LivestockLoanRequest": {
+            "type": "object",
+            "properties": {
+                "installments": {
+                    "description": "Installments are monthly; the first is due a month after the loan opens.",
+                    "type": "integer",
+                    "example": 12
+                },
+                "partnerReference": {
+                    "description": "PartnerReference is the activation's partnerReference (CuppoGan's onboarding ID).",
+                    "type": "string"
+                },
+                "rate": {
+                    "description": "Rate is the interest rate as agreed, in RateType: TEA (tasa efectiva\nanual) or NOMINAL_ANNUAL (Prestia's monthly rate × 12).",
+                    "type": "string",
+                    "example": "26.01"
+                },
+                "rateType": {
+                    "type": "string",
+                    "example": "TEA"
+                },
+                "system": {
+                    "description": "System is the amortization system: french (fixed payment) or german (fixed capital).",
+                    "type": "string",
+                    "example": "french"
+                },
+                "total": {
+                    "description": "Total is the loan's principal; at most the credit line's available amount.",
+                    "type": "string",
+                    "example": "1299155.00"
+                }
+            }
+        },
+        "dto.LivestockLoanResponse": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "creditLineId": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "COP"
+                },
+                "disbursedAt": {
+                    "type": "string"
+                },
+                "installments": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "loanId": {
+                    "type": "string"
+                },
+                "monthlyRate": {
+                    "type": "string",
+                    "example": "1.945275"
+                },
+                "nominalAnnualRate": {
+                    "type": "string",
+                    "example": "23.3433"
+                },
+                "rate": {
+                    "description": "Rate and RateType as agreed; NominalAnnualRate is what Prestia computes\nwith (monthly rate × 12) and MonthlyRate the monthly percentage.",
+                    "type": "string",
+                    "example": "26.01"
+                },
+                "rateType": {
+                    "type": "string",
+                    "example": "TEA"
+                },
+                "schedule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockLoanInstallment"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "system": {
+                    "type": "string",
+                    "example": "french"
+                },
+                "total": {
+                    "type": "string",
+                    "example": "1299155.00"
+                },
+                "totalToPay": {
+                    "type": "string",
+                    "example": "1469220.84"
                 }
             }
         },

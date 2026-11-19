@@ -84,6 +84,18 @@ func (l *Loan) RequestApproval() error {
 	return nil
 }
 
+// ApproveForPartner approves a loan a partner service opens on the terms it
+// agreed with the client (no back-office user approves it).
+func (l *Loan) ApproveForPartner() error {
+	if l.Status != LoanPending {
+		return fmt.Errorf("can only approve pending loans, current status: %s", l.Status)
+	}
+	l.Status = LoanApproved
+	now := time.Now()
+	l.ApprovedAt = &now
+	return nil
+}
+
 func (l *Loan) Approve(approvedBy uuid.UUID) error {
 	if l.Status != LoanPending {
 		return fmt.Errorf("can only approve pending loans, current status: %s", l.Status)

@@ -179,9 +179,11 @@ type TwilioConfig struct {
 type PartnersConfig struct {
 	// CuppoganAPIKey authenticates CuppoGan on POST /livestock-quotas.
 	CuppoganAPIKey string
-	// LivestockCreditInterestRate and LivestockCreditMaxInstallments are the
-	// terms of the credit line each CuppoGan activation opens in Prestia.
-	LivestockCreditInterestRate    decimal.Decimal
+	// LivestockCreditRateTEA (tasa efectiva anual) and
+	// LivestockCreditMaxInstallments are the initial terms of the credit line
+	// each CuppoGan activation opens in Prestia; the loan CuppoGan then opens
+	// on it sets the actual ones.
+	LivestockCreditRateTEA         decimal.Decimal
 	LivestockCreditMaxInstallments int
 	// SchedulerAPIKey authenticates Cloud Scheduler on the unattended Odoo
 	// sync (POST /livestock-credit-portfolio/odoo/sync).
@@ -298,8 +300,8 @@ func Load() *Config {
 		Partners: PartnersConfig{
 			CuppoganAPIKey:  getEnv("CUPPOGAN_API_KEY", ""),
 			SchedulerAPIKey: getEnv("SCHEDULER_API_KEY", ""),
-			// To be defined with TVGAN: until then 0 % and a single installment.
-			LivestockCreditInterestRate:    decimal.NewFromFloat(getEnvFloat("LIVESTOCK_CREDIT_INTEREST_RATE", 0)),
+			// CuppoGan's rate: 26.01 % TEA.
+			LivestockCreditRateTEA:         decimal.NewFromFloat(getEnvFloat("LIVESTOCK_CREDIT_RATE_TEA", 26.01)),
 			LivestockCreditMaxInstallments: getEnvInt("LIVESTOCK_CREDIT_MAX_INSTALLMENTS", 1),
 		},
 		Odoo: OdooConfig{

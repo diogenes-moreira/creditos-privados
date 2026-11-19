@@ -2,6 +2,7 @@ package dto
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
@@ -311,4 +312,91 @@ func ToLivestockCreditLineDetail(l *model.LivestockCreditLine, a *model.Livestoc
 	}
 	d.Assessment = s
 	return d
+}
+
+// LivestockLoanRequest opens the loan of an activated quota.
+type LivestockLoanRequest struct {
+	// PartnerReference is the activation's partnerReference (CuppoGan's onboarding ID).
+	PartnerReference string `json:"partnerReference"`
+	// Total is the loan's principal; at most the credit line's available amount.
+	Total decimal.Decimal `json:"total" swaggertype:"string" example:"1299155.00"`
+	// Rate is the interest rate as agreed, in RateType: TEA (tasa efectiva
+	// anual) or NOMINAL_ANNUAL (Prestia's monthly rate × 12).
+	Rate     decimal.Decimal `json:"rate" swaggertype:"string" example:"26.01"`
+	RateType string          `json:"rateType" example:"TEA"`
+	// Installments are monthly; the first is due a month after the loan opens.
+	Installments int `json:"installments" example:"12"`
+	// System is the amortization system: french (fixed payment) or german (fixed capital).
+	System string `json:"system" example:"french"`
+}
+
+// ToLivestockLoanRequest maps the request; validation is the service's.
+func ToLivestockLoanRequest(r LivestockLoanRequest) model.LivestockLoanRequest {
+	return model.LivestockLoanRequest{
+		PartnerReference: r.PartnerReference,
+		Total:            r.Total,
+		Rate:             r.Rate,
+		RateType:         model.RateType(strings.ToUpper(strings.TrimSpace(r.RateType))),
+		Installments:     r.Installments,
+		System:           model.AmortizationType(strings.ToLower(strings.TrimSpace(r.System))),
+	}
+}
+
+// LivestockLoanInstallment is one installment of the schedule.
+type LivestockLoanInstallment struct {
+	Number   int       `json:"number"`
+	DueDate  time.Time `json:"dueDate"`
+	Capital  string    `json:"capital" example:"97163.21"`
+	Interest string    `json:"interest" example:"25271.86"`
+	Total    string    `json:"total" example:"122435.07"`
+}
+
+// LivestockLoanResponse is the loan Prestia opened, with its schedule.
+type LivestockLoanResponse struct {
+	LoanID       string `json:"loanId"`
+	CreditLineID string `json:"creditLineId"`
+	ClientID     string `json:"clientId"`
+	Status       string `json:"status" example:"active"`
+	Total        string `json:"total" example:"1299155.00"`
+	Currency     string `json:"currency" example:"COP"`
+	// Rate and RateType as agreed; NominalAnnualRate is what Prestia computes
+	// with (monthly rate × 12) and MonthlyRate the monthly percentage.
+	Rate              string                     `json:"rate" example:"26.01"`
+	RateType          string                     `json:"rateType" example:"TEA"`
+	NominalAnnualRate string                     `json:"nominalAnnualRate" example:"23.3433"`
+	MonthlyRate       string                     `json:"monthlyRate" example:"1.945275"`
+	Installments      int                        `json:"installments" example:"12"`
+	System            string                     `json:"system" example:"french"`
+	DisbursedAt       *time.Time                 `json:"disbursedAt,omitempty"`
+	TotalToPay        string                     `json:"totalToPay" example:"1469220.84"`
+	Schedule          []LivestockLoanInstallment `json:"schedule"`
+}
+
+func ToLivestockLoanResponse(loan *model.Loan, line *model.LivestockCreditLine) LivestockLoanResponse {
+	out := LivestockLoanResponse{
+		LoanID:            loan.ID.String(),
+		CreditLineID:      loan.CreditLineID.String(),
+		ClientID:          loan.ClientID.String(),
+		Status:            string(loan.Status),
+		Total:             loan.Principal.StringFixed(2),
+		Currency:          line.Currency,
+		RateType:          line.LoanRateType,
+		NominalAnnualRate: loan.InterestRate.StringFixed(4),
+		MonthlyRate:       loan.InterestRate.Div(decimal.NewFromInt(12)).StringFixed(6),
+		Installments:      loan.NumInstallments,
+		System:            string(loan.AmortizationType),
+		DisbursedAt:       loan.DisbursedAt,
+		Schedule:          []LivestockLoanInstallment{},
+	}
+	if line.LoanAgreedRate.Valid {
+		out.Rate = line.LoanAgreedRate.Decimal.String()
+	}
+	total := decimal.Zero
+	for _, i := range loan.Installments {
+		total = total.Add(i.TotalAmount)
+		out.Schedule = append(out.Schedule, LivestockLoanInstallment{Number: i.Number, DueDate: i.DueDate,
+			Capital: i.CapitalAmount.StringFixed(2), Interest: i.InterestAmount.StringFixed(2), Total: i.TotalAmount.StringFixed(2)})
+	}
+	out.TotalToPay = total.StringFixed(2)
+	return out
 }

@@ -89,6 +89,13 @@ type LivestockCreditLine struct {
 	ClientID     *uuid.UUID `gorm:"type:uuid;index"`
 	CreditLineID *uuid.UUID `gorm:"type:uuid;index"`
 
+	// LoanID is the loan the partner opened on the quota (one per activation),
+	// with the rate as the partner stated it: LoanAgreedRate in LoanRateType
+	// (e.g. 26.01 TEA). The loan itself keeps the nominal equivalent.
+	LoanID         *uuid.UUID          `gorm:"type:uuid;index"`
+	LoanAgreedRate decimal.NullDecimal `gorm:"type:decimal(8,4)"`
+	LoanRateType   string              `gorm:"type:varchar(20)"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

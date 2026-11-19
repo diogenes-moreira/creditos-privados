@@ -27,11 +27,12 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 	tables := []any{&model.LivestockCreditLineDocument{}, &model.LivestockCreditLine{}, &model.LivestockQuotaAssessment{},
-		&model.CreditLine{}, &model.CurrentAccount{}, &model.Client{}, &model.User{}}
+		&model.Installment{}, &model.Loan{}, &model.CreditLine{}, &model.CurrentAccount{}, &model.Client{}, &model.User{}}
 	for _, table := range tables {
 		require.NoError(t, db.Migrator().DropTable(table))
 	}
 	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Client{}, &model.CurrentAccount{}, &model.CreditLine{},
+		&model.Loan{}, &model.Installment{},
 		&model.LivestockQuotaAssessment{}, &model.LivestockCreditLine{}, &model.LivestockCreditLineDocument{}))
 	repo := NewLivestockCreditLineRepository(db)
 
@@ -100,4 +101,34 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	var clients int64
 	db.Model(&model.Client{}).Count(&clients)
 	assert.EqualValues(t, 1, clients)
+
+	// The loan of the activation: loan, installments, credit line usage and terms, and the link, together.
+	loan, err := model.NewLoan(client.ID, e.CreditLine.ID, decimal.NewFromInt(1000000), decimal.RequireFromString("23.3433"), 12, model.AmortizationFrench)
+	require.NoError(t, err)
+	require.NoError(t, loan.RequestApproval())
+	require.NoError(t, loan.ApproveForPartner())
+	_, err = loan.Disburse(time.Now(), decimal.Zero)
+	require.NoError(t, err)
+	cl := e.CreditLine
+	cl.InterestRate, cl.MaxInstallments = loan.InterestRate, 12
+	cl.RecordDisbursement(loan.Principal)
+	line.LoanID, line.LoanAgreedRate, line.LoanRateType = &loan.ID, decimal.NewNullDecimal(decimal.RequireFromString("26.01")), "TEA"
+	require.NoError(t, repo.CreateLoan(ctx, line, cl, loan))
+
+	withLoan, err := repo.FindByID(ctx, line.ID)
+	require.NoError(t, err)
+	assert.Equal(t, loan.ID, *withLoan.LoanID)
+	assert.Equal(t, "26.0100", withLoan.LoanAgreedRate.Decimal.StringFixed(4))
+	assert.Equal(t, "TEA", withLoan.LoanRateType)
+	loans := NewLoanRepository(db)
+	storedLoan, err := loans.FindByIDWithInstallments(ctx, loan.ID)
+	require.NoError(t, err)
+	assert.Equal(t, model.LoanActive, storedLoan.Status)
+	assert.Len(t, storedLoan.Installments, 12)
+	assert.Equal(t, "94242.08", storedLoan.Installments[0].TotalAmount.StringFixed(2))
+	var updated model.CreditLine
+	require.NoError(t, db.First(&updated, "id = ?", cl.ID).Error)
+	assert.Equal(t, "1000000.00", updated.UsedAmount.StringFixed(2))
+	assert.Equal(t, "23.3433", updated.InterestRate.StringFixed(4))
+	assert.Equal(t, 12, updated.MaxInstallments)
 }

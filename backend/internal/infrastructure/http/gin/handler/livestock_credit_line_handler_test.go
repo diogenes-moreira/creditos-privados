@@ -45,6 +45,10 @@ func (m *memoryCreditLines) LinkClient(_ context.Context, l *model.LivestockCred
 	return nil
 }
 
+func (m *memoryCreditLines) CreateLoan(context.Context, *model.LivestockCreditLine, *model.CreditLine, *model.Loan) error {
+	return nil
+}
+
 func (m *memoryCreditLines) find(match func(*model.LivestockCreditLine) bool) (*model.LivestockCreditLine, error) {
 	for _, l := range m.lines {
 		if match(l) {

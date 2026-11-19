@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
@@ -37,6 +38,8 @@ type LivestockCreditLineService struct {
 	assessments port.LivestockQuotaRepository
 	audit       *AuditService
 	enrollment  *clientEnrollment
+	creditLines port.CreditLineRepository
+	loans       port.LoanRepository
 }
 
 // LivestockCreditTerms are the terms of the CreditLine an activation opens in
@@ -66,6 +69,12 @@ func NewLivestockCreditLineService(lines port.LivestockCreditLineRepository, ass
 // replayed.
 func (s *LivestockCreditLineService) WithClients(users port.UserRepository, clients port.ClientRepository, auth port.AuthService, country string, terms LivestockCreditTerms) *LivestockCreditLineService {
 	s.enrollment = &clientEnrollment{users: users, clients: clients, auth: auth, country: country, terms: terms}
+	return s
+}
+
+// WithLoans lets partners open the loan of an activated quota (OpenLoan).
+func (s *LivestockCreditLineService) WithLoans(creditLines port.CreditLineRepository, loans port.LoanRepository) *LivestockCreditLineService {
+	s.creditLines, s.loans = creditLines, loans
 	return s
 }
 
@@ -327,4 +336,89 @@ func AsActivationRejection(err error) (*model.ActivationRejection, bool) {
 	var r *model.ActivationRejection
 	ok := errors.As(err, &r)
 	return r, ok
+}
+
+// OpenLoan opens the loan of an activated quota on the terms the partner
+// agreed with the rancher, on the credit line the activation enrolled: Prestia
+// converts the rate to its nominal annual convention, adopts it (and the
+// installments) as the credit line's terms, computes the monthly schedule (the
+// first installment a month from now, no VAT on the interest: Colombian credit
+// interest is exempt) and records the disbursement on the line. One loan per
+// activation: a replay of the same request returns it (created false), any
+// other request is a conflict. Rejections are *model.ActivationRejection.
+func (s *LivestockCreditLineService) OpenLoan(ctx context.Context, partner string, req model.LivestockLoanRequest) (*model.Loan, *model.LivestockCreditLine, bool, error) {
+	if s.creditLines == nil || s.loans == nil {
+		return nil, nil, false, errors.New("livestock loans are not configured")
+	}
+	if err := req.Validate(); err != nil {
+		return nil, nil, false, err
+	}
+	line, err := s.lines.FindByPartnerReference(ctx, partner, req.PartnerReference)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("looking up the credit line: %w", err)
+	}
+	if line == nil {
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationUnprocessable,
+			Code: "unknown_activation", Message: "no activation with that partnerReference"}
+	}
+	if line.CreditLineID == nil || line.ClientID == nil {
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationConflict, Code: "not_enrolled",
+			Message: "the activation has no client nor credit line yet: replay the activation first"}
+	}
+	if line.LoanID != nil {
+		loan, err := s.loans.FindByIDWithInstallments(ctx, *line.LoanID)
+		if err != nil {
+			return nil, nil, false, fmt.Errorf("reading the loan of the activation: %w", err)
+		}
+		if req.Matches(line, loan) {
+			return loan, line, false, nil
+		}
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationConflict, Code: "loan_exists",
+			Message: "the activation already has a loan with other terms"}
+	}
+
+	creditLine, err := s.creditLines.FindByID(ctx, *line.CreditLineID)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("reading the credit line: %w", err)
+	}
+	nominal, err := model.NominalAnnualRate(req.Rate, req.RateType)
+	if err != nil {
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationInvalid, Code: "invalid_rate", Message: err.Error()}
+	}
+	if err := creditLine.CanDisburse(req.Total); err != nil {
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationUnprocessable,
+			Code: "exceeds_credit_line", Message: err.Error()}
+	}
+	creditLine.InterestRate = nominal
+	if creditLine.MaxInstallments < req.Installments {
+		creditLine.MaxInstallments = req.Installments
+	}
+
+	loan, err := model.NewLoan(*line.ClientID, creditLine.ID, req.Total, nominal, req.Installments, req.System)
+	if err != nil {
+		return nil, nil, false, &model.ActivationRejection{Kind: model.ActivationInvalid, Code: "invalid_loan", Message: err.Error()}
+	}
+	if err := loan.RequestApproval(); err != nil {
+		return nil, nil, false, err
+	}
+	if err := loan.ApproveForPartner(); err != nil {
+		return nil, nil, false, err
+	}
+	if _, err := loan.Disburse(time.Now(), decimal.Zero); err != nil {
+		return nil, nil, false, err
+	}
+	creditLine.RecordDisbursement(req.Total)
+	line.LoanID = &loan.ID
+	line.LoanAgreedRate = decimal.NewNullDecimal(req.Rate)
+	line.LoanRateType = string(req.RateType)
+	if err := s.lines.CreateLoan(ctx, line, creditLine, loan); err != nil {
+		return nil, nil, false, fmt.Errorf("storing the loan: %w", err)
+	}
+	if s.audit != nil {
+		s.audit.Record(ctx, nil, "open_livestock_loan", "loan", loan.ID.String(),
+			fmt.Sprintf("%s opened a %s %s loan on credit line %s: %s %% %s, %d %s installments (promissory note %s)",
+				partner, loan.Principal.StringFixed(2), line.Currency, creditLine.ID, req.Rate.String(), req.RateType,
+				req.Installments, req.System, line.PromissoryNoteNumber))
+	}
+	return loan, line, true, nil
 }
