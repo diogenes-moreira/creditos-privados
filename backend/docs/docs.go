@@ -4384,75 +4384,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/livestock-quotas/loans": {
-            "post": {
-                "security": [
-                    {
-                        "ServiceKey": []
-                    }
-                ],
-                "description": "The partner opens the loan of a quota it activated, on the terms it agreed with the rancher: total, interest rate (TEA — tasa efectiva anual — or NOMINAL_ANNUAL, Prestia's monthly rate × 12), monthly installments and amortization system (french or german). Prestia converts the rate to its nominal annual convention, adopts the terms on the rancher's credit line, computes the schedule (first installment a month after opening, no VAT on interest) and records the disbursement. One loan per activation: replaying the same request returns 200 with the loan; other terms are 409. Error codes: missing_partner_reference, invalid_total, invalid_rate, invalid_rate_type, invalid_installments, invalid_system (400), unknown_activation, exceeds_credit_line (422), not_enrolled, loan_exists (409).",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Livestock quota"
-                ],
-                "summary": "Open the loan of an activated livestock quota",
-                "parameters": [
-                    {
-                        "description": "Loan terms",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.LivestockLoanRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Already opened (replay)",
-                        "schema": {
-                            "$ref": "#/definitions/dto.LivestockLoanResponse"
-                        }
-                    },
-                    "201": {
-                        "description": "Opened",
-                        "schema": {
-                            "$ref": "#/definitions/dto.LivestockLoanResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CodedErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CodedErrorResponse"
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CodedErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/livestock-quotas/registry": {
             "post": {
                 "security": [
@@ -6277,6 +6208,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.LivestockCreditInstallmentResponse"
                     }
                 },
+                "loan": {
+                    "description": "Loan is Prestia's credit on the invoice: Odoo's capital plus the\ninterest of the credit line's rate. Absent until opened.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.LivestockInvoiceLoanResponse"
+                        }
+                    ]
+                },
                 "nextDueDate": {
                     "description": "NextDueDate is the due date of the oldest installment with a balance.",
                     "type": "string",
@@ -6743,6 +6682,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "BANCOLOMBIA"
                 },
+                "capital": {
+                    "description": "Capital went to Odoo; Interest stays in Prestia, InterestPendingReport\nuntil Odoo can take it.",
+                    "type": "string",
+                    "example": "800000.00"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6758,6 +6702,13 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "interest": {
+                    "type": "string",
+                    "example": "25260.80"
+                },
+                "interestPendingReport": {
+                    "type": "boolean"
                 },
                 "invoiceNumber": {
                     "type": "string",
@@ -6812,6 +6763,11 @@ const docTemplate = `{
                 },
                 "creditLineId": {
                     "type": "string"
+                },
+                "interestPendingReport": {
+                    "description": "InterestPendingReport is the interest collected that Odoo has not been\ntold about yet (its API takes the capital only, for now).",
+                    "type": "string",
+                    "example": "19452.75"
                 },
                 "invoices": {
                     "description": "Invoices: open ones first, by the due date of their oldest unpaid\ninstallment, then the paid ones.",
@@ -6897,123 +6853,80 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LivestockLoanInstallment": {
+        "dto.LivestockInvoiceLoanInstallment": {
             "type": "object",
             "properties": {
                 "capital": {
                     "type": "string",
-                    "example": "97163.21"
+                    "example": "333300.00"
                 },
                 "dueDate": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2026-12-12"
                 },
                 "interest": {
                     "type": "string",
-                    "example": "25271.86"
+                    "example": "19452.75"
                 },
                 "number": {
                     "type": "integer"
                 },
+                "paidCapital": {
+                    "type": "string",
+                    "example": "0.00"
+                },
+                "paidInterest": {
+                    "type": "string",
+                    "example": "0.00"
+                },
+                "remaining": {
+                    "type": "string",
+                    "example": "352752.75"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
                 "total": {
                     "type": "string",
-                    "example": "122435.07"
+                    "example": "352752.75"
                 }
             }
         },
-        "dto.LivestockLoanRequest": {
+        "dto.LivestockInvoiceLoanResponse": {
             "type": "object",
             "properties": {
-                "installments": {
-                    "description": "Installments are monthly; the first is due a month after the loan opens.",
-                    "type": "integer",
-                    "example": 12
-                },
-                "partnerReference": {
-                    "description": "PartnerReference is the activation's partnerReference (CuppoGan's onboarding ID).",
-                    "type": "string"
-                },
-                "rate": {
-                    "description": "Rate is the interest rate as agreed, in RateType: TEA (tasa efectiva\nanual) or NOMINAL_ANNUAL (Prestia's monthly rate × 12).",
+                "dueToday": {
+                    "description": "DueToday is what is due by today, interest included; PayoffToday adds\nthe capital not yet due (the most a payment today can be).",
                     "type": "string",
-                    "example": "26.01"
-                },
-                "rateType": {
-                    "type": "string",
-                    "example": "TEA"
-                },
-                "system": {
-                    "description": "System is the amortization system: french (fixed payment) or german (fixed capital).",
-                    "type": "string",
-                    "example": "french"
-                },
-                "total": {
-                    "description": "Total is the loan's principal; at most the credit line's available amount.",
-                    "type": "string",
-                    "example": "1299155.00"
-                }
-            }
-        },
-        "dto.LivestockLoanResponse": {
-            "type": "object",
-            "properties": {
-                "clientId": {
-                    "type": "string"
-                },
-                "creditLineId": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string",
-                    "example": "COP"
-                },
-                "disbursedAt": {
-                    "type": "string"
+                    "example": "352752.75"
                 },
                 "installments": {
-                    "type": "integer",
-                    "example": 12
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.LivestockInvoiceLoanInstallment"
+                    }
                 },
                 "loanId": {
                     "type": "string"
                 },
-                "monthlyRate": {
-                    "type": "string",
-                    "example": "1.945275"
-                },
                 "nominalAnnualRate": {
+                    "description": "NominalAnnualRate is the rate it computes with (monthly × 12; 23.3433 = 26.01 % TEA).",
                     "type": "string",
                     "example": "23.3433"
                 },
-                "rate": {
-                    "description": "Rate and RateType as agreed; NominalAnnualRate is what Prestia computes\nwith (monthly rate × 12) and MonthlyRate the monthly percentage.",
+                "outstandingCapital": {
+                    "description": "OutstandingCapital is the capital not yet paid (what Odoo shows as the invoice's balance).",
                     "type": "string",
-                    "example": "26.01"
+                    "example": "666700.00"
                 },
-                "rateType": {
+                "payoffToday": {
                     "type": "string",
-                    "example": "TEA"
-                },
-                "schedule": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.LivestockLoanInstallment"
-                    }
+                    "example": "1019452.75"
                 },
                 "status": {
                     "type": "string",
                     "example": "active"
-                },
-                "system": {
-                    "type": "string",
-                    "example": "french"
-                },
-                "total": {
-                    "type": "string",
-                    "example": "1299155.00"
-                },
-                "totalToPay": {
-                    "type": "string",
-                    "example": "1469220.84"
                 }
             }
         },

@@ -180,9 +180,9 @@ type PartnersConfig struct {
 	// CuppoganAPIKey authenticates CuppoGan on POST /livestock-quotas.
 	CuppoganAPIKey string
 	// LivestockCreditRateTEA (tasa efectiva anual) and
-	// LivestockCreditMaxInstallments are the initial terms of the credit line
-	// each CuppoGan activation opens in Prestia; the loan CuppoGan then opens
-	// on it sets the actual ones.
+	// LivestockCreditMaxInstallments are the terms of the credit line each
+	// CuppoGan activation opens in Prestia. Each quota invoice in Odoo becomes
+	// a loan on it at that rate (installments: Odoo's "Cuppogan" term, 3).
 	LivestockCreditRateTEA         decimal.Decimal
 	LivestockCreditMaxInstallments int
 	// SchedulerAPIKey authenticates Cloud Scheduler on the unattended Odoo
@@ -302,7 +302,7 @@ func Load() *Config {
 			SchedulerAPIKey: getEnv("SCHEDULER_API_KEY", ""),
 			// CuppoGan's rate: 26.01 % TEA.
 			LivestockCreditRateTEA:         decimal.NewFromFloat(getEnvFloat("LIVESTOCK_CREDIT_RATE_TEA", 26.01)),
-			LivestockCreditMaxInstallments: getEnvInt("LIVESTOCK_CREDIT_MAX_INSTALLMENTS", 1),
+			LivestockCreditMaxInstallments: getEnvInt("LIVESTOCK_CREDIT_MAX_INSTALLMENTS", 3),
 		},
 		Odoo: OdooConfig{
 			BaseURL:             getEnv("ODOO_API_BASE_URL", ""),
@@ -310,7 +310,7 @@ func Load() *Config {
 			TimeoutSeconds:      getEnvInt("ODOO_API_TIMEOUT_SECONDS", 15),
 			RequestsPerMinute:   getEnvInt("ODOO_API_REQUESTS_PER_MINUTE", 15),
 			RequestsPerHour:     getEnvInt("ODOO_API_REQUESTS_PER_HOUR", 150),
-			SyncIntervalMinutes: getEnvInt("ODOO_SYNC_INTERVAL_MINUTES", 15),
+			SyncIntervalMinutes: getEnvInt("ODOO_SYNC_INTERVAL_MINUTES", 5),
 		},
 		Country:         country,
 		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", defaults.IVARate),

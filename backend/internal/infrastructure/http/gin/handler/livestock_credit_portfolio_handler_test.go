@@ -20,6 +20,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/odoo"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -67,6 +68,12 @@ func (m *memoryPortfolio) ListInvoices(_ context.Context, lineID uuid.UUID) ([]m
 		out = append(out, inv)
 	}
 	return out, nil
+}
+
+func (m *memoryPortfolio) OpenInvoiceLoan(context.Context, uuid.UUID, *model.Loan) error { return nil }
+
+func (m *memoryPortfolio) RecordLoanPayment(context.Context, *model.Loan, *model.Payment, decimal.Decimal, *model.LivestockCreditPayment) error {
+	return nil
 }
 
 func (m *memoryPortfolio) CreatePayment(_ context.Context, p *model.LivestockCreditPayment) error {

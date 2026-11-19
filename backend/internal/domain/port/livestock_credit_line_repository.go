@@ -17,10 +17,6 @@ type LivestockCreditLineRepository interface {
 	// LinkClient stores the enrollment of a line registered without one and
 	// points the line at its client and credit line, together or not at all.
 	LinkClient(ctx context.Context, line *model.LivestockCreditLine, enrollment *model.LivestockClientEnrollment) error
-	// CreateLoan stores a loan opened on the line, with its installments, the
-	// credit line's new terms and usage, and the line's link to the loan,
-	// together or not at all.
-	CreateLoan(ctx context.Context, line *model.LivestockCreditLine, creditLine *model.CreditLine, loan *model.Loan) error
 	FindByPromissoryNote(ctx context.Context, number string) (*model.LivestockCreditLine, error)
 	FindByPartnerReference(ctx context.Context, partner, reference string) (*model.LivestockCreditLine, error)
 	FindByAssessment(ctx context.Context, assessmentID uuid.UUID) (*model.LivestockCreditLine, error)

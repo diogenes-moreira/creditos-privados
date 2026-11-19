@@ -45,26 +45,6 @@ func (r *LivestockCreditLineRepository) LinkClient(ctx context.Context, line *mo
 	})
 }
 
-func (r *LivestockCreditLineRepository) CreateLoan(ctx context.Context, line *model.LivestockCreditLine, creditLine *model.CreditLine, loan *model.Loan) error {
-	return r.quiet().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Omit(clause.Associations).Create(loan).Error; err != nil {
-			return fmt.Errorf("creating the loan: %w", err)
-		}
-		if len(loan.Installments) > 0 {
-			if err := tx.Omit(clause.Associations).Create(&loan.Installments).Error; err != nil {
-				return fmt.Errorf("creating the installments: %w", err)
-			}
-		}
-		if err := tx.Model(&model.CreditLine{}).Where("id = ?", creditLine.ID).Updates(map[string]any{
-			"interest_rate": creditLine.InterestRate, "max_installments": creditLine.MaxInstallments,
-			"used_amount": creditLine.UsedAmount}).Error; err != nil {
-			return fmt.Errorf("updating the credit line: %w", err)
-		}
-		return tx.Model(&model.LivestockCreditLine{}).Where("id = ?", line.ID).Updates(map[string]any{
-			"loan_id": line.LoanID, "loan_agreed_rate": line.LoanAgreedRate, "loan_rate_type": line.LoanRateType}).Error
-	})
-}
-
 // createEnrollment stores the new user, client and account (if the client is
 // new) and the credit line, without touching their associations, and points
 // the line at them.

@@ -263,6 +263,11 @@ type LivestockCreditInvoice struct {
 	PaymentState   string                       `gorm:"type:varchar(20)"`
 	Installments   []LivestockCreditInstallment `gorm:"serializer:json;type:text"`
 
+	// LoanID is Prestia's loan of the invoice (capital and dates from Odoo,
+	// interest from the credit line's rate); nil until opened, or when the
+	// line has no credit line in Prestia.
+	LoanID *uuid.UUID `gorm:"type:uuid;index"`
+
 	SyncedAt  time.Time `gorm:"not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -363,10 +368,19 @@ type LivestockCreditPayment struct {
 	OdooInvoiceID int64     `gorm:"not null"`
 	InvoiceNumber string    `gorm:"type:varchar(40)"`
 
-	Amount      decimal.Decimal `gorm:"type:decimal(18,2);not null"`
-	PaymentDate string          `gorm:"type:varchar(10);not null"`
-	Bank        string          `gorm:"type:varchar(40);not null"`
-	Reference   string          `gorm:"type:varchar(100);not null;index;uniqueIndex:idx_livestock_credit_payments_active_reference,where:status <> 'failed'"`
+	Amount decimal.Decimal `gorm:"type:decimal(18,2);not null"`
+	// CapitalAmount and InterestAmount split Amount on an invoice with a
+	// Prestia loan: only the capital is sent to Odoo; the interest stays in
+	// Prestia (InterestReportedAt nil) until Odoo can take it. On a payment
+	// without loan, Amount is all capital.
+	CapitalAmount      decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+	InterestAmount     decimal.Decimal `gorm:"type:decimal(18,2);not null;default:0"`
+	InterestReportedAt *time.Time
+	// LoanPaymentID is the payment in Prestia's loan (payments table).
+	LoanPaymentID *uuid.UUID `gorm:"type:uuid"`
+	PaymentDate   string     `gorm:"type:varchar(10);not null"`
+	Bank          string     `gorm:"type:varchar(40);not null"`
+	Reference     string     `gorm:"type:varchar(100);not null;index;uniqueIndex:idx_livestock_credit_payments_active_reference,where:status <> 'failed'"`
 
 	RegisteredBy      *uuid.UUID `gorm:"type:uuid"`
 	RegisteredByEmail string     `gorm:"type:varchar(200)"`
@@ -459,6 +473,13 @@ func (p *LivestockCreditPayment) MarkAlreadyRegistered(code, message string) {
 	if m := alreadyRegisteredPayment.FindStringSubmatch(message); m != nil {
 		p.OdooPaymentNumber = truncate(m[1], 60)
 	}
+}
+
+// MarkRecordedInPrestiaOnly is a payment with no capital (interest only):
+// nothing goes to Odoo.
+func (p *LivestockCreditPayment) MarkRecordedInPrestiaOnly() {
+	p.Status = PaymentRegistered
+	p.ErrorCode, p.ErrorMessage = "", ""
 }
 
 // MarkFailed records Odoo's rejection.

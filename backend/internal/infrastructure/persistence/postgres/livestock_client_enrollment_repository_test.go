@@ -33,7 +33,8 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	}
 	require.NoError(t, db.AutoMigrate(&model.User{}, &model.Client{}, &model.CurrentAccount{}, &model.CreditLine{},
 		&model.Loan{}, &model.Installment{},
-		&model.LivestockQuotaAssessment{}, &model.LivestockCreditLine{}, &model.LivestockCreditLineDocument{}))
+		&model.LivestockQuotaAssessment{}, &model.LivestockCreditLine{}, &model.LivestockCreditLineDocument{},
+		&model.Loan{}, &model.Installment{}, &model.Payment{}, &model.LivestockCreditInvoice{}, &model.LivestockCreditPayment{}))
 	repo := NewLivestockCreditLineRepository(db)
 
 	newLine := func(note string) (*model.LivestockCreditLine, *model.LivestockCreditLineDocument) {
@@ -102,33 +103,59 @@ func TestLivestockClientEnrollmentOnPostgres(t *testing.T) {
 	db.Model(&model.Client{}).Count(&clients)
 	assert.EqualValues(t, 1, clients)
 
-	// The loan of the activation: loan, installments, credit line usage and terms, and the link, together.
-	loan, err := model.NewLoan(client.ID, e.CreditLine.ID, decimal.NewFromInt(1000000), decimal.RequireFromString("23.3433"), 12, model.AmortizationFrench)
+	// A quota invoice of the line opens a loan on its credit line; a payment releases its capital.
+	portfolio := NewLivestockCreditPortfolioRepository(db)
+	d := decimal.RequireFromString
+	inv := model.NewLivestockCreditInvoice(line.ID, model.OdooInvoice{ID: 27506, Number: "FE12262", Date: "2026-11-12",
+		DueDate: "2027-02-10", AmountTotal: d("1000000"), AmountResidual: d("1000000"),
+		Installments: []model.LivestockCreditInstallment{
+			{Number: 1, DueDate: "2026-12-12", Amount: d("333300"), Residual: d("333300")},
+			{Number: 2, DueDate: "2027-01-11", Amount: d("333300"), Residual: d("333300")},
+			{Number: 3, DueDate: "2027-02-10", Amount: d("333400"), Residual: d("333400")}}}, time.Now())
+	require.NoError(t, portfolio.UpsertInvoices(ctx, line.ID, []model.LivestockCreditInvoice{inv}, true))
+	rows, err := portfolio.ListInvoices(ctx, line.ID)
 	require.NoError(t, err)
-	require.NoError(t, loan.RequestApproval())
-	require.NoError(t, loan.ApproveForPartner())
-	_, err = loan.Disburse(time.Now(), decimal.Zero)
+	require.Len(t, rows, 1)
+	loan, err := model.NewLivestockInvoiceLoan(client.ID, e.CreditLine.ID, rows[0], d("23.3433"))
 	require.NoError(t, err)
-	cl := e.CreditLine
-	cl.InterestRate, cl.MaxInstallments = loan.InterestRate, 12
-	cl.RecordDisbursement(loan.Principal)
-	line.LoanID, line.LoanAgreedRate, line.LoanRateType = &loan.ID, decimal.NewNullDecimal(decimal.RequireFromString("26.01")), "TEA"
-	require.NoError(t, repo.CreateLoan(ctx, line, cl, loan))
+	require.NoError(t, portfolio.OpenInvoiceLoan(ctx, rows[0].ID, loan))
+	require.Error(t, portfolio.OpenInvoiceLoan(ctx, rows[0].ID, loan), "one loan per invoice")
+	var used model.CreditLine
+	require.NoError(t, db.First(&used, "id = ?", e.CreditLine.ID).Error)
+	assert.Equal(t, "1000000.00", used.UsedAmount.StringFixed(2))
 
-	withLoan, err := repo.FindByID(ctx, line.ID)
+	// A complete sync where Odoo no longer reports the invoice keeps it: it has a loan.
+	require.NoError(t, portfolio.UpsertInvoices(ctx, line.ID, nil, true))
+	rows, err = portfolio.ListInvoices(ctx, line.ID)
 	require.NoError(t, err)
-	assert.Equal(t, loan.ID, *withLoan.LoanID)
-	assert.Equal(t, "26.0100", withLoan.LoanAgreedRate.Decimal.StringFixed(4))
-	assert.Equal(t, "TEA", withLoan.LoanRateType)
+	require.Len(t, rows, 1)
+	require.NotNil(t, rows[0].LoanID)
+
 	loans := NewLoanRepository(db)
-	storedLoan, err := loans.FindByIDWithInstallments(ctx, loan.ID)
+	qloan, err := loans.FindByIDWithInstallments(ctx, *rows[0].LoanID)
 	require.NoError(t, err)
-	assert.Equal(t, model.LoanActive, storedLoan.Status)
-	assert.Len(t, storedLoan.Installments, 12)
-	assert.Equal(t, "94242.08", storedLoan.Installments[0].TotalAmount.StringFixed(2))
-	var updated model.CreditLine
-	require.NoError(t, db.First(&updated, "id = ?", cl.ID).Error)
-	assert.Equal(t, "1000000.00", updated.UsedAmount.StringFixed(2))
-	assert.Equal(t, "23.3433", updated.InterestRate.StringFixed(4))
-	assert.Equal(t, 12, updated.MaxInstallments)
+	split, err := qloan.ApplyLivestockPayment(d("352752.75"), time.Date(2026, 12, 12, 0, 0, 0, 0, time.UTC))
+	require.NoError(t, err)
+	loanPayment, err := model.NewPayment(qloan.ID, d("352752.75"), model.PaymentTransfer, "R-1")
+	require.NoError(t, err)
+	payment := model.NewLivestockCreditPayment(line.ID, model.LivestockCreditPaymentRequest{InvoiceID: 27506,
+		Amount: d("352752.75"), Date: "2026-12-12", Bank: "DAVIVIENDA", Reference: "R-1"}, "FE12262", nil, "")
+	payment.CapitalAmount, payment.InterestAmount, payment.LoanPaymentID = split.Capital, split.Interest, &loanPayment.ID
+	payment.MarkRegistered(2112, "PDAVI/1")
+	require.NoError(t, portfolio.RecordLoanPayment(ctx, qloan, loanPayment, split.Capital, payment))
+
+	after, err := loans.FindByIDWithInstallments(ctx, qloan.ID)
+	require.NoError(t, err)
+	assert.Equal(t, model.InstallmentPaid, after.Installments[0].Status)
+	assert.Equal(t, "333300.00", after.Installments[0].PaidCapital.StringFixed(2))
+	assert.Equal(t, "19452.75", after.Installments[0].PaidInterest.StringFixed(2))
+	require.NoError(t, db.First(&used, "id = ?", e.CreditLine.ID).Error)
+	assert.Equal(t, "666700.00", used.UsedAmount.StringFixed(2), "the capital paid is available again")
+	var loanPayments int64
+	db.Model(&model.Payment{}).Where("loan_id = ?", qloan.ID).Count(&loanPayments)
+	assert.EqualValues(t, 1, loanPayments)
+	payments, err := portfolio.ListPayments(ctx, line.ID)
+	require.NoError(t, err)
+	require.Len(t, payments, 1)
+	assert.Equal(t, "19452.75", payments[0].InterestAmount.StringFixed(2))
 }

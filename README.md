@@ -171,7 +171,8 @@ npm run dev    # http://localhost:4321
 | `ODOO_API_TOKEN` | Token Bearer de esa API. Sin él (o sin la URL) la cartera queda apagada y lo guardado se sigue viendo | - |
 | `ODOO_API_TIMEOUT_SECONDS` | Tope por petición a Odoo | `15` |
 | `ODOO_API_REQUESTS_PER_MINUTE` / `ODOO_API_REQUESTS_PER_HOUR` | Límite propio de Prestia hacia Odoo, por instancia (Odoo admite 60/min y 600/h por IP, compartidos con cuppogan-service) | `15` / `150` |
-| `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `15` |
+| `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `5` |
+| `LIVESTOCK_CREDIT_RATE_TEA` / `LIVESTOCK_CREDIT_MAX_INSTALLMENTS` | Tasa (efectiva anual) y cuotas de la línea de crédito de cada cupo CuppoGan | `26.01` / `3` |
 | `SCHEDULER_API_KEY` | Clave (`X-API-Key`) con la que Cloud Scheduler dispara la sincronización con Odoo. Sin ella, la ruta no existe | - |
 | `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
 | `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
@@ -421,15 +422,17 @@ Build del frontend: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
 `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSLMODE`, `DB_INSTANCE`,
 `JWT_SECRET`, `FIREBASE_CREDENTIALS`.
 
-### Cartera en Odoo (cupos CuppoGan)
+### Crédito de los cupos CuppoGan (Prestia) y Odoo
 
-Encendida desde el 2026-11-17 contra producción (`https://www.tvgan.com.co/api/v1/cuppogan`):
+Prestia maneja el crédito (cupo, préstamos, cuotas, intereses y pagos); Odoo de TVGAN maneja las ventas y las facturas.
 
-- Token: secreto `ODOO_API_TOKEN` en Secret Manager (el mismo que usa cuppogan-service), con acceso para la cuenta de servicio de Cloud Run. `deploy.yml` lo monta en `--set-secrets` y la URL va en `--set-env-vars`; sin el secreto el deploy falla.
-- IP de salida: Prestia y cuppogan-service salen a internet por el conector Serverless VPC Access `cuppogan-egress-conn` + Cloud NAT, con la IP fija `34.30.16.187`, que TVGAN tiene en su lista de IP permitidas (en producción responde `403 IP_NOT_ALLOWED` a las demás). Los deploys conservan el conector.
-- Para apagarla: quitar las dos entradas de `deploy.yml` (la cartera queda deshabilitada y lo guardado se sigue viendo).
+- **Activación**: cuppogan-service informa el cupo activado (`POST /api/v1/livestock-quotas/activations`). Prestia da de alta al ganadero como **Client** (con su User y cuenta corriente; NIT = cédula + dígito de verificación; correo informado o `<cédula>@cuppogan.com`; fecha de nacimiento del documento o una genérica anotada en el cliente) y una **CreditLine** aprobada por el cupo, a `LIVESTOCK_CREDIT_RATE_TEA` (26,01 % TEA → 23,3433 % nominal anual, la convención de Prestia) y `LIVESTOCK_CREDIT_MAX_INSTALLMENTS` (3).
+- **Compras**: se venden en Odoo con el plazo de pago "Cuppogan" (3 cuotas de capital a 30, 60 y 90 días); Odoo no deja vender por encima del disponible. Cada factura a cupo que lee la sincronización se convierte en un **préstamo** de Prestia sobre la línea, sistema alemán: capital y fechas de las cuotas de Odoo, más los intereses de la tasa de la línea sobre el capital pendiente (sin IVA). Suma al utilizado de la línea.
+- **Pagos** (pantalla "Cupos CuppoGan" → cartera): se registra lo que pagó el ganadero. Se aplica primero a las cuotas vencidas a la fecha del pago (intereses y después capital, la más vieja primero); lo que sobra es prepago y va a capital, y los intereses de las cuotas que todavía no vencieron se recalculan sobre el saldo nuevo. **A Odoo se le envía solo el capital**, sobre la factura (Odoo lo aplica a su cuota más vieja y libera el disponible); el capital pagado libera también la línea en Prestia. **Los intereses quedan en Prestia** como "pendientes de informar a Odoo": la API de Odoo todavía no acepta capital e intereses discriminados (pedido a GRUPO MI ERP); mientras tanto TVGAN los registra a mano.
+- **Disponible**: Odoo calcula cupo aprobado − utilizado (el saldo de capital de las facturas), que coincide con el de Prestia porque solo recibe capital. Prestia manda sobre el cupo aprobado y el bloqueo (`blocked`).
+- Una factura con préstamo que Odoo deja de informar (nota crédito, anulación) se conserva para revisarla; no se ajusta sola.
 
-Sincronización automática: Cloud Scheduler (`prestia-odoo-sync`, us-central1) llama cada 15 minutos a `POST /api/v1/livestock-credit-portfolio/odoo/sync` con el header `X-API-Key` = secreto `SCHEDULER_API_KEY` (sin el secreto la ruta no se registra). Es la misma ronda que el temporizador interno (`ODOO_SYNC_INTERVAL_MINUTES`), que en Cloud Run con `--min-instances=0` solo corre mientras hay una instancia viva. El botón «Actualizar desde Odoo» de cada cupo sigue disponible.
+Conexión con Odoo: `https://www.tvgan.com.co/api/v1/cuppogan` (secreto `ODOO_API_TOKEN`), IP de salida fija `34.30.16.187` (conector `cuppogan-egress-conn` + Cloud NAT). Sincronización: Cloud Scheduler `prestia-odoo-sync` cada 5 minutos → `POST /api/v1/livestock-credit-portfolio/odoo/sync` con `X-API-Key` = `SCHEDULER_API_KEY` (y el temporizador interno, `ODOO_SYNC_INTERVAL_MINUTES`, 5). Para apagarla: quitar URL y token de `deploy.yml`.
 
 ## Deploy con Docker (self-hosted)
 

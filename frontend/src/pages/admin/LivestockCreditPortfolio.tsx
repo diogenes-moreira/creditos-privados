@@ -58,6 +58,7 @@ import type {
   LivestockCreditInvoice,
   LivestockCreditPortfolio as Portfolio,
   LivestockCreditPaymentResult,
+  LivestockInvoiceLoan,
 } from "../../api/types";
 import { formatCreditAmount, formatDate, formatDateTime } from "../../utils/creditLineFormat";
 
@@ -420,6 +421,9 @@ const LivestockCreditPortfolio: React.FC<Props> = ({ lineId, currency }) => {
                         <TableCell colSpan={8} sx={{ py: 0, borderBottom: expanded[inv.odooInvoiceId] ? undefined : "none" }}>
                           <Collapse in={!!expanded[inv.odooInvoiceId]} unmountOnExit>
                             <Box py={1} pl={6}>
+                              {inv.loan ? (
+                                <LoanSchedule loan={inv.loan} money={money} />
+                              ) : (
                               <Table size="small">
                                 <TableHead>
                                   <TableRow>
@@ -440,6 +444,7 @@ const LivestockCreditPortfolio: React.FC<Props> = ({ lineId, currency }) => {
                                   ))}
                                 </TableBody>
                               </Table>
+                              )}
                             </Box>
                           </Collapse>
                         </TableCell>
@@ -456,6 +461,11 @@ const LivestockCreditPortfolio: React.FC<Props> = ({ lineId, currency }) => {
       {/* Payments */}
       <Card>
         <CardContent>
+          {Number.parseFloat(portfolio.interestPendingReport) > 0 && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {t(`${P}.payments.interestPending`, { amount: money(portfolio.interestPendingReport) })}
+            </Alert>
+          )}
           <Typography variant="h6" gutterBottom>
             {t(`${P}.payments.title`)}
           </Typography>
@@ -481,7 +491,14 @@ const LivestockCreditPortfolio: React.FC<Props> = ({ lineId, currency }) => {
                     <TableRow key={p.id}>
                       <TableCell>{formatOdooDate(p.date)}</TableCell>
                       <TableCell sx={{ fontFamily: "monospace" }}>{p.invoiceNumber}</TableCell>
-                      <TableCell align="right">{money(p.amount)}</TableCell>
+                      <TableCell align="right">
+                        {money(p.amount)}
+                        {Number.parseFloat(p.interest) > 0 && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            {t(`${P}.payments.split`, { capital: money(p.capital), interest: money(p.interest) })}
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell>{p.bank}</TableCell>
                       <TableCell sx={{ fontFamily: "monospace" }}>{p.reference}</TableCell>
                       <TableCell>
@@ -626,7 +643,9 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const invoice = useMemo(() => invoices.find((i) => i.odooInvoiceId === invoiceId), [invoices, invoiceId]);
 
   const amountValue = Number.parseFloat(amount.replace(",", "."));
-  const overResidual = invoice && Number.isFinite(amountValue) && amountValue > Number.parseFloat(invoice.amountResidual);
+  // With a Prestia loan the most is today's payoff (interest included); without, Odoo's balance.
+  const limit = invoice ? (invoice.loan ? invoice.loan.payoffToday : invoice.amountResidual) : "0";
+  const overResidual = invoice && Number.isFinite(amountValue) && amountValue > Number.parseFloat(limit);
   const invalidAmount = amount !== "" && (!Number.isFinite(amountValue) || amountValue <= 0 || !/^\d+([.,]\d{1,2})?$/.test(amount.trim()));
   const futureDate = date > today;
   const valid =
@@ -695,8 +714,10 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
               invalidAmount
                 ? t(`${P}.pay.amountInvalid`)
                 : overResidual
-                  ? t(`${P}.pay.amountOver`, { residual: money(invoice!.amountResidual) })
-                  : invoice
+                  ? t(`${P}.pay.amountOver`, { residual: money(limit) })
+                  : invoice?.loan
+                    ? t(`${P}.pay.loanHint`, { due: money(invoice.loan.dueToday), payoff: money(invoice.loan.payoffToday) })
+                    : invoice
                     ? t(`${P}.pay.residualHint`, { residual: money(invoice.amountResidual) })
                     : ""
             }
@@ -805,3 +826,46 @@ const BlockDialog: React.FC<BlockDialogProps> = ({ lineId, blocked, errorMessage
 };
 
 export default LivestockCreditPortfolio;
+
+/** Prestia's installments of an invoice: Odoo's capital plus the interest. */
+const LoanSchedule: React.FC<{ loan: LivestockInvoiceLoan; money: (raw: string) => string }> = ({ loan, money }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {t(`${P}.loan.summary`, {
+          rate: loan.nominalAnnualRate,
+          capital: money(loan.outstandingCapital),
+          due: money(loan.dueToday),
+          payoff: money(loan.payoffToday),
+        })}
+      </Typography>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>{t(`${P}.invoices.installment`)}</TableCell>
+            <TableCell>{t(`${P}.invoices.due`)}</TableCell>
+            <TableCell align="right">{t(`${P}.loan.capital`)}</TableCell>
+            <TableCell align="right">{t(`${P}.loan.interest`)}</TableCell>
+            <TableCell align="right">{t(`${P}.loan.total`)}</TableCell>
+            <TableCell align="right">{t(`${P}.invoices.residual`)}</TableCell>
+            <TableCell>{t(`${P}.invoices.state`)}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loan.installments.map((i) => (
+            <TableRow key={i.number}>
+              <TableCell>{i.number}</TableCell>
+              <TableCell>{formatOdooDate(i.dueDate)}</TableCell>
+              <TableCell align="right">{money(i.capital)}</TableCell>
+              <TableCell align="right">{money(i.interest)}</TableCell>
+              <TableCell align="right">{money(i.total)}</TableCell>
+              <TableCell align="right">{money(i.remaining)}</TableCell>
+              <TableCell>{t(`${P}.loan.status.${i.status}`, { defaultValue: i.status })}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
+  );
+};

@@ -251,7 +251,9 @@ func (h *LivestockCreditPortfolioHandler) ListBanks(c *gin.Context) {
 }
 
 func toPortfolioResponse(p *service.LivestockCreditPortfolio) dto.LivestockCreditPortfolioResponse {
-	return dto.ToLivestockCreditPortfolioResponse(p.Enabled, p.Line, p.Invoices, p.Payments, p.BlockEvents, p.Suggested)
+	r := dto.ToLivestockCreditPortfolioResponse(p.Enabled, p.Line, p.Invoices, p.Payments, p.BlockEvents, p.Suggested)
+	dto.AddInvoiceLoans(&r, p.Invoices, p.Loans, p.Today)
+	return r
 }
 
 func actorOf(c *gin.Context) service.Actor {

@@ -219,10 +219,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 			WithClients(userRepo, clientRepo, authService, r.country, service.LivestockCreditTerms{
 				InterestRate:    livestockNominalRate(r.partners.LivestockCreditRateTEA),
 				MaxInstallments: r.partners.LivestockCreditMaxInstallments,
-			}).
-			WithLoans(creditLineRepo, loanRepo))
+			}))
 	livestockPortfolioHandler := handler.NewLivestockCreditPortfolioHandler(
-		r.livestockPortfolioService(livestockCreditLineRepo, livestockPortfolioRepo, auditService))
+		r.livestockPortfolioService(livestockCreditLineRepo, livestockPortfolioRepo, auditService, creditLineRepo, loanRepo))
 
 	// Optional path prefix for when the service is mounted under a sub-path.
 	// Empty by default: the app is served from the root.
@@ -255,9 +254,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		api.POST("/livestock-quotas", cuppogan, livestockQuotaHandler.Assess)
 		api.POST("/livestock-quotas/registry", cuppogan, livestockQuotaHandler.AssessFromRegistryForPartner)
 		api.POST("/livestock-quotas/activations", cuppogan, livestockCreditLineHandler.RegisterActivation)
-		api.POST("/livestock-quotas/loans", cuppogan, livestockCreditLineHandler.OpenLoan)
 	} else {
-		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry, /livestock-quotas/activations and /livestock-quotas/loans disabled")
+		log.Println("CUPPOGAN_API_KEY not set: POST /livestock-quotas, /livestock-quotas/registry and /livestock-quotas/activations disabled")
 	}
 	if r.partners.SchedulerAPIKey != "" {
 		livestockPortfolioHandler.RegisterSchedulerRoutes(api.Group("", middleware.RequireServiceKey("scheduler", r.partners.SchedulerAPIKey)))
@@ -471,7 +469,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 // livestockPortfolioService builds the portfolio service on TVGAN's Odoo and
 // starts its periodic sync. Without ODOO_API_TOKEN (or ODOO_API_BASE_URL) the
 // stored data stays readable and every Odoo operation answers odoo_disabled.
-func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineRepository, repo port.LivestockCreditPortfolioRepository, audit *service.AuditService) *service.LivestockCreditPortfolioService {
+func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineRepository, repo port.LivestockCreditPortfolioRepository, audit *service.AuditService, creditLines port.CreditLineRepository, loans port.LoanRepository) *service.LivestockCreditPortfolioService {
 	loc, err := time.LoadLocation(r.timeZone)
 	if err != nil {
 		loc = time.UTC
@@ -485,7 +483,7 @@ func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineReposit
 	})
 	if client == nil {
 		log.Println("ODOO_API_TOKEN or ODOO_API_BASE_URL not set: the livestock credit portfolio (Odoo sync, payments, blocks) is disabled")
-		return service.NewLivestockCreditPortfolioService(lines, repo, nil).WithAudit(audit).WithLocation(loc)
+		return service.NewLivestockCreditPortfolioService(lines, repo, nil).WithAudit(audit).WithLocation(loc).WithLoans(creditLines, loans)
 	}
 	perHour := r.odoo.RequestsPerHour
 	if perHour <= 0 {
@@ -493,7 +491,7 @@ func (r *Router) livestockPortfolioService(lines port.LivestockCreditLineReposit
 	}
 	// The unattended sync leaves a quarter of the hourly budget to staff.
 	s := service.NewLivestockCreditPortfolioService(lines, repo, client).
-		WithAudit(audit).WithLocation(loc).WithSyncReserve(perHour / 4)
+		WithAudit(audit).WithLocation(loc).WithSyncReserve(perHour/4).WithLoans(creditLines, loans)
 	interval := time.Duration(r.odoo.SyncIntervalMinutes) * time.Minute
 	if interval > 0 {
 		log.Printf("Livestock credit portfolio: syncing from Odoo every %s", interval)

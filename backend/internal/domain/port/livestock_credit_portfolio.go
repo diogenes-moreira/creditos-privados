@@ -6,6 +6,7 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // OdooPortfolioGateway is TVGAN's Odoo as the ledger of the livestock credit
@@ -75,6 +76,15 @@ type LivestockCreditPortfolioRepository interface {
 	// invoices Odoo no longer reports are removed.
 	UpsertInvoices(ctx context.Context, lineID uuid.UUID, invoices []model.LivestockCreditInvoice, complete bool) error
 	ListInvoices(ctx context.Context, lineID uuid.UUID) ([]model.LivestockCreditInvoice, error)
+
+	// OpenInvoiceLoan stores the loan of a quota invoice (with its
+	// installments), adds its principal to the credit line's used amount and
+	// links the invoice to it, together or not at all.
+	OpenInvoiceLoan(ctx context.Context, invoiceID uuid.UUID, loan *model.Loan) error
+	// RecordLoanPayment stores a payment applied to an invoice's loan: the
+	// installments and status of the loan, Prestia's payment, the capital
+	// released from the credit line and the portfolio payment, together.
+	RecordLoanPayment(ctx context.Context, loan *model.Loan, loanPayment *model.Payment, capital decimal.Decimal, payment *model.LivestockCreditPayment) error
 
 	// CreatePayment fails if another payment that is not failed has the
 	// reference (unique index).
