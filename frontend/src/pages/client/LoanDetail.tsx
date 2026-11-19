@@ -27,6 +27,7 @@ import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import type { Installment } from "../../api/types";
+import { amortizationLabel } from "../../utils/amortization";
 
 const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,7 +184,7 @@ const LoanDetail: React.FC = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4}>
               <Typography variant="body2" color="text.secondary">{t("loans.system")}</Typography>
-              <Typography>{loan.amortizationType === "french" ? t("loans.french") : t("loans.german")}</Typography>
+              <Typography>{amortizationLabel(t, loan.amortizationType)}</Typography>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Typography variant="body2" color="text.secondary">{t("loans.interestRate")}</Typography>

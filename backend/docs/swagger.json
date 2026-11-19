@@ -5581,7 +5581,8 @@
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -7894,7 +7895,8 @@
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -8257,7 +8259,8 @@
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -8815,7 +8818,8 @@
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {

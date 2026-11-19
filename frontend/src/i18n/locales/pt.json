@@ -182,6 +182,8 @@
     "german": "Alemão",
     "frenchFull": "Francês (parcela fixa)",
     "germanFull": "Alemão (capital fixo)",
+    "interestIncluded": "Juros incluídos",
+    "interestIncludedFull": "Juros incluídos (parcela fixa, mesmo capital e juros em cada parcela)",
     "system": "Sistema",
     "disbursedAt": "Data do desembolso",
     "totalPaid": "Total pago",
@@ -1233,7 +1235,7 @@
         "replayed": "Esse pagamento já estava registrado.",
         "error": "Não foi possível registrar o pagamento.",
         "banksError": "Não foi possível carregar os bancos do Odoo.",
-        "loanHint": "Vence hoje (com juros): {{due}}. Para quitar hoje: {{payoff}}. O que exceder o vencido vai para o capital."
+        "loanHint": "Vence hoje: {{due}}. Saldo da fatura: {{payoff}}. As parcelas são pagas inteiras: pagar antes não desconta juros."
       },
       "blockDialog": {
         "blockTitle": "Bloquear compras a prazo",
@@ -1271,7 +1273,7 @@
         "already_linked": "O limite já está vinculado a outro contato do Odoo."
       },
       "loan": {
-        "summary": "Crédito na Prestia a {{rate}} % nominal anual · capital pendente {{capital}} · vence hoje {{due}} · para quitar hoje {{payoff}}",
+        "summary": "Parcela fixa com juros incluídos ({{rate}} % nominal anual) · capital pendente {{capital}} · vence hoje {{due}} · saldo {{payoff}}",
         "capital": "Capital",
         "interest": "Juros",
         "total": "Parcela",

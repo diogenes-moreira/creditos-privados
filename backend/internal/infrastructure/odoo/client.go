@@ -287,6 +287,18 @@ func (c *Client) SetBlocked(ctx context.Context, partnerID int64, blocked bool) 
 	return &m, nil
 }
 
+func (c *Client) SetApprovedAmount(ctx context.Context, partnerID int64, amount decimal.Decimal) (*model.OdooCustomer, error) {
+	req := struct {
+		ApprovedAmount json.Number `json:"approved_amount"`
+	}{ApprovedAmount: json.Number(amount.Round(2).String())}
+	var body customer
+	if err := c.do(ctx, http.MethodPatch, "/customers/"+strconv.FormatInt(partnerID, 10)+"/credit", nil, req, &body); err != nil {
+		return nil, err
+	}
+	m := body.toModel()
+	return &m, nil
+}
+
 // do sends one request through the throttle and decodes a 2xx into out.
 // Anything else is a *port.OdooError. Errors never carry the URL: its query
 // may hold a national ID.

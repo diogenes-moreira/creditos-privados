@@ -114,6 +114,8 @@ func (s *CreditService) SimulateLoan(principal, interestRate decimal.Decimal, nu
 	switch amortType {
 	case model.AmortizationGerman:
 		return model.CalculateGermanAmortization(principal, interestRate, numInstallments, startDate, ivaRate)
+	case model.AmortizationInterestIncluded:
+		return model.CalculateInterestIncludedAmortization(principal, interestRate, numInstallments, startDate, ivaRate)
 	default:
 		return model.CalculateFrenchAmortization(principal, interestRate, numInstallments, startDate, ivaRate)
 	}
@@ -223,6 +225,9 @@ func (s *CreditService) CancelLoan(ctx context.Context, adminID, loanID uuid.UUI
 	if err != nil {
 		return nil, nil, err
 	}
+	if loan.PartnerManaged() {
+		return nil, nil, model.ErrPartnerManagedLoan
+	}
 	if loan.Status != model.LoanActive {
 		return nil, nil, fmt.Errorf("can only cancel active loans, current status: %s", loan.Status)
 	}
@@ -310,6 +315,9 @@ func (s *CreditService) PrepayLoan(ctx context.Context, adminID, loanID uuid.UUI
 	loan, err := s.loanRepo.FindByIDWithInstallments(ctx, loanID)
 	if err != nil {
 		return nil, err
+	}
+	if loan.PartnerManaged() {
+		return nil, model.ErrPartnerManagedLoan
 	}
 	if loan.Status != model.LoanActive {
 		return nil, fmt.Errorf("can only prepay active loans")

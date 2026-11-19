@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,19 +10,30 @@ import (
 )
 
 // A purchase on a livestock quota is invoiced in TVGAN's Odoo with the
-// "Cuppogan" payment term: equal installments of capital at 30, 60 and 90 days.
-// Prestia keeps the credit: each quota invoice becomes a loan whose installments
-// carry Odoo's capital and due dates (so both systems agree on what is due and
-// when) plus the interest of the credit line's rate on the outstanding capital,
-// German system (constant capital). Odoo only knows the capital: a payment's
-// capital is reported to Odoo, its interest stays in Prestia.
+// "Cuppogan" payment term: 3 equal installments at 30, 60 and 90 days whose
+// price already includes the interest. Prestia keeps the credit without
+// recomputing it: each quota invoice becomes a loan of type
+// AmortizationInterestIncluded whose installments are Odoo's (amounts and due
+// dates), each split into capital and interest by working the interest out of
+// the price:
+//
+//   - the capital of the invoice is what its installments are worth today at
+//     the credit line's monthly rate (their present value);
+//   - the interest is the rest, spread over the installments in proportion to
+//     their amounts (equal installments, equal interest).
+//
+// A $105 invoice in 3 installments of $35 at 1.945271 % a month (26.01 % TEA):
+// capital 101.04 (33.68 per installment), interest 3.96 (1.32 per installment).
+// Payments go to Odoo in full and are applied oldest installment first,
+// interest before capital; an early payment pays installments in full (the
+// interest is in the invoice: there is no discount).
 
 // NewLivestockInvoiceLoan builds the active loan of a quota invoice on the
 // rancher's credit line. nominalRate is the line's (annual, monthly × 12).
 func NewLivestockInvoiceLoan(clientID, creditLineID uuid.UUID, inv LivestockCreditInvoice, nominalRate decimal.Decimal) (*Loan, error) {
 	type part struct {
-		due     time.Time
-		capital decimal.Decimal
+		due    time.Time
+		amount decimal.Decimal
 	}
 	var parts []part
 	for _, inst := range inv.Installments {
@@ -40,64 +52,64 @@ func NewLivestockInvoiceLoan(clientID, creditLineID uuid.UUID, inv LivestockCred
 		}
 		parts = []part{{due, inv.AmountTotal.Round(2)}}
 	}
-	principal := decimal.Zero
-	for _, p := range parts {
-		principal = principal.Add(p.capital)
+	if nominalRate.IsNegative() {
+		return nil, fmt.Errorf("interest rate cannot be negative")
 	}
-	loan, err := NewLoan(clientID, creditLineID, principal, nominalRate, len(parts), AmortizationGerman)
-	if err != nil {
-		return nil, err
+
+	// Present value of the installments, month k discounted k times.
+	monthly, _ := nominalRate.Div(monthlyRateDivisor).Float64()
+	total, presentValue := decimal.Zero, 0.0
+	for k, p := range parts {
+		total = total.Add(p.amount)
+		a, _ := p.amount.Float64()
+		presentValue += a / math.Pow(1+monthly, float64(k+1))
 	}
-	if err := loan.RequestApproval(); err != nil {
-		return nil, err
+	capital := decimal.NewFromFloat(presentValue).Round(2)
+	if capital.GreaterThan(total) {
+		capital = total
 	}
-	if err := loan.ApproveForPartner(); err != nil {
-		return nil, err
-	}
+
 	disbursed, err := time.Parse(time.DateOnly, inv.InvoiceDate)
 	if err != nil {
 		disbursed = inv.SyncedAt
 	}
-	loan.Status, loan.DisbursedAt = LoanActive, &disbursed
+	loan := &Loan{
+		ID: uuid.New(), ClientID: clientID, CreditLineID: creditLineID, Principal: capital,
+		InterestRate: nominalRate, NumInstallments: len(parts), AmortizationType: AmortizationInterestIncluded,
+		Status: LoanActive, DisbursedAt: &disbursed, ExternalReference: fmt.Sprintf("odoo-invoice:%d", inv.OdooInvoiceID),
+	}
+	now := time.Now()
+	loan.ApprovedAt = &now
+	// Each installment carries the capital in proportion to its amount; the
+	// last one takes the rounding, so the capitals add up to the invoice's.
+	assigned := decimal.Zero
 	for i, p := range parts {
+		c := p.amount.Mul(capital).Div(total).Round(2)
+		if i == len(parts)-1 {
+			c = capital.Sub(assigned)
+		}
+		assigned = assigned.Add(c)
 		loan.Installments = append(loan.Installments, Installment{
-			ID: uuid.New(), LoanID: loan.ID, Number: i + 1, DueDate: p.due, CapitalAmount: p.capital,
-			IVAAmount: decimal.Zero, PaidAmount: decimal.Zero, PaidCapital: decimal.Zero, PaidInterest: decimal.Zero,
-			Status: InstallmentPending,
+			ID: uuid.New(), LoanID: loan.ID, Number: i + 1, DueDate: p.due,
+			CapitalAmount: c, InterestAmount: p.amount.Sub(c), IVAAmount: decimal.Zero, TotalAmount: p.amount,
+			PaidAmount: decimal.Zero, PaidCapital: decimal.Zero, PaidInterest: decimal.Zero,
+			RemainingAmount: p.amount, Status: InstallmentPending,
 		})
 	}
-	loan.recomputeLivestockInterest(time.Time{})
 	return loan, nil
 }
 
-// monthlyRate is the loan's monthly rate as a fraction.
-func (l *Loan) monthlyRate() decimal.Decimal {
-	return l.InterestRate.Div(monthlyRateDivisor)
-}
-
-// recomputeLivestockInterest sets the interest of every installment not yet
-// due on `asOf` (all of them, with a zero asOf) to the monthly rate on the
-// capital still owed from that installment on. Paid interest is never undone.
-func (l *Loan) recomputeLivestockInterest(asOf time.Time) {
-	rate := l.monthlyRate()
-	balance := decimal.Zero
-	for i := len(l.Installments) - 1; i >= 0; i-- {
-		inst := &l.Installments[i]
-		balance = balance.Add(inst.CapitalAmount.Sub(inst.PaidCapital))
-		if inst.Status == InstallmentPaid || (!asOf.IsZero() && !inst.DueDate.After(asOf)) {
-			continue
-		}
-		interest := balance.Mul(rate).Round(2)
-		if interest.LessThan(inst.PaidInterest) {
-			interest = inst.PaidInterest
-		}
-		inst.InterestAmount = interest
-		inst.refreshLivestockTotals()
+// InvoiceTotal is what the rancher owes on the invoice: the installments'
+// amounts, interest included. It is what the loan uses of the quota.
+func (l *Loan) InvoiceTotal() decimal.Decimal {
+	total := decimal.Zero
+	for _, inst := range l.Installments {
+		total = total.Add(inst.TotalAmount)
 	}
+	return total
 }
 
 func (i *Installment) refreshLivestockTotals() {
-	i.TotalAmount = i.CapitalAmount.Add(i.InterestAmount)
 	i.PaidAmount = i.PaidCapital.Add(i.PaidInterest)
 	i.RemainingAmount = i.TotalAmount.Sub(i.PaidAmount)
 	switch {
@@ -119,24 +131,13 @@ type LivestockPaymentSplit struct {
 	Interest decimal.Decimal
 }
 
-// LivestockPayoff is the most a payment made on `on` can be: what is due by
-// then (capital and interest) plus the capital not yet due.
-func (l *Loan) LivestockPayoff(on time.Time) decimal.Decimal {
-	total := decimal.Zero
-	for _, inst := range l.Installments {
-		if inst.Status == InstallmentPaid {
-			continue
-		}
-		if inst.DueDate.After(on) {
-			total = total.Add(inst.CapitalAmount.Sub(inst.PaidCapital))
-		} else {
-			total = total.Add(inst.RemainingAmount)
-		}
-	}
-	return total
+// LivestockPayoff is the most a payment can be: everything still owed on the
+// invoice (installments are paid in full, also early).
+func (l *Loan) LivestockPayoff(time.Time) decimal.Decimal {
+	return l.TotalRemaining()
 }
 
-// LivestockDue is what is due by `on` (capital and interest of the due installments).
+// LivestockDue is what is due by `on`.
 func (l *Loan) LivestockDue(on time.Time) decimal.Decimal {
 	total := decimal.Zero
 	for _, inst := range l.Installments {
@@ -147,18 +148,17 @@ func (l *Loan) LivestockDue(on time.Time) decimal.Decimal {
 	return total
 }
 
-// ApplyLivestockPayment applies a payment made on `on`: first the installments
-// due by then, oldest first, interest before capital; the rest prepays capital,
-// oldest installment first (as Odoo applies it), and the interest of the
-// installments not yet due is recomputed on the new balance. It cannot exceed
-// LivestockPayoff. The loan completes when nothing is left.
+// ApplyLivestockPayment applies a payment oldest installment first, each
+// installment's interest before its capital, as Odoo applies the same amount
+// to the invoice. It cannot exceed what is owed. The loan completes when
+// nothing is left.
 func (l *Loan) ApplyLivestockPayment(amount decimal.Decimal, on time.Time) (LivestockPaymentSplit, error) {
 	split := LivestockPaymentSplit{Capital: decimal.Zero, Interest: decimal.Zero}
 	if !amount.IsPositive() {
 		return split, fmt.Errorf("payment amount must be positive")
 	}
 	if payoff := l.LivestockPayoff(on); amount.GreaterThan(payoff) {
-		return split, fmt.Errorf("the payment (%s) exceeds what can be paid on the loan (%s)", amount.StringFixed(2), payoff.StringFixed(2))
+		return split, fmt.Errorf("the payment (%s) exceeds what is owed on the invoice (%s)", amount.StringFixed(2), payoff.StringFixed(2))
 	}
 	left := amount
 	take := func(owed decimal.Decimal) decimal.Decimal {
@@ -171,7 +171,7 @@ func (l *Loan) ApplyLivestockPayment(amount decimal.Decimal, on time.Time) (Live
 	}
 	for i := range l.Installments {
 		inst := &l.Installments[i]
-		if inst.Status == InstallmentPaid || inst.DueDate.After(on) {
+		if inst.Status == InstallmentPaid {
 			continue
 		}
 		interest := take(inst.InterestAmount.Sub(inst.PaidInterest))
@@ -179,19 +179,6 @@ func (l *Loan) ApplyLivestockPayment(amount decimal.Decimal, on time.Time) (Live
 		inst.PaidInterest, inst.PaidCapital = inst.PaidInterest.Add(interest), inst.PaidCapital.Add(capital)
 		split.Interest, split.Capital = split.Interest.Add(interest), split.Capital.Add(capital)
 		inst.refreshLivestockTotals()
-	}
-	for i := range l.Installments {
-		inst := &l.Installments[i]
-		if inst.Status == InstallmentPaid || !inst.DueDate.After(on) {
-			continue
-		}
-		capital := take(inst.CapitalAmount.Sub(inst.PaidCapital))
-		inst.PaidCapital = inst.PaidCapital.Add(capital)
-		split.Capital = split.Capital.Add(capital)
-	}
-	l.recomputeLivestockInterest(on)
-	for i := range l.Installments {
-		l.Installments[i].refreshLivestockTotals()
 	}
 	if l.CheckCompletion() && l.Status == LoanActive {
 		_ = l.Complete()

@@ -29,6 +29,9 @@ type OdooPortfolioGateway interface {
 	// SetBlocked sends only credit.blocked: the other credit fields belong to
 	// CuppoGan's service.
 	SetBlocked(ctx context.Context, partnerID int64, blocked bool) (*model.OdooCustomer, error)
+	// SetApprovedAmount sends only credit.approved_amount: Odoo recomputes
+	// the available amount (approved − used) from it.
+	SetApprovedAmount(ctx context.Context, partnerID int64, amount decimal.Decimal) (*model.OdooCustomer, error)
 	// RemainingBudget is how many requests the client-side throttle still
 	// allows in its tightest window. The background sync leaves a reserve for
 	// staff's requests.
@@ -78,13 +81,14 @@ type LivestockCreditPortfolioRepository interface {
 	ListInvoices(ctx context.Context, lineID uuid.UUID) ([]model.LivestockCreditInvoice, error)
 
 	// OpenInvoiceLoan stores the loan of a quota invoice (with its
-	// installments), adds its principal to the credit line's used amount and
-	// links the invoice to it, together or not at all.
+	// installments), adds the invoice's total (interest included) to the
+	// credit line's used amount and links the invoice to it, together or not
+	// at all.
 	OpenInvoiceLoan(ctx context.Context, invoiceID uuid.UUID, loan *model.Loan) error
 	// RecordLoanPayment stores a payment applied to an invoice's loan: the
-	// installments and status of the loan, Prestia's payment, the capital
-	// released from the credit line and the portfolio payment, together.
-	RecordLoanPayment(ctx context.Context, loan *model.Loan, loanPayment *model.Payment, capital decimal.Decimal, payment *model.LivestockCreditPayment) error
+	// installments and status of the loan, Prestia's payment, the amount
+	// released on the credit line and the portfolio payment, together.
+	RecordLoanPayment(ctx context.Context, loan *model.Loan, loanPayment *model.Payment, released decimal.Decimal, payment *model.LivestockCreditPayment) error
 
 	// CreatePayment fails if another payment that is not failed has the
 	// reference (unique index).

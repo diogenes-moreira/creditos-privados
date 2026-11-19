@@ -329,8 +329,38 @@ func (s *LivestockCreditPortfolioService) refresh(ctx context.Context, line *mod
 		return fmt.Errorf("storing the invoices: %w", err)
 	}
 	s.openInvoiceLoans(ctx, line)
+	customer = s.alignApprovedAmount(ctx, line, partnerID, customer)
 	line.ApplyOdooCustomer(customer, now)
 	return s.saveState(ctx, line)
+}
+
+// alignApprovedAmount keeps Odoo's approved quota equal to the rancher's
+// credit line in Prestia (its max amount): if it differs (the line changed in
+// Prestia, or Odoo was edited), Prestia sends its own with a PATCH and Odoo
+// recomputes the available amount. Failures are logged and retried on the
+// next sync. Returns the contact as Odoo now reports it.
+func (s *LivestockCreditPortfolioService) alignApprovedAmount(ctx context.Context, line *model.LivestockCreditLine, partnerID int64, customer model.OdooCustomer) model.OdooCustomer {
+	if !s.keepsLoans() || line.CreditLineID == nil || line.Status != model.LivestockCreditLineActive {
+		return customer
+	}
+	creditLine, err := s.creditLines.FindByID(ctx, *line.CreditLineID)
+	if err != nil {
+		log.Printf("Odoo sync: line %s: credit line not read to align the quota: %v", line.ID, err)
+		return customer
+	}
+	want := creditLine.MaxAmount.Round(2)
+	if customer.Credit.ApprovedAmount.Round(2).Equal(want) {
+		return customer
+	}
+	updated, err := s.odoo.SetApprovedAmount(ctx, partnerID, want)
+	if err != nil {
+		log.Printf("Odoo sync: line %s: approved quota not sent to Odoo: %v", line.ID, err)
+		return customer
+	}
+	s.record(ctx, nil, "align_livestock_credit_quota_odoo", line,
+		fmt.Sprintf("Odoo contact %d: approved quota %s → %s (Prestia's credit line)", partnerID,
+			customer.Credit.ApprovedAmount.StringFixed(2), want.StringFixed(2)))
+	return *updated
 }
 
 // openInvoiceLoans opens the loan of every quota invoice of the line that has
@@ -572,18 +602,22 @@ func (s *LivestockCreditPortfolioService) invoiceRow(ctx context.Context, lineID
 	return nil, nil
 }
 
-// registerLoanPayment applies what the rancher paid to the invoice's loan:
-// the installments due by the payment date take it first (interest, then
-// capital), the rest prepays capital and lowers the interest not yet due. Only
-// the capital goes to Odoo, on the invoice; the interest stays in Prestia,
-// pending to report to Odoo. Odoo answers as in RegisterPayment; the loan is
-// only touched once Odoo has the capital (or there is none to send). A loan
-// not stored after Odoo took the capital is fixed by retrying the same
+// registerLoanPayment registers what the rancher paid on an invoice with a
+// Prestia loan. The invoice's price includes the interest, so the whole
+// payment goes to Odoo, which applies it to the oldest installment; Prestia
+// applies it the same way, splitting it into interest and capital, and frees
+// the same amount of the quota. The loan is only touched once Odoo has the
+// payment. A loan not stored after Odoo took it is fixed by retrying the same
 // reference: Odoo answers it was already registered and the loan is updated.
 func (s *LivestockCreditPortfolioService) registerLoanPayment(ctx context.Context, line *model.LivestockCreditLine, invoice *model.OdooInvoice, loanID uuid.UUID, req model.LivestockCreditPaymentRequest, actor Actor) (*PaymentOutcome, error) {
 	loan, err := s.loans.FindByIDWithInstallments(ctx, loanID)
 	if err != nil {
 		return nil, fmt.Errorf("reading the loan of invoice %s: %w", invoice.Number, err)
+	}
+	if req.Amount.GreaterThan(invoice.AmountResidual) {
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "amount_exceeds_residual",
+			Message: fmt.Sprintf("the amount (%s) exceeds the balance of invoice %s (%s)",
+				req.Amount.StringFixed(2), invoice.Number, invoice.AmountResidual.StringFixed(2))}
 	}
 	on, err := time.Parse(time.DateOnly, req.Date)
 	if err != nil {
@@ -592,14 +626,9 @@ func (s *LivestockCreditPortfolioService) registerLoanPayment(ctx context.Contex
 	payoff := loan.LivestockPayoff(on)
 	split, err := loan.ApplyLivestockPayment(req.Amount, on)
 	if err != nil {
-		return nil, &model.PortfolioRejection{Kind: model.PortfolioInvalid, Code: "amount_exceeds_balance",
-			Message: fmt.Sprintf("the amount (%s) exceeds what can be paid on invoice %s on %s (%s: due installments plus the capital not yet due)",
-				req.Amount.StringFixed(2), invoice.Number, req.Date, payoff.StringFixed(2))}
-	}
-	if split.Capital.GreaterThan(invoice.AmountResidual) {
 		return nil, &model.PortfolioRejection{Kind: model.PortfolioConflict, Code: "odoo_balance_mismatch",
-			Message: fmt.Sprintf("the payment's capital (%s) exceeds the balance Odoo shows for invoice %s (%s): reconcile the invoice first",
-				split.Capital.StringFixed(2), invoice.Number, invoice.AmountResidual.StringFixed(2))}
+			Message: fmt.Sprintf("the amount (%s) exceeds what Prestia's loan of invoice %s still owes (%s): reconcile the invoice first",
+				req.Amount.StringFixed(2), invoice.Number, payoff.StringFixed(2))}
 	}
 	banks, err := s.odoo.Banks(ctx)
 	if err != nil {
@@ -612,59 +641,56 @@ func (s *LivestockCreditPortfolioService) registerLoanPayment(ctx context.Contex
 
 	payment := model.NewLivestockCreditPayment(line.ID, req, invoice.Number, actor.UserID, actor.Email)
 	payment.CapitalAmount, payment.InterestAmount = split.Capital, split.Interest
-	var result *model.OdooPaymentResult
+	result, err := s.odoo.RegisterPayment(ctx, invoice.ID, model.OdooPaymentRequest{
+		Amount: req.Amount, Date: req.Date, Bank: req.Bank, Reference: req.Reference,
+	})
 	var oe *port.OdooError
-	if split.Capital.IsPositive() {
-		result, err = s.odoo.RegisterPayment(ctx, invoice.ID, model.OdooPaymentRequest{
-			Amount: split.Capital, Date: req.Date, Bank: req.Bank, Reference: req.Reference,
-		})
-		switch {
-		case err == nil:
-			payment.MarkRegistered(result.PaymentID, result.PaymentNumber)
-		case errors.As(err, &oe) && oe.Code == port.OdooPaymentAlreadyRegistered:
-			payment.MarkAlreadyRegistered(oe.Code, oe.Message)
-		case errors.As(err, &oe) && !oe.Unavailable():
-			payment.MarkFailed(oe.Code, oe.Message)
-			if storeErr := s.repo.CreatePayment(ctx, payment); storeErr != nil {
-				return nil, fmt.Errorf("storing the rejected payment: %w", storeErr)
-			}
-			s.record(ctx, actor.UserID, "register_livestock_credit_payment", line,
-				fmt.Sprintf("payment %s of %s (capital %s) on invoice %s rejected by Odoo: %s",
-					req.Reference, req.Amount.StringFixed(2), split.Capital.StringFixed(2), invoice.Number, oe.Code))
-			return nil, &model.PortfolioRejection{Kind: model.PortfolioOdooRejected, Code: "odoo_rejected", Message: oe.Message, OdooCode: oe.Code}
-		default:
-			r := odooRejection(err)
-			s.record(ctx, actor.UserID, "livestock_credit_payment_not_sent", line,
-				fmt.Sprintf("payment %s of %s on invoice %s not registered, Odoo unavailable (%s); it can be retried",
-					req.Reference, req.Amount.StringFixed(2), invoice.Number, r.OdooCode))
-			return nil, r
+	switch {
+	case err == nil:
+		payment.MarkRegistered(result.PaymentID, result.PaymentNumber)
+	case errors.As(err, &oe) && oe.Code == port.OdooPaymentAlreadyRegistered:
+		payment.MarkAlreadyRegistered(oe.Code, oe.Message)
+	case errors.As(err, &oe) && !oe.Unavailable():
+		payment.MarkFailed(oe.Code, oe.Message)
+		if storeErr := s.repo.CreatePayment(ctx, payment); storeErr != nil {
+			return nil, fmt.Errorf("storing the rejected payment: %w", storeErr)
 		}
-	} else {
-		payment.MarkRecordedInPrestiaOnly()
+		s.record(ctx, actor.UserID, "register_livestock_credit_payment", line,
+			fmt.Sprintf("payment %s of %s on invoice %s rejected by Odoo: %s",
+				req.Reference, req.Amount.StringFixed(2), invoice.Number, oe.Code))
+		return nil, &model.PortfolioRejection{Kind: model.PortfolioOdooRejected, Code: "odoo_rejected", Message: oe.Message, OdooCode: oe.Code}
+	default:
+		r := odooRejection(err)
+		s.record(ctx, actor.UserID, "livestock_credit_payment_not_sent", line,
+			fmt.Sprintf("payment %s of %s on invoice %s not registered, Odoo unavailable (%s); it can be retried",
+				req.Reference, req.Amount.StringFixed(2), invoice.Number, r.OdooCode))
+		return nil, r
 	}
+	// The interest is in the invoice: Odoo has it with the payment.
+	reported := s.now()
+	payment.InterestReportedAt = &reported
 
 	loanPayment, err := model.NewPayment(loan.ID, req.Amount, model.PaymentTransfer, req.Reference)
 	if err != nil {
 		return nil, err
 	}
 	payment.LoanPaymentID = &loanPayment.ID
-	if err := s.repo.RecordLoanPayment(ctx, loan, loanPayment, split.Capital, payment); err != nil {
+	if err := s.repo.RecordLoanPayment(ctx, loan, loanPayment, req.Amount, payment); err != nil {
 		if again, findErr := s.repo.FindActivePaymentByReference(ctx, req.Reference); findErr == nil && again != nil {
 			return s.answerExisting(ctx, line, again, req)
 		}
 		s.record(ctx, actor.UserID, "livestock_credit_payment_not_stored", line,
-			fmt.Sprintf("payment %s: Odoo has the capital %s of invoice %s but the loan was not updated (%v); retry the same reference",
-				req.Reference, split.Capital.StringFixed(2), invoice.Number, err))
+			fmt.Sprintf("payment %s: Odoo has %s of invoice %s but the loan was not updated (%v); retry the same reference",
+				req.Reference, req.Amount.StringFixed(2), invoice.Number, err))
 		return nil, fmt.Errorf("storing the payment on the loan: %w", err)
 	}
 	s.record(ctx, actor.UserID, "register_livestock_credit_payment", line,
-		fmt.Sprintf("payment %s of %s on invoice %s into %s dated %s: capital %s (to Odoo: %s %s), interest %s (pending to report)",
+		fmt.Sprintf("payment %s of %s on invoice %s into %s dated %s: capital %s, interest %s (Odoo: %s %s)",
 			payment.Reference, payment.Amount.StringFixed(2), payment.InvoiceNumber, payment.Bank, payment.PaymentDate,
-			split.Capital.StringFixed(2), payment.Status, payment.OdooPaymentNumber, split.Interest.StringFixed(2)))
-	switch {
-	case result != nil:
+			split.Capital.StringFixed(2), split.Interest.StringFixed(2), payment.Status, payment.OdooPaymentNumber))
+	if result != nil {
 		s.applyPaymentResult(ctx, line, result)
-	case payment.Status == model.PaymentAlreadyRegistered:
+	} else {
 		_ = s.syncLine(ctx, line, false)
 	}
 	portfolio, err := s.portfolioOf(ctx, line)

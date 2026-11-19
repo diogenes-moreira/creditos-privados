@@ -98,7 +98,7 @@ func (r *LivestockCreditPortfolioRepository) OpenInvoiceLoan(ctx context.Context
 			return fmt.Errorf("creating the installments: %w", err)
 		}
 		if err := tx.Model(&model.CreditLine{}).Where("id = ?", loan.CreditLineID).
-			Update("used_amount", gorm.Expr("used_amount + ?", loan.Principal)).Error; err != nil {
+			Update("used_amount", gorm.Expr("used_amount + ?", loan.InvoiceTotal())).Error; err != nil {
 			return fmt.Errorf("updating the credit line: %w", err)
 		}
 		res := tx.Model(&model.LivestockCreditInvoice{}).Where("id = ? AND loan_id IS NULL", invoiceID).
@@ -113,7 +113,7 @@ func (r *LivestockCreditPortfolioRepository) OpenInvoiceLoan(ctx context.Context
 	})
 }
 
-func (r *LivestockCreditPortfolioRepository) RecordLoanPayment(ctx context.Context, loan *model.Loan, loanPayment *model.Payment, capital decimal.Decimal, payment *model.LivestockCreditPayment) error {
+func (r *LivestockCreditPortfolioRepository) RecordLoanPayment(ctx context.Context, loan *model.Loan, loanPayment *model.Payment, released decimal.Decimal, payment *model.LivestockCreditPayment) error {
 	return r.quiet().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for i := range loan.Installments {
 			inst := &loan.Installments[i]
@@ -134,9 +134,9 @@ func (r *LivestockCreditPortfolioRepository) RecordLoanPayment(ctx context.Conte
 				return fmt.Errorf("creating the loan payment: %w", err)
 			}
 		}
-		if capital.IsPositive() {
+		if released.IsPositive() {
 			if err := tx.Model(&model.CreditLine{}).Where("id = ?", loan.CreditLineID).
-				Update("used_amount", gorm.Expr("GREATEST(used_amount - ?, 0)", capital)).Error; err != nil {
+				Update("used_amount", gorm.Expr("GREATEST(used_amount - ?, 0)", released)).Error; err != nil {
 				return fmt.Errorf("releasing the credit line: %w", err)
 			}
 		}

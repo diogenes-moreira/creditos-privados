@@ -55,6 +55,7 @@ import type { Vendor, Purchase, VendorPayment, WithdrawalRequest, Client, Credit
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import { getCountryConfig } from "../../config/countryConfig";
+import type { AmortizationType } from "../../utils/amortization";
 
 const statusColors: Record<string, "warning" | "success" | "error" | "info" | "default"> = {
   pending: "warning",
@@ -96,7 +97,7 @@ const VendorDetail: React.FC = () => {
   const [purchaseAmount, setPurchaseAmount] = useState("");
   const [purchaseDescription, setPurchaseDescription] = useState("");
   const [purchaseNumInstallments, setPurchaseNumInstallments] = useState(1);
-  const [purchaseAmortType, setPurchaseAmortType] = useState<"french" | "german">("french");
+  const [purchaseAmortType, setPurchaseAmortType] = useState<AmortizationType>("french");
   const [purchaseSubmitting, setPurchaseSubmitting] = useState(false);
   const { showSuccess, showError } = useNotification();
 
@@ -564,10 +565,11 @@ const VendorDetail: React.FC = () => {
                       fullWidth
                       label={t("vendor.amortizationSystem")}
                       value={purchaseAmortType}
-                      onChange={(e) => setPurchaseAmortType(e.target.value as "french" | "german")}
+                      onChange={(e) => setPurchaseAmortType(e.target.value as AmortizationType)}
                     >
                       <MenuItem value="french">{t("loans.frenchFull")}</MenuItem>
                       <MenuItem value="german">{t("loans.germanFull")}</MenuItem>
+                      <MenuItem value="interest_included">{t("loans.interestIncludedFull")}</MenuItem>
                     </TextField>
                   </>
                 )}

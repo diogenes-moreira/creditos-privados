@@ -5587,7 +5587,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -7900,7 +7901,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -8263,7 +8265,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {
@@ -8821,7 +8824,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "french",
-                        "german"
+                        "german",
+                        "interest_included"
                     ]
                 },
                 "amount": {

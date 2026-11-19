@@ -10,6 +10,7 @@ import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import type { Loan } from "../../api/types";
+import { amortizationLabel } from "../../utils/amortization";
 
 const LoanList: React.FC = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const LoanList: React.FC = () => {
     {
       id: "amortizationType",
       label: t("loans.system"),
-      render: (row) => (row.amortizationType === "french" ? t("loans.french") : t("loans.german")),
+      render: (row) => amortizationLabel(t, row.amortizationType),
     },
     {
       id: "interestRate",

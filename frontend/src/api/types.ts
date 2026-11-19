@@ -172,14 +172,14 @@ export interface LoanRequest {
   creditLineId: string;
   amount: number;
   installments: number;
-  amortizationType: "french" | "german";
+  amortizationType: "french" | "german" | "interest_included";
 }
 
 export interface SimulateRequest {
   amount: number;
   installments: number;
   interestRate: number;
-  amortizationType: "french" | "german";
+  amortizationType: "french" | "german" | "interest_included";
 }
 
 export interface SimulationResult {
@@ -374,7 +374,7 @@ export interface RecordPurchaseRequest {
   amount: string;
   description: string;
   numInstallments: number;
-  amortizationType: "french" | "german";
+  amortizationType: "french" | "german" | "interest_included";
 }
 
 export interface RecordVendorPaymentRequest {
