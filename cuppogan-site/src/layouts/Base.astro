@@ -38,7 +38,7 @@ const year = new Date().getFullYear();
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -55,7 +55,9 @@ const year = new Date().getFullYear();
           <a href="/#requisitos">Requisitos</a>
           <a href="/#preguntas">Preguntas</a>
         </nav>
-        <a class="btn btn-primary btn-sm" href={whatsappLink()} rel="noopener">Escríbanos</a>
+        <a class="btn btn-primary btn-sm" href={whatsappLink()} rel="noopener"
+          ><span class="long">Escribir por </span>WhatsApp</a
+        >
       </div>
     </header>
 
@@ -66,8 +68,8 @@ const year = new Date().getFullYear();
     <footer class="site-footer">
       <div class="container footer-grid">
         <div>
-          <img src="/brand/cuppogan-logo.png" alt="CuppoGan" width="150" height="49" class="footer-logo" />
-          <p class="muted">
+          <img src="/brand/cuppogan-logo.png" alt="CuppoGan" width="140" height="46" class="footer-logo" />
+          <p class="muted footer-about">
             Programa de compra de insumos ganaderos a plazos en TVGAN, promovido por FEDEGÁN, con la tecnología de
             evaluación Cuppo.
           </p>
@@ -90,7 +92,7 @@ const year = new Date().getFullYear();
         </div>
       </div>
       <div class="container footer-bottom">
-        <span>© {year} Programa CuppoGan · TVGAN S.A.S.</span>
+        <span>© {year} Programa CuppoGan, TVGAN S.A.S.</span>
         <span>TVGAN nunca le pedirá claves ni pagos en cuentas que no sean de su titularidad.</span>
       </div>
     </footer>
@@ -106,9 +108,10 @@ const year = new Date().getFullYear();
     --graphite: #2d3131;
     --muted: #5c6160;
     --cream: #f4f2eb;
-    --line: rgba(45, 49, 49, 0.12);
+    --mint: #e4efe0;
+    --line: rgba(45, 49, 49, 0.14);
     --gradient: linear-gradient(90deg, #06673d 0%, #398e33 100%);
-    --radius: 14px;
+    --measure: 64ch;
   }
   *,
   *::before,
@@ -117,15 +120,22 @@ const year = new Date().getFullYear();
   }
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 80px;
+    scroll-padding-top: 84px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   body {
     margin: 0;
     font-family: Inter, Arial, sans-serif;
+    font-size: 1.0625rem;
     color: var(--graphite);
     background: #fff;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
   }
   img {
     max-width: 100%;
@@ -133,10 +143,16 @@ const year = new Date().getFullYear();
   }
   a {
     color: var(--deep);
+    text-underline-offset: 3px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--growth);
+    outline-offset: 3px;
+    border-radius: 4px;
   }
   .container {
     width: 100%;
-    max-width: 1120px;
+    max-width: 1140px;
     margin: 0 auto;
     padding: 0 20px;
   }
@@ -153,24 +169,20 @@ const year = new Date().getFullYear();
     z-index: 100;
     background: #fff;
     padding: 8px 12px;
-    border-radius: 8px;
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     font-weight: 700;
     text-decoration: none;
     border-radius: 10px;
-    padding: 14px 24px;
+    padding: 15px 24px;
     font-size: 1rem;
-    transition: background-color 0.15s, transform 0.15s;
-    white-space: nowrap;
-  }
-  .btn:hover {
-    transform: translateY(-1px);
+    line-height: 1.2;
+    transition: background-color 0.15s;
   }
   .btn-primary {
     background: var(--deep);
@@ -186,10 +198,6 @@ const year = new Date().getFullYear();
   .btn-light:hover {
     background: var(--cream);
   }
-  .btn-outline-light {
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.7);
-  }
   .btn-sm {
     padding: 10px 16px;
     font-size: 0.92rem;
@@ -199,15 +207,14 @@ const year = new Date().getFullYear();
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.97);
     border-bottom: 1px solid var(--line);
   }
   .header-row {
     display: flex;
     align-items: center;
-    gap: 24px;
-    height: 68px;
+    gap: 28px;
+    height: 70px;
   }
   .logo img {
     display: block;
@@ -216,7 +223,7 @@ const year = new Date().getFullYear();
   }
   .nav {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     margin-left: auto;
   }
   .nav a {
@@ -228,37 +235,40 @@ const year = new Date().getFullYear();
   .nav a:hover {
     color: var(--deep);
   }
-  @media (max-width: 760px) {
+  @media (max-width: 820px) {
     .nav {
       display: none;
     }
     .header-row .btn {
       margin-left: auto;
     }
+    .header-row .long {
+      display: none;
+    }
     .logo img {
-      width: 128px;
+      width: 124px;
     }
   }
 
   .site-footer {
     background: var(--cream);
-    border-top: 1px solid var(--line);
-    padding: 48px 0 24px;
+    padding: 56px 0 28px;
     font-size: 0.93rem;
   }
   .footer-grid {
     display: grid;
     grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 32px;
+    gap: 40px;
   }
   .footer-logo {
     width: 140px;
-    margin-bottom: 8px;
+  }
+  .footer-about {
+    max-width: 36ch;
   }
   .footer-title {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.95rem;
+    font-weight: 700;
     margin: 0 0 12px;
   }
   .footer-list {
@@ -276,7 +286,7 @@ const year = new Date().getFullYear();
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 8px;
-    margin-top: 32px;
+    margin-top: 40px;
     padding-top: 20px;
     border-top: 1px solid var(--line);
     color: var(--muted);
@@ -285,6 +295,7 @@ const year = new Date().getFullYear();
   @media (max-width: 760px) {
     .footer-grid {
       grid-template-columns: 1fr;
+      gap: 28px;
     }
   }
 </style>

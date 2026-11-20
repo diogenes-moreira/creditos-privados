@@ -4,49 +4,64 @@ import { contact, whatsappLink } from "../site";
 
 // Everything on this page must stay within what the Terms (v1.0) allow it to
 // say: no amounts, rates or terms of any cupo, which are only informed
-// personally over WhatsApp before each purchase (Terms §3 and §7).
+// personally over WhatsApp before each purchase (Terms §3 and §7). The hero
+// conversation is an example and says so.
+
+const chat = [
+  { from: "me", text: "Hola, quiero activar mi beneficio CuppoGan" },
+  {
+    from: "them",
+    text: "Con gusto. Le envío un enlace para validar su identidad. Con su autorización también consultamos su registro en el RUV.",
+  },
+  { from: "them", link: "Validar mi identidad", note: "Enlace de un solo uso" },
+  { from: "me", text: "Listo, ya validé" },
+  {
+    from: "them",
+    text: "Gracias. Le escribo el monto de su cupo, el plazo y la tasa para que usted decida.",
+  },
+];
 
 const steps = [
   {
     title: "Escríbanos por WhatsApp",
-    text: "Déjenos su interés en la línea oficial de CuppoGan. Un asesor de TVGAN lo contacta.",
+    text: "Use la línea oficial de CuppoGan. Un asesor de TVGAN le responde.",
   },
   {
     title: "Valide su identidad",
-    text: "Con su autorización, verificamos su identidad y consultamos su registro en el RUV y en centrales de riesgo.",
+    text: "Desde un enlace de un solo uso. Con su autorización consultamos su registro en el RUV y en centrales de riesgo.",
   },
   {
     title: "Conozca su cupo",
-    text: "Le informamos de manera personal, por WhatsApp, el monto y las condiciones de su cupo antes de que usted decida.",
+    text: "Le informamos el monto y las condiciones por escrito, de manera personal, antes de que usted decida.",
   },
   {
     title: "Compre y pague a plazos",
-    text: "Compre insumos en TVGAN, en la tienda digital o con su asesor, y pague en cuotas desde la entrega.",
+    text: "Compre insumos en la tienda digital de TVGAN o con su asesor. Confirma cada compra respondiendo por WhatsApp y el plazo corre desde la entrega.",
   },
 ];
 
 const requirements = [
-  "Ser persona natural mayor de edad, con cédula de ciudadanía.",
-  "Ser comprador de TVGAN.",
-  "Tener su predio ganadero registrado en el Registro Único de Vacunación (RUV).",
+  "Persona natural mayor de edad, con cédula de ciudadanía",
+  "Comprador de TVGAN",
+  "Predio ganadero registrado en el Registro Único de Vacunación (RUV)",
 ];
 
-const benefits = [
+const rights = [
   {
-    title: "Condiciones claras antes de comprar",
-    text: "Antes de cada compra recibe por escrito el precio de contado, el plazo, las cuotas y la tasa efectiva anual, que nunca supera la tasa de usura vigente.",
+    title: "Condiciones por escrito antes de comprar",
+    text: "Precio de contado, plazo, cuotas y tasa efectiva anual, que nunca supera la tasa de usura vigente.",
   },
   {
-    title: "Pague antes, sin penalidad",
-    text: "Puede pagar en cualquier momento, total o parcialmente, y solo se liquida el cargo financiero causado hasta ese día.",
+    title: "Pago anticipado sin penalidad",
+    text: "Pague cuando quiera, total o parcialmente. Solo se liquida el cargo financiero causado hasta ese día.",
   },
   {
     title: "Sin intereses sobre intereses",
-    text: "Los pagos se aplican primero a la compra más antigua y nunca se cobran intereses sobre intereses.",
+    text: "Los pagos se aplican primero a la compra más antigua.",
   },
   {
-    title: "Compre como prefiera",
-    text: "Use su cupo en la tienda digital de TVGAN o con su asesor comercial por WhatsApp.",
+    title: "Aviso antes de cualquier reporte",
+    text: "Si se atrasa, se le avisa al menos veinte días antes de reportarlo a centrales de riesgo.",
   },
 ];
 
@@ -56,31 +71,25 @@ const faqs = [
     a: "No. CuppoGan no entrega dinero ni permite retiros. Es un cupo para comprar insumos productivos ganaderos en TVGAN y pagarlos a plazos.",
   },
   {
-    q: "¿Qué puedo comprar con mi cupo?",
-    a: "Insumos productivos ganaderos de TVGAN. El cupo no se puede usar para comprar ganado en pie, retirar efectivo ni para gastos personales.",
-  },
-  {
     q: "¿Escribir por WhatsApp me obliga a algo?",
-    a: "No. Dejar sus datos no genera ninguna obligación para usted ni garantiza la asignación de un cupo. Sus obligaciones solo nacen de las compras que usted confirme.",
+    a: "No. Dejar sus datos no genera ninguna obligación ni garantiza la asignación de un cupo. Sus obligaciones solo nacen de las compras que usted confirme.",
   },
   {
     q: "¿Por qué se consulta el RUV?",
     a: "El Registro Único de Vacunación, que custodia FEDEGÁN, permite conocer su inventario ganadero para determinar su cupo. Solo se consulta con su autorización previa.",
   },
   {
-    q: "¿Cómo sé que me contacta CuppoGan?",
+    q: "¿Cómo sé que me escribe CuppoGan?",
     a: `El WhatsApp oficial de CuppoGan es ${contact.whatsappDisplay}. TVGAN nunca le pedirá claves ni que pague en cuentas que no sean de su titularidad.`,
   },
   {
     q: "¿Qué pasa si me atraso en un pago?",
-    a: "Recibirá avisos antes y después del vencimiento. Mientras exista una cuota en mora el cupo se suspende para nuevas compras, y antes de cualquier reporte a centrales de riesgo se le avisa con al menos veinte días.",
+    a: "Recibe avisos antes y después del vencimiento. Mientras haya una cuota en mora el cupo se suspende para nuevas compras.",
   },
-];
-
-const participants = [
-  { name: "TVGAN", role: "Vende los insumos, aprueba los cupos y recibe los pagos." },
-  { name: "FEDEGÁN", role: "Promueve el programa entre los ganaderos y custodia el RUV." },
-  { name: "Cuppo", role: "Tecnología de evaluación de TechX Latam, operador tecnológico del programa." },
+  {
+    q: "¿Y si no cumplo los requisitos?",
+    a: "Escríbanos igual. Le contamos qué opciones tiene, aunque eso no implica acceso al programa.",
+  },
 ];
 ---
 
@@ -90,70 +99,101 @@ const participants = [
 >
   <section class="hero">
     <div class="container hero-grid">
-      <div>
-        <p class="eyebrow">Programa promovido por FEDEGÁN</p>
+      <div class="hero-copy">
         <h1>Insumos para su hato hoy, pagados a plazos</h1>
         <p class="lead">
-          Con CuppoGan, los ganaderos compran insumos productivos en TVGAN con un cupo preaprobado y pagan en cuotas,
-          con las condiciones claras antes de cada compra.
+          Con CuppoGan compra insumos productivos en TVGAN con un cupo preaprobado y paga en cuotas. Todo se hace por
+          WhatsApp, y conoce las condiciones antes de cada compra.
         </p>
         <div class="hero-actions">
-          <a class="btn btn-light" href={whatsappLink()} rel="noopener">
+          <a class="btn btn-primary" href={whatsappLink()} rel="noopener">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3Z"/></svg>
-            Quiero activar mi beneficio
+            Escribir por WhatsApp
           </a>
-          <a class="btn btn-outline-light" href="#como-funciona">Cómo funciona</a>
+          <a class="text-link" href="#como-funciona">Ver cómo funciona</a>
+        </div>
+        <p class="backers">
+          Un programa de <strong>TVGAN</strong>, promovido por <strong>FEDEGÁN</strong>, con la tecnología de
+          evaluación <strong>Cuppo</strong>.
+        </p>
+      </div>
+
+      <figure class="phone" aria-label="Conversación de ejemplo con un asesor de TVGAN por WhatsApp">
+        <div class="phone-bar">
+          <img src="/brand/cuppogan-symbol.png" alt="" width="26" height="32" />
+          <div>
+            <strong>CuppoGan</strong>
+            <span>Asesor TVGAN</span>
+          </div>
+        </div>
+        <ol class="chat">
+          {
+            chat.map((m, i) => (
+              <li class={`bubble ${m.from}`} style={`--i:${i}`}>
+                {m.link ? (
+                  <span class="bubble-link">
+                    <strong>{m.link}</strong>
+                    <span>{m.note}</span>
+                  </span>
+                ) : (
+                  m.text
+                )}
+                {m.from === "me" && (
+                  <svg class="ticks" aria-hidden="true" width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6l3 3 6-7.5M6.5 8.5 7 9l6-7.5" /></svg>
+                )}
+              </li>
+            ))
+          }
+        </ol>
+        <figcaption>Conversación de ejemplo. El monto y las condiciones de su cupo se le informan de manera personal.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band band-cream">
+    <div class="container two-col">
+      <div>
+        <h2>No es un préstamo: es un cupo para comprar insumos</h2>
+        <p class="muted measure">
+          TVGAN le vende el insumo y difiere el pago en el tiempo. El cupo se asigna después de su autorización y de la
+          validación de su identidad, y usted solo se obliga por las compras que confirma.
+        </p>
+      </div>
+      <div class="usage">
+        <div>
+          <h3>Con su cupo puede comprar</h3>
+          <ul class="marks yes">
+            <li>Insumos productivos ganaderos de TVGAN</li>
+            <li>En la tienda digital o con su asesor por WhatsApp</li>
+          </ul>
+        </div>
+        <div>
+          <h3>No sirve para</h3>
+          <ul class="marks no">
+            <li>Ganado en pie</li>
+            <li>Retiros de efectivo</li>
+            <li>Gastos personales</li>
+          </ul>
         </div>
       </div>
-      <div class="hero-card" aria-hidden="true">
-        <img src="/brand/cuppogan-symbol.png" alt="" width="66" height="80" class="hero-mark" />
-        <ul>
-          <li>Cupo preaprobado para insumos</li>
-          <li>Pago en cuotas desde la entrega</li>
-          <li>Compre por WhatsApp o en la tienda digital</li>
-        </ul>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="band">
+    <div class="container two-col">
+      <div class="sticky-head">
+        <h2>Cómo funciona</h2>
+        <p class="muted measure">Desde la primera conversación hasta su primera compra, por WhatsApp.</p>
       </div>
-    </div>
-  </section>
-
-  <section class="participants">
-    <div class="container participants-grid">
-      {
-        participants.map((p) => (
-          <div>
-            <strong>{p.name}</strong>
-            <span>{p.role}</span>
-          </div>
-        ))
-      }
-    </div>
-  </section>
-
-  <section id="que-es" class="section">
-    <div class="container narrow center">
-      <p class="eyebrow dark">Qué es CuppoGan</p>
-      <h2>Financiación para producir, no para endeudarse</h2>
-      <p class="muted big">
-        CuppoGan no es un préstamo en efectivo. TVGAN le vende el insumo y difiere el pago en el tiempo, con base en
-        un cupo asignado después de su autorización y de la validación de su identidad. Usted solo se obliga por las
-        compras que confirma.
-      </p>
-    </div>
-  </section>
-
-  <section id="como-funciona" class="section cream">
-    <div class="container">
-      <div class="center narrow">
-        <p class="eyebrow dark">Cómo funciona</p>
-        <h2>Cuatro pasos, todo por WhatsApp</h2>
-      </div>
-      <ol class="steps">
+      <ol class="timeline">
         {
           steps.map((s, i) => (
             <li>
-              <span class="step-num">{i + 1}</span>
-              <h3>{s.title}</h3>
-              <p class="muted">{s.text}</p>
+              <span class="step-num" aria-hidden="true">{i + 1}</span>
+              <div>
+                <h3>{s.title}</h3>
+                <p class="muted">{s.text}</p>
+              </div>
             </li>
           ))
         }
@@ -161,16 +201,15 @@ const participants = [
     </div>
   </section>
 
-  <section id="requisitos" class="section">
-    <div class="container split">
+  <section id="requisitos" class="band band-cream">
+    <div class="container two-col">
       <div>
-        <p class="eyebrow dark">Requisitos</p>
-        <h2>¿Quién puede acceder?</h2>
-        <p class="muted">
-          Si no cumple alguno de estos criterios, igual puede escribirnos y le contamos las opciones disponibles.
+        <h2>Quién puede acceder</h2>
+        <p class="muted measure">
+          Si no cumple alguno de estos criterios, escríbanos igual y le contamos qué opciones tiene.
         </p>
       </div>
-      <ul class="checks">
+      <ul class="checklist">
         {
           requirements.map((r) => (
             <li>
@@ -183,37 +222,36 @@ const participants = [
     </div>
   </section>
 
-  <section class="section cream">
+  <section class="band">
     <div class="container">
-      <div class="center narrow">
-        <p class="eyebrow dark">Sus derechos</p>
-        <h2>Transparencia en cada compra</h2>
-      </div>
-      <div class="benefits">
+      <h2>Sus derechos en cada compra</h2>
+      <dl class="rights">
         {
-          benefits.map((b) => (
-            <article>
-              <h3>{b.title}</h3>
-              <p class="muted">{b.text}</p>
-            </article>
+          rights.map((r) => (
+            <div>
+              <dt>{r.title}</dt>
+              <dd class="muted">{r.text}</dd>
+            </div>
           ))
         }
-      </div>
+      </dl>
     </div>
   </section>
 
-  <section id="preguntas" class="section">
-    <div class="container narrow">
-      <div class="center">
-        <p class="eyebrow dark">Preguntas frecuentes</p>
-        <h2>Lo que más nos preguntan</h2>
+  <section id="preguntas" class="band band-cream">
+    <div class="container two-col">
+      <div>
+        <h2>Preguntas frecuentes</h2>
+        <p class="muted measure">
+          ¿No encuentra su respuesta? Escriba a <a href={`mailto:${contact.email}`}>{contact.email}</a>.
+        </p>
       </div>
       <div class="faqs">
         {
           faqs.map((f) => (
             <details>
               <summary>{f.q}</summary>
-              <p>{f.a}</p>
+              <p class="muted">{f.a}</p>
             </details>
           ))
         }
@@ -223,11 +261,11 @@ const participants = [
 
   <section class="cta">
     <div class="container cta-inner">
-      <div>
-        <h2>¿Listo para activar su beneficio?</h2>
-        <p>Escríbanos al WhatsApp oficial de CuppoGan y un asesor de TVGAN lo contacta.</p>
+      <h2>Escríbanos y un asesor de TVGAN lo contacta</h2>
+      <div class="cta-action">
+        <a class="btn btn-light" href={whatsappLink()} rel="noopener">Escribir por WhatsApp</a>
+        <span>{contact.whatsappDisplay}</span>
       </div>
-      <a class="btn btn-light" href={whatsappLink()} rel="noopener">Escribir a {contact.whatsappDisplay}</a>
     </div>
     <p class="container cta-legal">
       TVGAN S.A.S. es responsable del tratamiento de sus datos y TechX Latam S.A.S. es encargado, conforme a la Ley 1581
@@ -240,225 +278,324 @@ const participants = [
 </Base>
 
 <style>
-  .eyebrow {
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin: 0 0 12px;
-    color: rgba(255, 255, 255, 0.85);
-  }
-  .eyebrow.dark {
-    color: var(--growth);
-  }
   h1,
   h2,
   h3 {
-    line-height: 1.15;
     margin: 0;
+    color: var(--graphite);
   }
   h2 {
-    font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+    font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+    line-height: 1.12;
     font-weight: 800;
+    letter-spacing: -0.025em;
     margin-bottom: 16px;
+    max-width: 20ch;
   }
   h3 {
-    font-size: 1.1rem;
+    font-size: 1.08rem;
+    line-height: 1.3;
     font-weight: 700;
-    margin-bottom: 8px;
   }
-  .center {
-    text-align: center;
+  .measure {
+    max-width: 46ch;
+    margin: 0;
   }
-  .narrow {
-    max-width: 760px;
-    margin-left: auto;
-    margin-right: auto;
+  .band {
+    padding: 96px 0;
   }
-  .big {
-    font-size: 1.1rem;
-  }
-  .section {
-    padding: 88px 0;
-  }
-  .section.cream {
+  .band-cream {
     background: var(--cream);
   }
+  .two-col {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 64px;
+    align-items: start;
+  }
 
+  /* Hero: the conversation is the product, so it is the picture. */
   .hero {
-    background: var(--gradient);
-    color: #fff;
-    padding: 88px 0 96px;
+    padding: 72px 0 88px;
   }
   .hero-grid {
     display: grid;
-    grid-template-columns: 1.25fr 1fr;
-    gap: 56px;
+    grid-template-columns: 7fr 5fr;
+    gap: 64px;
     align-items: center;
   }
   .hero h1 {
-    font-size: clamp(2.2rem, 5vw, 3.6rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    margin-bottom: 20px;
+    font-size: clamp(2.6rem, 6.2vw, 4.6rem);
+    line-height: 1.02;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    max-width: 13ch;
+    margin-bottom: 28px;
   }
   .lead {
-    font-size: 1.15rem;
-    color: rgba(255, 255, 255, 0.9);
-    max-width: 560px;
-    margin: 0 0 32px;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 44ch;
+    margin: 0 0 36px;
   }
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 28px;
+  }
+  .text-link {
+    font-weight: 600;
+    color: var(--graphite);
+  }
+  .backers {
+    margin: 48px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 52ch;
+  }
+  .backers strong {
+    color: var(--graphite);
+  }
+
+  .phone {
+    margin: 0;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    overflow: hidden;
+    max-width: 400px;
+    justify-self: end;
+    width: 100%;
+  }
+  .phone-bar {
+    display: flex;
+    align-items: center;
     gap: 12px;
-  }
-  .hero-card {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    padding: 32px;
-  }
-  .hero-mark {
-    display: block;
-    width: 72px;
-    height: auto;
-    box-sizing: content-box;
-    padding: 12px 15px;
+    padding: 14px 18px;
     background: #fff;
-    border-radius: 16px;
-    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
   }
-  .hero-card ul {
+  .phone-bar img {
+    width: 26px;
+    height: auto;
+  }
+  .phone-bar div {
+    display: grid;
+    line-height: 1.25;
+  }
+  .phone-bar span {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .chat {
     list-style: none;
     margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 14px;
-    font-weight: 600;
+    padding: 20px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.95rem;
+    line-height: 1.45;
   }
-  .hero-card li {
-    padding-left: 28px;
+  .bubble {
+    max-width: 84%;
+    padding: 9px 12px;
+    border-radius: 14px;
     position: relative;
   }
-  .hero-card li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.45em;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+  /* The one orchestrated moment: on wide screens, where the chat is in view
+     on load, the conversation plays in order. */
+  @media (min-width: 921px) and (prefers-reduced-motion: no-preference) {
+    .bubble {
+      animation: bubble-in 0.35s ease-out both;
+      animation-delay: calc(var(--i) * 0.55s + 0.2s);
+    }
+  }
+  .bubble.them {
     background: #fff;
+    align-self: flex-start;
+    border-top-left-radius: 4px;
   }
-
-  .participants {
-    border-bottom: 1px solid var(--line);
-    padding: 28px 0;
+  .bubble.me {
+    background: var(--mint);
+    align-self: flex-end;
+    border-top-right-radius: 4px;
+    padding-right: 32px;
   }
-  .participants-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+  .ticks {
+    position: absolute;
+    right: 9px;
+    bottom: 8px;
+    color: var(--growth);
   }
-  .participants-grid div {
+  .bubble-link {
     display: grid;
     gap: 2px;
+    padding: 6px 2px;
   }
-  .participants-grid strong {
+  .bubble-link strong {
     color: var(--deep);
-    font-size: 1.05rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
-  .participants-grid span {
+  .bubble-link span {
+    font-size: 0.8rem;
     color: var(--muted);
-    font-size: 0.92rem;
+  }
+  .phone figcaption {
+    padding: 12px 18px 18px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  @keyframes bubble-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
-  .steps {
-    list-style: none;
-    padding: 0;
-    margin: 48px 0 0;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-  }
-  .steps li {
-    background: #fff;
-    border-radius: var(--radius);
-    padding: 28px 24px;
-    border: 1px solid var(--line);
-  }
-  .step-num {
-    display: inline-grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--deep);
-    color: #fff;
-    font-weight: 800;
-    margin-bottom: 16px;
-  }
-  .steps p,
-  .benefits p {
-    margin: 0;
-  }
-
-  .split {
+  /* What the cupo is for. */
+  .usage {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 56px;
-    align-items: center;
+    gap: 40px;
   }
-  .checks {
+  .usage h3 {
+    margin-bottom: 14px;
+  }
+  .marks {
     list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0;
     display: grid;
-    gap: 16px;
+    gap: 12px;
   }
-  .checks li {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-    background: var(--cream);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    font-weight: 600;
+  .marks li {
+    padding-left: 30px;
+    position: relative;
   }
-  .checks svg {
-    color: var(--deep);
-    flex: none;
-    margin-top: 2px;
+  .marks li::before {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: 800;
+  }
+  .marks.yes li::before {
+    content: "✓";
+    color: var(--growth);
+  }
+  .marks.no li::before {
+    content: "✕";
+    color: var(--muted);
   }
 
-  .benefits {
+  /* Steps are a real sequence, so they are numbered and joined. */
+  .sticky-head {
+    position: sticky;
+    top: 110px;
+  }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 20px;
+    position: relative;
+    padding-bottom: 40px;
+  }
+  .timeline li:last-child {
+    padding-bottom: 0;
+  }
+  .timeline li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 21px;
+    top: 48px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--line);
+  }
+  .step-num {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 2px solid var(--deep);
+    color: var(--deep);
+    font-weight: 800;
+  }
+  .timeline h3 {
+    margin: 9px 0 6px;
+  }
+  .timeline p {
+    margin: 0;
+    max-width: 52ch;
+  }
+
+  .checklist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .checklist li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .checklist svg {
+    color: var(--growth);
+    flex: none;
+    margin-top: 3px;
+  }
+
+  .rights {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    margin-top: 48px;
+    gap: 0 64px;
+    margin: 40px 0 0;
   }
-  .benefits article {
-    background: #fff;
-    border-radius: var(--radius);
-    padding: 28px;
-    border-left: 4px solid var(--growth);
+  .rights div {
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+  }
+  .rights dt {
+    font-weight: 700;
+    font-size: 1.08rem;
+    margin-bottom: 6px;
+  }
+  .rights dd {
+    margin: 0;
+    max-width: 48ch;
   }
 
   .faqs {
-    margin-top: 40px;
-    display: grid;
-    gap: 12px;
+    border-top: 1px solid var(--line);
   }
   details {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 0 22px;
+    border-bottom: 1px solid var(--line);
   }
   summary {
     cursor: pointer;
     font-weight: 700;
-    padding: 18px 0;
+    padding: 20px 0;
     list-style: none;
     display: flex;
     justify-content: space-between;
@@ -472,71 +609,86 @@ const participants = [
     color: var(--deep);
     font-size: 1.4rem;
     line-height: 1;
+    transition: transform 0.2s;
   }
   details[open] summary::after {
-    content: "−";
+    transform: rotate(45deg);
   }
   details p {
-    margin: 0 0 18px;
-    color: var(--muted);
+    margin: 0 0 20px;
+    max-width: 60ch;
   }
 
+  /* The one place the signature gradient appears: the call to act. */
   .cta {
-    background: var(--deep);
+    background: var(--gradient);
     color: #fff;
-    padding: 64px 0 40px;
+    padding: 72px 0 40px;
   }
   .cta-inner {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 24px;
+    gap: 28px;
   }
   .cta h2 {
-    margin-bottom: 8px;
-  }
-  .cta p {
+    color: #fff;
     margin: 0;
-    color: rgba(255, 255, 255, 0.88);
+    max-width: 18ch;
+  }
+  .cta-action {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+  }
+  .cta-action span {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
   }
   .cta-legal {
-    margin-top: 36px !important;
+    margin-top: 48px;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: rgba(255, 255, 255, 0.78);
   }
   .cta-legal a {
     color: #fff;
   }
+  .cta :focus-visible {
+    outline-color: #fff;
+  }
 
-  @media (max-width: 900px) {
+  @media (max-width: 920px) {
     .hero-grid,
-    .split {
+    .two-col {
       grid-template-columns: 1fr;
       gap: 40px;
     }
-    .steps {
-      grid-template-columns: repeat(2, 1fr);
+    .phone {
+      justify-self: start;
+    }
+    .sticky-head {
+      position: static;
     }
   }
   @media (max-width: 600px) {
-    .section {
+    .band {
       padding: 64px 0;
     }
     .hero {
-      padding: 56px 0 64px;
+      padding: 40px 0 56px;
     }
-    .steps,
-    .benefits,
-    .participants-grid {
+    .usage,
+    .rights {
       grid-template-columns: 1fr;
     }
-    .hero-actions .btn {
-      width: 100%;
+    .usage {
+      gap: 28px;
     }
-    .cta-inner .btn {
+    .hero-actions .btn,
+    .cta-action,
+    .cta-action .btn {
       width: 100%;
-      white-space: normal;
     }
   }
 </style>

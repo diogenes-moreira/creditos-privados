@@ -3,6 +3,8 @@ name: Deploy to Cloud Run
 on:
   push:
     branches: [main]
+    # The marketing site deploys on its own (deploy-site.yml).
+    paths-ignore: ["cuppogan-site/**", ".github/workflows/deploy-site.yml"]
 
 env:
   PROJECT_ID: fedegan-prestia-30x
