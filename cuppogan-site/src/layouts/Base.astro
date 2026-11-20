@@ -1,0 +1,290 @@
+---
+import { contact, whatsappLink } from "../site";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#06673D" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_CO" />
+    <meta property="og:site_name" content="CuppoGan" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/og-cuppogan.png", Astro.site).toString()} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CuppoGan" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#contenido">Ir al contenido</a>
+
+    <header class="site-header">
+      <div class="container header-row">
+        <a href="/" class="logo" aria-label="CuppoGan, inicio">
+          <img src="/brand/cuppogan-logo.png" alt="CuppoGan" width="150" height="49" />
+        </a>
+        <nav aria-label="Principal" class="nav">
+          <a href="/#como-funciona">Cómo funciona</a>
+          <a href="/#requisitos">Requisitos</a>
+          <a href="/#preguntas">Preguntas</a>
+        </nav>
+        <a class="btn btn-primary btn-sm" href={whatsappLink()} rel="noopener">Escríbanos</a>
+      </div>
+    </header>
+
+    <main id="contenido">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div>
+          <img src="/brand/cuppogan-logo.png" alt="CuppoGan" width="150" height="49" class="footer-logo" />
+          <p class="muted">
+            Programa de compra de insumos ganaderos a plazos en TVGAN, promovido por FEDEGÁN, con la tecnología de
+            evaluación Cuppo.
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-title">Contacto</h2>
+          <ul class="footer-list">
+            <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+            <li>WhatsApp oficial: <a href={whatsappLink()} rel="noopener">{contact.whatsappDisplay}</a></li>
+            <li>{contact.address}</li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-title">Legal</h2>
+          <ul class="footer-list">
+            <li><a href="/terminos">Términos y Condiciones</a></li>
+            <li><a href="/privacidad">Política de Tratamiento de Datos</a></li>
+            <li><a href="https://www.sic.gov.co" rel="noopener">Superintendencia de Industria y Comercio</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <span>© {year} Programa CuppoGan · TVGAN S.A.S.</span>
+        <span>TVGAN nunca le pedirá claves ni pagos en cuentas que no sean de su titularidad.</span>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --deep: #06673d;
+    --deep-dark: #044b2c;
+    --mid: #267e37;
+    --growth: #398e33;
+    --graphite: #2d3131;
+    --muted: #5c6160;
+    --cream: #f4f2eb;
+    --line: rgba(45, 49, 49, 0.12);
+    --gradient: linear-gradient(90deg, #06673d 0%, #398e33 100%);
+    --radius: 14px;
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+  }
+  body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    color: var(--graphite);
+    background: #fff;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  a {
+    color: var(--deep);
+  }
+  .container {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .skip {
+    position: absolute;
+    left: -9999px;
+  }
+  .skip:focus {
+    left: 16px;
+    top: 16px;
+    z-index: 100;
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-size: 1rem;
+    transition: background-color 0.15s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+  .btn-primary {
+    background: var(--deep);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--deep-dark);
+  }
+  .btn-light {
+    background: #fff;
+    color: var(--deep);
+  }
+  .btn-light:hover {
+    background: var(--cream);
+  }
+  .btn-outline-light {
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+  }
+  .btn-sm {
+    padding: 10px 16px;
+    font-size: 0.92rem;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 68px;
+  }
+  .logo img {
+    display: block;
+    width: 150px;
+    height: auto;
+  }
+  .nav {
+    display: flex;
+    gap: 24px;
+    margin-left: auto;
+  }
+  .nav a {
+    color: var(--graphite);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+  .nav a:hover {
+    color: var(--deep);
+  }
+  @media (max-width: 760px) {
+    .nav {
+      display: none;
+    }
+    .header-row .btn {
+      margin-left: auto;
+    }
+    .logo img {
+      width: 128px;
+    }
+  }
+
+  .site-footer {
+    background: var(--cream);
+    border-top: 1px solid var(--line);
+    padding: 48px 0 24px;
+    font-size: 0.93rem;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 32px;
+  }
+  .footer-logo {
+    width: 140px;
+    margin-bottom: 8px;
+  }
+  .footer-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 12px;
+  }
+  .footer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .footer-list a {
+    color: var(--graphite);
+  }
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 760px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

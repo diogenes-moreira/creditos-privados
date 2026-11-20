@@ -1,0 +1,64 @@
+---
+import Base from "./Base.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  html: string;
+}
+
+// The legal texts are kept verbatim from the published versions; edit the
+// fragments in src/legal/ only with a new version number and effective date.
+const { title, description, html } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <div class="legal-band" aria-hidden="true"></div>
+  <article class="container legal" set:html={html} />
+  <p class="container legal-back"><a href="/">Volver al inicio</a></p>
+</Base>
+
+<style>
+  .legal-band {
+    height: 6px;
+    background: var(--gradient);
+  }
+  .legal {
+    max-width: 780px;
+    padding-top: 56px;
+    padding-bottom: 24px;
+  }
+  .legal-back {
+    max-width: 780px;
+    padding-bottom: 72px;
+    font-weight: 600;
+  }
+  .legal :global(h1) {
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    font-weight: 900;
+    color: var(--deep);
+    line-height: 1.15;
+    margin: 0 0 16px;
+  }
+  .legal :global(h2) {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--deep);
+    margin: 44px 0 12px;
+  }
+  .legal :global(p),
+  .legal :global(li) {
+    line-height: 1.75;
+  }
+  .legal :global(p) {
+    margin: 16px 0;
+  }
+  .legal :global(ul) {
+    padding-left: 24px;
+    display: grid;
+    gap: 8px;
+  }
+  .legal :global(em) {
+    color: var(--muted);
+  }
+</style>
