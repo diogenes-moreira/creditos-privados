@@ -26,6 +26,9 @@ type SendGridConfig struct {
 	// API rejects the send with 403.
 	FromEmail string
 	FromName  string
+	// LogoURL is the public image shown at the top of the email; empty uses
+	// DefaultEmailLogoURL.
+	LogoURL string
 }
 
 // Enabled reports whether enough is configured to send through SendGrid.
@@ -67,20 +70,21 @@ func (s *SendGridOTPSender) SendOTP(ctx context.Context, to port.OTPRecipient, c
 		from["name"] = name
 	}
 
-	text := fmt.Sprintf(
-		"Tu código de acceso a CuppoGan es %s.\n\n"+
-			"Vence en 10 minutos y se usa una sola vez.\n"+
-			"Si no pediste este código, ignorá este mensaje.",
-		code)
+	mail, err := buildOTPEmail(code, strings.TrimSpace(s.cfg.LogoURL))
+	if err != nil {
+		return fmt.Errorf("email OTP: %w", err)
+	}
 
 	payload := map[string]any{
 		"personalizations": []any{
 			map[string]any{"to": []any{map[string]any{"email": address}}},
 		},
 		"from":    from,
-		"subject": fmt.Sprintf("%s es tu código de acceso a CuppoGan", code),
+		"subject": mail.Subject,
+		// SendGrid requires text/plain before text/html.
 		"content": []any{
-			map[string]any{"type": "text/plain", "value": text},
+			map[string]any{"type": "text/plain", "value": mail.Text},
+			map[string]any{"type": "text/html", "value": mail.HTML},
 		},
 	}
 

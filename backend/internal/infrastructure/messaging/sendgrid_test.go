@@ -169,3 +169,38 @@ func TestSendGridSubjectLeadsWithTheCode(t *testing.T) {
 	assert.True(t, strings.HasPrefix((*body)["subject"].(string), "987654"),
 		"subject should start with the code, got %q", (*body)["subject"])
 }
+
+func TestSendGridSendsABrandedHTMLAlternative(t *testing.T) {
+	sender, body, _ := newStubbedSendGrid(t, testSendGridConfig(), http.StatusAccepted, "")
+
+	require.NoError(t, sender.SendOTP(context.Background(),
+		port.OTPRecipient{Email: "ana@example.com"}, "482913"))
+
+	content := (*body)["content"].([]any)
+	require.Len(t, content, 2, "plain text and HTML")
+	assert.Equal(t, "text/plain", content[0].(map[string]any)["type"], "SendGrid requires text/plain first")
+	html := content[1].(map[string]any)
+	assert.Equal(t, "text/html", html["type"])
+	assert.Contains(t, html["value"], "482913")
+	assert.Contains(t, html["value"], DefaultEmailLogoURL, "the logo defaults to the one the app serves")
+	assert.Contains(t, html["value"], "#06673D", "brand green")
+}
+
+func TestSendGridUsesTheConfiguredLogo(t *testing.T) {
+	cfg := testSendGridConfig()
+	cfg.LogoURL = "https://cdn.example.com/logo.png"
+	sender, body, _ := newStubbedSendGrid(t, cfg, http.StatusAccepted, "")
+
+	require.NoError(t, sender.SendOTP(context.Background(),
+		port.OTPRecipient{Email: "ana@example.com"}, "482913"))
+
+	html := (*body)["content"].([]any)[1].(map[string]any)["value"].(string)
+	assert.Contains(t, html, "https://cdn.example.com/logo.png")
+	assert.NotContains(t, html, DefaultEmailLogoURL)
+}
+
+func TestOTPEmailEscapesTheLogoURL(t *testing.T) {
+	mail, err := buildOTPEmail("123456", `https://x.example/"><script>alert(1)</script>`)
+	require.NoError(t, err)
+	assert.NotContains(t, mail.HTML, "<script>")
+}
