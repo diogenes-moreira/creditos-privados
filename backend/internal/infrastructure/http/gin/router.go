@@ -75,6 +75,7 @@ func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 				APIKey:    cfg.SendGrid.APIKey,
 				FromEmail: cfg.SendGrid.FromEmail,
 				FromName:  cfg.SendGrid.FromName,
+				LogoURL:   cfg.SendGrid.LogoURL,
 			},
 			Twilio: messaging.TwilioConfig{
 				AccountSID:      cfg.Twilio.AccountSID,

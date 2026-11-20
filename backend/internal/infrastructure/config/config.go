@@ -150,6 +150,7 @@ type SendGridConfig struct {
 	APIKey    string
 	FromEmail string
 	FromName  string
+	LogoURL   string
 }
 
 // KapsoConfig configures WhatsApp delivery through Kapso, which fronts the
@@ -292,6 +293,7 @@ func Load() *Config {
 			APIKey:    getEnv("SENDGRID_API_KEY", ""),
 			FromEmail: getEnv("SENDGRID_FROM_EMAIL", ""),
 			FromName:  getEnv("SENDGRID_FROM_NAME", "CuppoGan"),
+			LogoURL:   getEnv("SENDGRID_LOGO_URL", ""),
 		},
 		RUV: RUVConfig{
 			BaseURL:      getEnv("RUV_BASE_URL", ""),
