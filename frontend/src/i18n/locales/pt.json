@@ -735,7 +735,7 @@
       "title": "Modelo de análise de risco",
       "subtitle": "O prompt define como cada solicitante é analisado. Os limites numéricos restringem qualquer recomendação que a análise produza.",
       "activeVersion": "Ativo: {{name}} v{{version}}",
-      "noAnalyzerConfigured": "Nenhum provedor de análise está configurado. As avaliações usam o scorecard determinístico e o prompt não é enviado a nenhum serviço. Defina ANTHROPIC_API_KEY para habilitar a análise por prompt.",
+      "noAnalyzerConfigured": "Nenhum provedor de análise está configurado. As avaliações usam o scorecard determinístico e o prompt não é enviado a nenhum serviço. Defina VERTEX_PROJECT para habilitar a análise por prompt.",
       "analyzerConfigured": "Análise por prompt habilitada com {{analyzer}}.",
       "promptTab": "Prompt",
       "guardrailsTab": "Limites",

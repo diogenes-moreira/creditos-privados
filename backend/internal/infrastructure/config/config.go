@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -199,8 +200,19 @@ type OdooConfig struct {
 	SyncIntervalMinutes int
 }
 
+// AIConfig selects and configures the provider behind the risk analysis.
 type AIConfig struct {
-	APIKey    string
+	// Provider is "gemini" (Vertex AI, the default) or "claude" (the
+	// Anthropic API).
+	Provider string
+	// APIKey is the Anthropic API key, used only by the claude provider.
+	APIKey string
+	// VertexProject and VertexLocation are where the gemini provider calls
+	// Vertex AI. It authenticates as the runtime service account, so it needs
+	// no key.
+	VertexProject  string
+	VertexLocation string
+	// Model empty means the provider's default model.
 	Model     string
 	Effort    string
 	MaxTokens int
@@ -208,7 +220,10 @@ type AIConfig struct {
 
 // Enabled reports whether a prompt-driven analyzer can be built.
 func (c AIConfig) Enabled() bool {
-	return c.APIKey != ""
+	if c.Provider == "claude" {
+		return c.APIKey != ""
+	}
+	return c.VertexProject != ""
 }
 
 type GCSConfig struct {
@@ -251,10 +266,13 @@ func Load() *Config {
 			LocalPath:       getEnv("LOCAL_STORAGE_PATH", "./storage"),
 		},
 		AI: AIConfig{
-			APIKey:    getEnv("ANTHROPIC_API_KEY", ""),
-			Model:     getEnv("RISK_ANALYSIS_MODEL", "claude-opus-5"),
-			Effort:    getEnv("RISK_ANALYSIS_EFFORT", "high"),
-			MaxTokens: getEnvInt("RISK_ANALYSIS_MAX_TOKENS", 16000),
+			Provider:       strings.ToLower(getEnv("RISK_ANALYSIS_PROVIDER", "gemini")),
+			APIKey:         getEnv("ANTHROPIC_API_KEY", ""),
+			VertexProject:  getEnv("VERTEX_PROJECT", getEnv("GOOGLE_CLOUD_PROJECT", "")),
+			VertexLocation: getEnv("VERTEX_LOCATION", ""),
+			Model:          getEnv("RISK_ANALYSIS_MODEL", ""),
+			Effort:         getEnv("RISK_ANALYSIS_EFFORT", "high"),
+			MaxTokens:      getEnvInt("RISK_ANALYSIS_MAX_TOKENS", 16000),
 		},
 		Kapso: KapsoConfig{
 			APIKey:           getEnv("KAPSO_API_KEY", ""),
