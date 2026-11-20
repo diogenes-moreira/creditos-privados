@@ -737,7 +737,7 @@
       "title": "Credit risk analysis model",
       "subtitle": "The prompt defines how each applicant is analysed. The numeric guardrails bound whatever the analysis recommends.",
       "activeVersion": "Active: {{name}} v{{version}}",
-      "noAnalyzerConfigured": "No analysis provider is configured. Assessments use the deterministic scorecard and the prompt is not sent anywhere. Set ANTHROPIC_API_KEY to enable prompt-driven analysis.",
+      "noAnalyzerConfigured": "No analysis provider is configured. Assessments use the deterministic scorecard and the prompt is not sent anywhere. Set VERTEX_PROJECT to enable prompt-driven analysis.",
       "analyzerConfigured": "Prompt-driven analysis enabled with {{analyzer}}.",
       "promptTab": "Prompt",
       "guardrailsTab": "Guardrails",

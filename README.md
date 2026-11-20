@@ -174,8 +174,11 @@ npm run dev    # http://localhost:4321
 | `ODOO_SYNC_INTERVAL_MINUTES` | Cada cuánto se actualizan todos los cupos desde Odoo (`0` = apagado; el botón «Actualizar desde Odoo» sigue funcionando) | `5` |
 | `LIVESTOCK_CREDIT_RATE_TEA` / `LIVESTOCK_CREDIT_MAX_INSTALLMENTS` | Tasa (efectiva anual) y cuotas de la línea de crédito de cada cupo CuppoGan | `26.01` / `3` |
 | `SCHEDULER_API_KEY` | Clave (`X-API-Key`) con la que Cloud Scheduler dispara la sincronización con Odoo. Sin ella, la ruta no existe | - |
-| `ANTHROPIC_API_KEY` | Habilita el análisis de riesgo por prompt (opcional) | - |
-| `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo | `claude-opus-5` |
+| `RISK_ANALYSIS_PROVIDER` | Proveedor del análisis de riesgo por prompt: `gemini` (Vertex AI) o `claude` (API de Anthropic) | `gemini` |
+| `VERTEX_PROJECT` | Proyecto de GCP donde se llama a Vertex AI. Sin él (ni `GOOGLE_CLOUD_PROJECT`) el análisis por prompt queda apagado. Se autentica con la cuenta de servicio, sin clave | - |
+| `VERTEX_LOCATION` | Ubicación de Vertex AI | `global` |
+| `ANTHROPIC_API_KEY` | Clave de Anthropic, solo con `RISK_ANALYSIS_PROVIDER=claude` | - |
+| `RISK_ANALYSIS_MODEL` | Modelo usado para el análisis de riesgo (vacío = el del proveedor) | `gemini-4-argon` / `claude-opus-5` |
 | `RISK_ANALYSIS_EFFORT` | Profundidad del razonamiento (`low`..`max`) | `high` |
 | `RISK_ANALYSIS_MAX_TOKENS` | Tope de tokens por análisis | `16000` |
 
@@ -339,7 +342,7 @@ Las barandas se aplican **después** del análisis y solo pueden restringir: baj
 
 **3. El cálculo de disponibilidad.** La capacidad de pago es el menor entre el excedente disponible y un porcentaje del ingreso reconocido (los ingresos sin verificar sufren un descuento configurable). Esa cuota se convierte en capital invirtiendo el mismo cronograma de amortización francesa que usan los préstamos reales, de modo que el límite recomendado siempre es un capital cuya cuota más alta cabe en la capacidad de pago.
 
-**Motor de análisis.** Si `ANTHROPIC_API_KEY` está configurada, el prompt se ejecuta contra Claude con salida estructurada. Si no lo está —o si la llamada falla— la evaluación usa un **scorecard determinístico** del dominio que pondera capacidad de pago, endeudamiento, estabilidad laboral, buró e historial de pago interno. El módulo funciona completo sin credenciales de IA; el scorecard también se usa siempre para las precalificaciones y se le entrega al análisis por prompt como referencia. Cuando no hay datos de buró o historial, esos factores puntúan neutro en lugar de penalizar a quien no tiene legajo.
+**Motor de análisis.** El prompt se ejecuta con salida estructurada contra Gemini en Vertex AI (por defecto, autenticado con la cuenta de servicio y facturado en el proyecto) o contra Claude si `RISK_ANALYSIS_PROVIDER=claude`; los dos comparten el mismo contrato de respuesta. Si el proveedor no está configurado —o si la llamada falla— la evaluación usa un **scorecard determinístico** del dominio que pondera capacidad de pago, endeudamiento, estabilidad laboral, buró e historial de pago interno. El módulo funciona completo sin credenciales de IA; el scorecard también se usa siempre para las precalificaciones y se le entrega al análisis por prompt como referencia. Cuando no hay datos de buró o historial, esos factores puntúan neutro en lugar de penalizar a quien no tiene legajo.
 
 ## Decisiones técnicas
 
@@ -365,7 +368,7 @@ Las barandas se aplican **después** del análisis y solo pueden restringir: baj
   consola son adaptadores
 - **Política de riesgo como dato** - el prompt y las barandas son entidades versionadas, editables sin deploy
 - **Las barandas solo restringen** - una recomendación externa nunca puede ampliar el límite, el plazo ni bajar la tasa por debajo del piso de su categoría
-- **Degradación sin IA** - sin `ANTHROPIC_API_KEY` el riesgo se evalúa con un scorecard determinístico del dominio
+- **Degradación sin IA** - sin proveedor configurado el riesgo se evalúa con un scorecard determinístico del dominio
 
 ## Deploy a producción (GCP — proyecto `fedegan-prestia-30x`)
 

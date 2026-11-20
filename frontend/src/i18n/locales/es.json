@@ -737,7 +737,7 @@
       "title": "Modelo de análisis de riesgo",
       "subtitle": "El prompt define cómo se analiza a cada solicitante. Las barandas numéricas acotan cualquier recomendación que produzca el análisis.",
       "activeVersion": "Activo: {{name}} v{{version}}",
-      "noAnalyzerConfigured": "No hay proveedor de análisis configurado. Las evaluaciones usan el scorecard determinístico y el prompt no se envía a ningún servicio. Configurá ANTHROPIC_API_KEY para habilitar el análisis por prompt.",
+      "noAnalyzerConfigured": "No hay proveedor de análisis configurado. Las evaluaciones usan el scorecard determinístico y el prompt no se envía a ningún servicio. Configurá VERTEX_PROJECT para habilitar el análisis por prompt.",
       "analyzerConfigured": "Análisis por prompt habilitado con {{analyzer}}.",
       "promptTab": "Prompt",
       "guardrailsTab": "Barandas",

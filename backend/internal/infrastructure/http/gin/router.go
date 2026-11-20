@@ -145,17 +145,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	reportRepo := postgres.NewReportRepository(r.db)
 	reportService := service.NewReportService(reportRepo)
 
-	// Credit risk. The analyzer is nil when no AI credentials are configured,
+	// Credit risk. The analyzer is nil when its provider is not configured,
 	// in which case the risk service scores with its deterministic scorecard.
-	var riskAnalyzer port.RiskAnalyzer
-	if analyzer := ai.NewClaudeAnalyzer(ai.Config{
-		APIKey:    r.aiConfig.APIKey,
-		Model:     r.aiConfig.Model,
-		Effort:    r.aiConfig.Effort,
-		MaxTokens: r.aiConfig.MaxTokens,
-	}); analyzer != nil {
-		riskAnalyzer = analyzer
-	}
+	riskAnalyzer := r.riskAnalyzer()
 	riskService := service.NewRiskService(
 		riskProfileRepo, riskModelRepo, riskAssessmentRepo, creditHistoryRepo,
 		clientRepo, creditLineRepo, creditService, auditService, riskAnalyzer,
@@ -509,4 +501,37 @@ func livestockNominalRate(tea decimal.Decimal) decimal.Decimal {
 		log.Fatalf("LIVESTOCK_CREDIT_RATE_TEA: %v", err)
 	}
 	return nominal
+}
+
+// riskAnalyzer builds the configured AI risk analyzer, or nil when its
+// provider is not configured. A provider that fails to start is logged and
+// left out rather than stopping the server: risk analysis falls back to the
+// scorecard.
+func (r *Router) riskAnalyzer() port.RiskAnalyzer {
+	if r.aiConfig.Provider == "claude" {
+		if a := ai.NewClaudeAnalyzer(ai.Config{
+			APIKey:    r.aiConfig.APIKey,
+			Model:     r.aiConfig.Model,
+			Effort:    r.aiConfig.Effort,
+			MaxTokens: r.aiConfig.MaxTokens,
+		}); a != nil {
+			return a
+		}
+		return nil
+	}
+	a, err := ai.NewGeminiAnalyzer(context.Background(), ai.GeminiConfig{
+		Project:   r.aiConfig.VertexProject,
+		Location:  r.aiConfig.VertexLocation,
+		Model:     r.aiConfig.Model,
+		Effort:    r.aiConfig.Effort,
+		MaxTokens: r.aiConfig.MaxTokens,
+	})
+	if err != nil {
+		log.Printf("Risk analysis on Vertex AI unavailable, using the scorecard: %v", err)
+		return nil
+	}
+	if a == nil {
+		return nil
+	}
+	return a
 }
