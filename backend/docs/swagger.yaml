@@ -1427,6 +1427,8 @@ definitions:
         type: string
       nationalId:
         type: string
+      phone:
+        type: string
     type: object
   dto.PartnerRegistryQuotaRequest:
     properties:
