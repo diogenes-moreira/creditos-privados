@@ -7542,6 +7542,9 @@ const docTemplate = `{
                 },
                 "nationalId": {
                     "type": "string"
+                },
+                "phone": {
+                    "type": "string"
                 }
             }
         },

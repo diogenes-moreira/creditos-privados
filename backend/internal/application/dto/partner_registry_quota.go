@@ -16,12 +16,15 @@ type PartnerRegistryQuotaRequest struct {
 // every predio and cycle reported. The partner needs the predios to fill the
 // promissory note (notification address) and to cite the RUV code to the
 // rancher, and the e-mail for the promissory note and the electronic invoice of
-// ranchers it has none for (most write in by WhatsApp). The phone stays out:
-// the partner already holds the one the rancher writes from.
+// ranchers it has none for (most write in by WhatsApp). The phone is for the
+// promissory note too: with WhatsApp usernames, Meta may not tell the partner
+// the number the rancher writes from. It is the one FEDEGÁN has on file, not a
+// verified one: it does not tell who is writing.
 type PartnerRancherResponse struct {
 	NationalID string                    `json:"nationalId"`
 	Name       string                    `json:"name"`
 	Email      string                    `json:"email,omitempty"`
+	Phone      string                    `json:"phone,omitempty"`
 	Holdings   []RegistryHoldingResponse `json:"holdings"`
 }
 
@@ -45,6 +48,7 @@ func ToPartnerRegistryQuotaResponse(r *service.RegistryAssessment) PartnerRegist
 			NationalID: r.Rancher.NationalID,
 			Name:       r.Rancher.Name,
 			Email:      r.Rancher.Email,
+			Phone:      r.Rancher.Phone,
 			Holdings:   toRegistryHoldings(r.Rancher.Holdings),
 		},
 		Assessment:   ToLivestockQuotaResponse(r.Record, r.Assessment, r.Tier),
